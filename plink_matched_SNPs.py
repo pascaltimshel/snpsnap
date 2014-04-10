@@ -114,8 +114,8 @@ def submit(batch_ids):
 									output_dir_path + "/snplists/"+ batch_id + ".rsID", \
 									ld_cutoff, \
 									output_dir_path, batch_id)
-			test_run = 0 # SWITCH
-			if test_run:
+			test_run_NoSubmission = 0 # SWITCH to only print the command
+			if test_run_NoSubmission:
 				print command
 				raise Exception('test run set to true. Exiting')
 			jobs.append( QueueJob(command, log_dir_path, queue_name, walltime, mem_per_job , flags, "plink_matched_SNPs_"+batch_id) )
@@ -132,6 +132,7 @@ def submit(batch_ids):
 #genotype_prefix = "/home/projects/tp/data/hapmap/phase2/hapmap_CEU_r23a" # TUNES OLD HAPMAP path/prefix
 #@@TODO: INSERT PATH TO 1000 GENOMES DATA FILES
 genotype_prefix = "/net/home/home/projects9/tp/childrens/snpsnap/src/results/test_thin0.001/CEU_GBR_TSI_unrelated.phase1"
+#genotype_prefix = "/net/home/home/projects9/tp/childrens/snpsnap/src/results/test_thin0.05/CEU_GBR_TSI_unrelated.phase1"
 max_snps_per_bin = 50000 # 50*50,000==2.5e6
 batch_size = 10000 # Used to break down jobs for paralellization
 freq_bin_size = 1
