@@ -1,0 +1,22 @@
+#### README by timshel
+#@GOAL: construct test file
+#@DIR: /home/projects9/tp/childrens/snpsnap/src
+
+CEU_GBR_TSI_unrelated.phase1_release_v3.20101123.snps_indels_svs.genotypes
+
+# Make test file
+plink --bfile mydata --thin 0.2
+
+
+# Remove a subset of SNPs
+--> write snps with freq < 1 % to file and exclude them
+plink --file data --exclude mysnps.txt
+
+
+plink --bfile mydata --maf 0.05 --geno 0.05 --write-snplist
+which generates a file
+     plink.snplist
+This file is simply a list of included SNP names, i.e. the same SNPs that a --recode or --make-bed statement would have produced in the corresponding MAP or BIM files
+The --make-bed option does the same as --recode but creates binary files;
+--out mydata2
+

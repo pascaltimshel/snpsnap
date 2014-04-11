@@ -104,7 +104,7 @@ def submit(batch_ids):
 			if args.distance_type == "ld":
 				command = "plink --bfile {0}"\
 								" --ld-snp-list {1}"\
-								" --ld-window-kb 10000"\
+								" --ld-window-kb 1000"\
 								" --ld-window-r2 {2}"\
 								" --ld-window 99999"\
 								" --out {3}/ldlists/{4}"\
@@ -114,7 +114,7 @@ def submit(batch_ids):
 									output_dir_path + "/snplists/"+ batch_id + ".rsID", \
 									ld_cutoff, \
 									output_dir_path, batch_id)
-			test_run_NoSubmission = 0 # SWITCH to only print the command
+			test_run_NoSubmission = 1 # SWITCH to only print the command
 			if test_run_NoSubmission:
 				print command
 				raise Exception('test run set to true. Exiting')
