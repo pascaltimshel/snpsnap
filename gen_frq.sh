@@ -38,7 +38,7 @@ if [ -n "$pthin" ]; then # "if set" (string variable is non-empty/non-zero). Tha
 	 --geno $pgeno\
 	 --hwe $phwe\
 	 --make-bed\
-	 --out ./results/$dir_output/$prefix_out\
+	 --out ../data/$dir_output/$prefix_out\
 	 --noweb"
 else
 	# FULL DATA (	 --thin $pthin REMOVED)
@@ -48,15 +48,15 @@ else
 	 --geno $pgeno\
 	 --hwe $phwe\
 	 --make-bed\
-	 --out ./results/$dir_output/$prefix_out\
+	 --out ../data/$dir_output/$prefix_out\
 	 --noweb"
 fi
 
-if [ -d ./results/$dir_output ]; then
+if [ -d ../data/$dir_output ]; then
 	echo "Removing existing output dir $dir_output"
-	rm -r ./results/$dir_output
+	rm -r ../data/$dir_output
 fi
-mkdir -p ./results/$dir_output # no error if existing, make parent directories as needed
+mkdir -p ../data/$dir_output # no error if existing, make parent directories as needed
 
 # ##################################### Make test file ######################################
 
@@ -64,15 +64,20 @@ mkdir -p ./results/$dir_output # no error if existing, make parent directories a
 # Note the space indentation to seperate arguments
 echo "making call to plink"
 echo "$call"
-plink $call &> ./results/$dir_output/tmp1.$$.log
+plink $call &> ../data/$dir_output/tmp1.$$.log
 
 # @@@@@@@@@@@@@@@@@@ FREQ CALL @@@@@@@@@@@@@@@@@@
 # Note the DIFFERENCE in --bfile!
 
-call_stat="--bfile `pwd`/results/$dir_output/$prefix_out\
- --out ./results/$dir_output/$prefix_out\
+call_stat="--bfile ../data/$dir_output/$prefix_out\
+ --out ../data/$dir_output/$prefix_out\
  --freq\
  --noweb"
+
+#call_stat="--bfile `pwd`/results/$dir_output/$prefix_out\
+# --out ./results/$dir_output/$prefix_out\
+# --freq\
+# --noweb"
 
 echo "making call to plink"
 echo "$call_stat"
@@ -81,7 +86,7 @@ echo "$call_stat"
 	#plink &> combined.log (special syntax)
 	#plink >& combined.log (special syntax)
 	#plink > combined.log 2>&1
-plink $call_stat &> ./results/$dir_output/tmp2.$$.log
+plink $call_stat &> ../data/$dir_output/tmp2.$$.log
 
 ###################################### CLEAING and PRINT RUNTIME ######################################
 T="$(($(date +%s)-T))" ## END TIME
@@ -95,7 +100,7 @@ $script_name with PID$$ completed
 RUNTIME
 $t_seconds s
 $t_min min
-$t_hours h" | tee ./results/$dir_output/tmp.runtime.$$.log
+$t_hours h" | tee ../data/$dir_output/tmp.runtime.$$.log
 
 
 ## Cleaning tmp log file
