@@ -10,7 +10,7 @@ T="$(date +%s)" # Get time as a UNIX timestamp (seconds elapsed since Jan 1, 197
 
 ###################################### PARAMETERS ######################################
 #@@@@@@@@@@@@@@@@@@ Important switch - if value is < 1 test dataset is created @@@@@@@@@
-pthin=0.1 #To keep only a random e.g. 20% of SNPs
+pthin=0.11 #To keep only a random e.g. 20% of SNPs
 #Parameter for --thin must be 0<x<1
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
@@ -69,7 +69,8 @@ plink $call &> ../data/$dir_output/tmp1.$$.log
 # @@@@@@@@@@@@@@@@@@ FREQ CALL @@@@@@@@@@@@@@@@@@
 # Note the DIFFERENCE in --bfile!
 
-call_stat="--bfile ../data/$dir_output/$prefix_out\
+path_parrent=$(dirname `pwd`)
+call_stat="--bfile $path_parrent/data/$dir_output/$prefix_out\
  --out ../data/$dir_output/$prefix_out\
  --freq\
  --noweb"

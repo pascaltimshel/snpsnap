@@ -1,4 +1,5 @@
 #!/usr/bin/env python2.7
+#@TODO Possibly change this
 
 import sys
 import glob
@@ -24,7 +25,7 @@ def submit(path):
 
 		if not os.path.exists(outfilename):
 				jobs.append( QueueJob(command, log_dir_path, queue_name, walltime, mem_per_job , flags, "run_parse_matched_SNPs_"+suffix) )
-		elif sum(1 for line in open(outfilename)) == 0:
+		elif sum(1 for line in open(outfilename)) == 0: # Files are emtpy
 				jobs.append( QueueJob(command, log_dir_path, queue_name, walltime, mem_per_job , flags, "run_parse_matched_SNPs_"+suffix) )
 
 	for job in jobs:
@@ -32,7 +33,7 @@ def submit(path):
 		time.sleep(1)
 
 # CBS queue parameters
-queue_name = "urgent"
+queue_name = "urgent" #@TODO Change queue to idle
 walltime="86400" # 60*60*24=1 day
 mem_per_job="1gb"
 flags = "sharedmem"

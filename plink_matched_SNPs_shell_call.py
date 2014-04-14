@@ -1,7 +1,12 @@
 #!/usr/bin/env python2.7
 
-## Use this line on padawan
+# Python path for timshel is /tools/bin/python which is not properly compiled on padawan architechture
+# import random does not work
+# --------> -> import random
+# 				ERROR:root:code for hash md5 was not found.
+## Use this line on padawan. Otherwise use python <scriptname>. 
 ## #!/home/people/timshel/.local/bin/python
+
 ## Use this line else
 ## #!/usr/bin/env python2.7
 
@@ -91,10 +96,10 @@ def write_batches():
 	return batches
 
 
-#def gen_job_call(cmd, logdir, queue, walltime, mem, flags, logname):
-#	qcmd = "xmsub -de -o %s/%s.out -e %s/%s.err -r y -q %s -l mem=%s,walltime=%s,flags=%s"%(logdir, logname, logdir, logname, queue, mem, walltime,flags) 
-#	call = qcmd + " " + cmd
-#	return call
+def gen_job_call(cmd, logdir, queue, walltime, mem, flags, logname):
+	qcmd = "xmsub -de -o %s/%s.out -e %s/%s.err -r y -q %s -l mem=%s,walltime=%s,flags=%s"%(logdir, logname, logdir, logname, queue, mem, walltime,flags) 
+	call = qcmd + " " + cmd
+	return call
 
 # Function to submit jobs to queue
 def submit(batch_ids):
@@ -149,15 +154,16 @@ def submit(batch_ids):
 				#raise Exception('test run set to true. Exiting')
 				devnull.close()
 				#sys.exit(1)
-			#print "JOB NO " + str(job_no) + ": submitting batch id " + batch_id
-			#call = gen_job_call( command, log_dir_path, queue_name, walltime, mem_per_job , flags, "plink_matched_SNPs_"+batch_id )
-			#print call
-			#subprocess.Popen([call], shell=True)
-			#time.sleep(2)
-			jobs.append( QueueJob(command, log_dir_path, queue_name, walltime, mem_per_job , flags, "plink_matched_SNPs_"+batch_id) )
-	for job in jobs:
-	    time.sleep(2)
-	    job.run()
+			print "JOB NO " + str(job_no) + ": submitting batch id " + batch_id
+			call = gen_job_call( command, log_dir_path, queue_name, walltime, mem_per_job , flags, "plink_matched_SNPs_"+batch_id )
+			print call
+			subprocess.Popen([call], shell=True)
+			time.sleep(2)
+
+			#jobs.append( QueueJob(command, log_dir_path, queue_name, walltime, mem_per_job , flags, "plink_matched_SNPs_"+batch_id) )
+	# for job in jobs:
+	    # time.sleep(2)
+	    # job.run()
 
 
 #pdb.set_trace()
@@ -209,10 +215,10 @@ print("Running with %s option, using cutoff %s"%(args.distance_type,args.distanc
 #
 ##TODO@@ Adjust queue parameters??
 queue_name = "cbs"
-walltime="604800" # 60*60*24*7=7 days
-mem_per_job="3gb"
-#walltime="86400" # 60*60*24=1 day
-#mem_per_job="1gb"
+#walltime="604800" # 60*60*24*7=7 days
+#mem_per_job="3gb"
+walltime="86400" # 60*60*24=1 day
+mem_per_job="1gb"
 flags = "sharedmem"
 
 #if os.listdir(output_dir_path + "/snplists") == []: # 
