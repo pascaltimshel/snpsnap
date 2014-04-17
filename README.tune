@@ -12,6 +12,8 @@
 #/home/projects2/tp/childrens/hawk/data_height/ppi_gwas/GC_N50K_GWAS_X491rem_Combined_SError_Height_MAC3_Dec12_2011_Freeze_Sailaja1_rsIDs.csv
 
 # 2) Run script to record distance, gene density, etc. (Make sure that all files are run):
+# run_parse_matched_SNPs.py CALLS parse_matched_SNPs.py
+# the PATH for the parse_matched_SNPs.py script is HARDCODED - BEWARE
 ./run_parse_matched_SNPs.py /home/projects2/tp/tools/matched_snps/hapmap_hapmap_CEU_r23a_50000snpsperbin/ld0.5/ 
 
 # 3) Merge all files from (2) into a single file:

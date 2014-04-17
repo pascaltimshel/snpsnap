@@ -216,9 +216,8 @@ print("Running with %s option, using cutoff %s"%(args.distance_type,args.distanc
 ##TODO@@ Adjust queue parameters??
 queue_name = "cbs"
 #walltime="604800" # 60*60*24*7=7 days
-#mem_per_job="3gb"
-walltime="86400" # 60*60*24=1 day
-mem_per_job="1gb"
+#walltime="86400" # 60*60*24=1 day
+mem_per_job="10gb" #=>> PBS: job killed: mem job total 4323312 kb exceeded limit 3145728 kb
 flags = "sharedmem"
 
 #if os.listdir(output_dir_path + "/snplists") == []: # 

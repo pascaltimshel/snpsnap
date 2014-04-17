@@ -1,16 +1,21 @@
 #!/usr/bin/env bash
 #@Usage: Run this program in background:
 #	gen_testdata.sh &
+#OUTPUT: 	all output is writte to ../data/<call_param_name>/<prefix>
+#			
 #STDOUT is writting to tmp log file which can be deleted
 #@Goal: make test data set to work on with plink_matched_SNPs.py
 #@DIR: /home/projects9/tp/childrens/snpsnap/src
+
+# Make the shell exit with an error when you reference an undefined variable.
+# set -u 
 
 ## START TIME
 T="$(date +%s)" # Get time as a UNIX timestamp (seconds elapsed since Jan 1, 1970 0:00 UTC)
 
 ###################################### PARAMETERS ######################################
 #@@@@@@@@@@@@@@@@@@ Important switch - if value is < 1 test dataset is created @@@@@@@@@
-pthin=0.11 #To keep only a random e.g. 20% of SNPs
+pthin=0.02 #To keep only a random e.g. 20% of SNPs
 #Parameter for --thin must be 0<x<1
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
@@ -31,32 +36,32 @@ data_in=$dir_in/$prefix_in
 prefix_out="CEU_GBR_TSI_unrelated.phase1" # THIS IS IMPORTANT
 if [ -n "$pthin" ]; then # "if set" (string variable is non-empty/non-zero). That is, is pthin given
 	# TEST DATA dir
-	dir_output="test_thin${pthin}"
+	dir_output="test_thin${pthin}_${$}"
 	call="--bfile $data_in\
 	 --thin $pthin\
 	 --maf $pmaf\
 	 --geno $pgeno\
 	 --hwe $phwe\
 	 --make-bed\
-	 --out ../data/$dir_output/$prefix_out\
+	 --out ../data/${dir_output}/${prefix_out}\
 	 --noweb"
 else
 	# FULL DATA (	 --thin $pthin REMOVED)
-	dir_output="full_no_pthin"
+	dir_output="full_no_pthin_${$}"
 	call="--bfile $data_in\
 	 --maf $pmaf\
 	 --geno $pgeno\
 	 --hwe $phwe\
 	 --make-bed\
-	 --out ../data/$dir_output/$prefix_out\
+	 --out ../data/${dir_output}/${prefix_out}\
 	 --noweb"
 fi
 
-if [ -d ../data/$dir_output ]; then
-	echo "Removing existing output dir $dir_output"
-	rm -r ../data/$dir_output
+if [ -d ../data/${dir_output} ]; then
+	echo "Removing existing output dir ${dir_output}"
+	rm -r ../data/${dir_output}
 fi
-mkdir -p ../data/$dir_output # no error if existing, make parent directories as needed
+mkdir -p ../data/${dir_output} # no error if existing, make parent directories as needed
 
 # ##################################### Make test file ######################################
 
@@ -64,19 +69,19 @@ mkdir -p ../data/$dir_output # no error if existing, make parent directories as 
 # Note the space indentation to seperate arguments
 echo "making call to plink"
 echo "$call"
-plink $call &> ../data/$dir_output/tmp1.$$.log
+plink $call &> ../data/${dir_output}/tmp1.$$.log
 
 # @@@@@@@@@@@@@@@@@@ FREQ CALL @@@@@@@@@@@@@@@@@@
 # Note the DIFFERENCE in --bfile!
 
 path_parrent=$(dirname `pwd`)
-call_stat="--bfile $path_parrent/data/$dir_output/$prefix_out\
- --out ../data/$dir_output/$prefix_out\
+call_stat="--bfile $path_parrent/data/${dir_output}/${prefix_out}\
+ --out ../data/${dir_output}/${prefix_out}\
  --freq\
  --noweb"
 
-#call_stat="--bfile `pwd`/results/$dir_output/$prefix_out\
-# --out ./results/$dir_output/$prefix_out\
+#call_stat="--bfile `pwd`/results/${dir_output}/${prefix_out}\
+# --out ./results/${dir_output}/${prefix_out}\
 # --freq\
 # --noweb"
 
@@ -87,7 +92,7 @@ echo "$call_stat"
 	#plink &> combined.log (special syntax)
 	#plink >& combined.log (special syntax)
 	#plink > combined.log 2>&1
-plink $call_stat &> ../data/$dir_output/tmp2.$$.log
+plink $call_stat &> ../data/${dir_output}/tmp2.$$.log
 
 ###################################### CLEAING and PRINT RUNTIME ######################################
 T="$(($(date +%s)-T))" ## END TIME
@@ -101,7 +106,7 @@ $script_name with PID$$ completed
 RUNTIME
 $t_seconds s
 $t_min min
-$t_hours h" | tee ../data/$dir_output/tmp.runtime.$$.log
+$t_hours h" | tee ../data/${dir_output}/tmp.runtime.$$.log
 
 
 ## Cleaning tmp log file
@@ -110,7 +115,7 @@ $t_hours h" | tee ../data/$dir_output/tmp.runtime.$$.log
 
 
 ###################################### OLD STUFF ######################################
-#call="--bfile $mydata --thin $pthin --maf $pmaf --make-bed --out $dir_output/CEU_GBR_TSI_unrelated.phase1.testset --noweb"
+#call="--bfile $mydata --thin $pthin --maf $pmaf --make-bed --out ${dir_output}/CEU_GBR_TSI_unrelated.phase1.testset --noweb"
 
 # DOES NOT WORK:
 #plink $call > /dev/null & ## sending output to bit-bucket (trash)
@@ -126,13 +131,13 @@ $t_hours h" | tee ../data/$dir_output/tmp.runtime.$$.log
 # fi
 
 # prefix_out="CEU_GBR_TSI_unrelated.phase1"
-# dir_output_full=$path_parrent/data/$dir_output ## IMPORTANT PATH
+# dir_output_full=$path_parrent/data/${dir_output} ## IMPORTANT PATH
 
-# if [ -d $dir_output_full ]; then
-# 	echo "Removing existing output dir $dir_output"
-# 	rm -r $dir_output_full
+# if [ -d ${dir_output}_full ]; then
+# 	echo "Removing existing output dir ${dir_output}"
+# 	rm -r ${dir_output}_full
 # fi
-# mkdir -p $dir_output_full # no error if existing, make parent directories as needed
+# mkdir -p ${dir_output}_full # no error if existing, make parent directories as needed
 
 
 ###################################### MIX NOTES ######################################
