@@ -26,39 +26,15 @@ script = "/home/projects/tp/childrens/snpsnap/git/parse_matched_SNPs.py" # Updat
 current_script_name = os.path.basename(__file__)
 
 
-def run_parse(ldfiles_prefix, outfilename):
-	ldfiles = glob.glob(ldfiles_prefix+"*.ld") # catching all .ld files with CORRECT prefix
+
+def run_parse(snplist_prefix, outfilename):
+	snplist_files = glob.glob(snplist_prefix+"*.rsID") # catching all files with CORRECT prefix
 	if not os.path.exists(outfilename): # Test if already run
 		print "%s: CREATING NEW" % outfilename
-		#print "*** Filename %s does NOT exists ***.\nAppending job for LDfile %s to QueueJob.py..." % (outfilename, ldfile)
 		return True # submit job is there is no existing ldfile
 	else:
-		ld_snplist = {}
-		existing_outfile = {}
-		# Read all .ld files matching prefix
-		#print "Found {} ld file for prefix {}".format(len(ldfiles), ldfiles_prefix)
-		#print "Reading files..."		
-		for ldfile in ldfiles:
-			with open(ldfile, 'r') as f:
-				# CHR_A         BP_A        SNP_A  CHR_B         BP_B        SNP_B           R2
-	 			# 1      1011095   rs11810785      1      1011095   rs11810785            1
-	 			# 1      1011095   rs11810785      1      1025301    rs9442400      0.61996
-				
-				# plink ALWAYS outputs a line containing with input SNP, i.e. a line with an LD buddy to itself. SEE above example. 
-				# this enables us to assume len(existing_ld_snplist) == len(batch_snplist)
-				lines = f.readlines()[1:] # SKIP HEADER!!
-				expected_cols = 7 ######################## OBS ##############################
-				for line in lines:
-					cols = line.strip().split()
-					# cols[2] ==> input SNP rs-number
-					# cols[5] ==> LD buddy rs-number
-					if len(cols) == expected_cols:
-						ld_snplist[cols[2]] = 1
-					else:
-						print "***OBS*** File %s did not contain %d columns as expected." % (ldfile, expected_cols)
-						print "Please check structure of file if you see the message repeatedly"
-						break
-			
+		batch_snplist = {}
+		existing_outfile = {}			
 		# Read existing outfile. .tab is a 6 column file. First column is rs-number for matched_rsID
 		#rs16823904      9-10    3       154081865       7       11940   ENSG00000240048 ENSG00000240068,ENSG00000174953,ENSG00000174948
 		with open(outfilename, 'r') as f:
@@ -75,15 +51,25 @@ def run_parse(ldfiles_prefix, outfilename):
 					print "***OBS*** File %s did not contain %d columns as expected." % (outfilename, expected_cols)
 					print "Please check structure of file if you see the message repeatedly"
 					break
-
-		if len(ld_snplist) == len(existing_outfile):
-			#print "Filename %s exists and are validated for ldfile %s.\nNot appending any jobs to QueueJob.py..." % (outfilename, ldfile)
+		for snp_list in snplist_files:
+			with open(snp_list, 'r') as f:
+				# rs28615451
+				# rs184229306
+				# rs115111187
+				# rs12361890
+				lines = f.readlines()
+				for line in lines:
+					rs_no = line.strip()
+					batch_snplist[rs_no] = 1
+		#pdb.set_trace()
+		if len(batch_snplist) == len(existing_outfile):
 			print "%s: OK" % outfilename
 			return None # Do not submit new job if files are ok!
 		else:
-			#print "Filename %s\n*** Exists but are NOT OK !***\nAppending job for LDfile %s to QueueJob.py... ***" % (outfilename, ldfile)
 			print "%s: BAD FILE EXISTS. MAKING NEW" % outfilename
 			return True # Re-run job.
+
+
 
 
 
@@ -96,10 +82,11 @@ def submit(path, stat_gene_density_path):
 		suffix = "%s-%s"%(i,i+1) # e.g. 0-1
 		#outfilename = prefix + suffix + ".tab" # e.g. ...long-path.../ldlists/freq0-1.tab
 		ldfiles_prefix = os.path.abspath(path+"/ldlists/freq") + suffix
+		snplist_prefix = os.path.abspath(path+"/snplists/freq") + suffix # e.g. # e.g. ...long-path.../snplist/freq0-1, where the whole file is e.g. freq9-10-part40000-50000.rsID
 		outfilename = stat_gene_density_path + "/freq" + suffix + ".tab" # e.g. .;long_path../step2/1KG_full_queue/ld0.5/stat_gene_density/freq0-1.tab
 		#command = "%s --ldfiles_prefix %s --outfilename %s"%(script,"%s%s"%(prefix,suffix),outfilename) # e.g. --ldfiles_prefix becomes freq0-1
 		command = "%s --ldfiles_prefix %s --outfilename %s" % (script, ldfiles_prefix ,outfilename) #
-		run = run_parse(ldfiles_prefix, outfilename)
+		run = run_parse(snplist_prefix, outfilename)
 		if run:
 			jobs.append( QueueJob(command, log_dir_path, queue_name, walltime, mem_per_job , flags, "run_parse_matched_SNPs_"+suffix, script_name=current_script_name) )
 		# if not os.path.exists(outfilename):
@@ -147,4 +134,83 @@ print "Ok let's start..."
 
 
 submit(path, stat_gene_density_path)
+
+
+
+
+
+
+
+
+
+
+#########################################
+
+# def run_parse(ldfiles_prefix, outfilename):
+# 	ldfiles = glob.glob(ldfiles_prefix+"*.ld") # catching all .ld files with CORRECT prefix
+# 	if not os.path.exists(outfilename): # Test if already run
+# 		print "%s: CREATING NEW" % outfilename
+# 		#print "*** Filename %s does NOT exists ***.\nAppending job for LDfile %s to QueueJob.py..." % (outfilename, ldfile)
+# 		return True # submit job is there is no existing ldfile
+# 	else:
+# 		ld_snplist = {}
+# 		existing_outfile = {}
+# 		# Read all .ld files matching prefix
+# 		#print "Found {} ld file for prefix {}".format(len(ldfiles), ldfiles_prefix)
+# 		#print "Reading files..."		
+# 		for ldfile in ldfiles:
+# 			with open(ldfile, 'r') as f:
+# 				# CHR_A         BP_A        SNP_A  CHR_B         BP_B        SNP_B           R2
+# 	 			# 1      1011095   rs11810785      1      1011095   rs11810785            1
+# 	 			# 1      1011095   rs11810785      1      1025301    rs9442400      0.61996
+				
+# 				# plink ALWAYS outputs a line containing with input SNP, i.e. a line with an LD buddy to itself. SEE above example. 
+# 				# this enables us to assume len(existing_ld_snplist) == len(batch_snplist)
+# 				lines = f.readlines()[1:] # SKIP HEADER!!
+# 				expected_cols = 7 ######################## OBS ##############################
+# 				for line in lines:
+# 					cols = line.strip().split()
+# 					# cols[2] ==> input SNP rs-number
+# 					# cols[5] ==> LD buddy rs-number
+# 					if len(cols) == expected_cols:
+# 						ld_snplist[cols[2]] = 1
+# 					else:
+# 						print "***OBS*** File %s did not contain %d columns as expected." % (ldfile, expected_cols)
+# 						print "Please check structure of file if you see the message repeatedly"
+# 						break
+			
+# 		# Read existing outfile. .tab is a 6 column file. First column is rs-number for matched_rsID
+# 		#rs16823904      9-10    3       154081865       7       11940   ENSG00000240048 ENSG00000240068,ENSG00000174953,ENSG00000174948
+# 		with open(outfilename, 'r') as f:
+# 			lines = f.readlines() # No header...
+# 			#pdb.set_trace()
+# 			expected_cols = 8 ######################## OBS ##############################
+# 			for line in lines:
+# 				# Remove only trailing newline
+# 				cols = line.rstrip('\n').split('\t') # tab seperated - WE MUST KNOW THIS!
+# 				# cols[0] ==> "input SNP rs-number" (matched_rsID)
+# 				if len(cols) == expected_cols: #hmmm, potentially bad code
+# 					existing_outfile[cols[0]] = 1
+# 				else:
+# 					print "***OBS*** File %s did not contain %d columns as expected." % (outfilename, expected_cols)
+# 					print "Please check structure of file if you see the message repeatedly"
+# 					break
+
+# 		if len(ld_snplist) == len(existing_outfile):
+# 			#print "Filename %s exists and are validated for ldfile %s.\nNot appending any jobs to QueueJob.py..." % (outfilename, ldfile)
+# 			print "%s: OK" % outfilename
+# 			return None # Do not submit new job if files are ok!
+# 		else:
+# 			#print "Filename %s\n*** Exists but are NOT OK !***\nAppending job for LDfile %s to QueueJob.py... ***" % (outfilename, ldfile)
+# 			print "%s: BAD FILE EXISTS. MAKING NEW" % outfilename
+# 			return True # Re-run job.
+
+
+
+
+
+
+
+
+
 
