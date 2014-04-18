@@ -125,7 +125,8 @@ def get_plink_command(batch_id):
 def run_ldfile(batch_id, snp_list):
 	ldfile = output_dir_path + "/ldlists/" + batch_id + ".ld"
 	if not os.path.exists(ldfile): # Test if already run
-		print "*** LDfile %s\nNOT exists. Appending jobs for batch ID %s to QueueJob.py... ***" % (ldfile, batch_id)
+		print "%s: CREATING NEW" % ldfile
+		#print "*** LDfile %s\nNOT exists. Appending jobs for batch ID %s to QueueJob.py... ***" % (ldfile, batch_id)
 		return True # submit job is there is no existing ldfile
 	else:
 		batch_snplist = {}
@@ -139,12 +140,18 @@ def run_ldfile(batch_id, snp_list):
 			# plink ALWAYS outputs a line containing with input SNP, i.e. a line with an LD buddy to itself. SEE above example. 
 			# this enables us to assume len(existing_ld_snplist) == len(batch_snplist)
 			lines = f.readlines()[1:] # SKIP HEADER!!
+			expected_cols = 7
 			for line in lines:
 				cols = line.strip().split()
 				# cols[2] ==> input SNP rs-number
 				# cols[5] ==> LD buddy rs-number
-				if len(cols) == 7:
+				if len(cols) == expected_cols:
 					existing_ld_snplist[cols[2]] = 1
+				else:
+					print "***OBS*** File %s did not contain %d columns as expected." % (ldfile, expected_cols)
+					print "Please check structure of file if you see the message repeatedly"
+					print 'Breaking out if loop'
+					break
 		# Read batch SNP list file
 		with open(snp_list, 'r') as f:
 			# rs28615451
@@ -156,10 +163,12 @@ def run_ldfile(batch_id, snp_list):
 				rs_no = line.strip()
 				batch_snplist[rs_no] = 1
 		if len(existing_ld_snplist) == len(batch_snplist):
-			print "LDfile %s\nExists and are validated for batch ID %s. Not appending any jobs to QueueJob.py..." % (ldfile, batch_id)
+			print "%s: OK" % ldfile
+			#print "LDfile %s\nExists and are validated for batch ID %s. Not appending any jobs to QueueJob.py..." % (ldfile, batch_id)
 			return None # Do not submit new job if files are ok!
 		else:
-			print "LDfile %s\n*** Exists but are NOT ok! Running job for batch ID %s ***" % (ldfile, batch_id)
+			print "%s: BAD FILE EXISTS. MAKING NEW" % ldfile
+			#print "LDfile %s\n*** Exists but are NOT ok! Running job for batch ID %s ***" % (ldfile, batch_id)
 			return True # Re-run job.
 
 
@@ -216,8 +225,8 @@ if args.distance_type == "kb":
 	kb_cutoff = args.distance_cutoff
 
 
-ShellUtils.mkdirs(output_dir_path + "/snplists/") #TODO: remove trailing slash
-ShellUtils.mkdirs(output_dir_path + "/ldlists/") #TODO: remove trailing slash
+ShellUtils.mkdirs(output_dir_path + "/snplists/") #TODO: remove trailing slash and see if it still works
+ShellUtils.mkdirs(output_dir_path + "/ldlists/") #TODO: remove trailing slash and see if it still works
 log_dir_path = output_dir_path + "/log" # Pascal - FIXED ERROR. : before it was /log/
 ShellUtils.mkdirs(log_dir_path)
 

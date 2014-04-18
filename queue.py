@@ -32,7 +32,7 @@ class QueueJob:
         self.logdir = logdir
         self.cmd = cmd
         self.call = self.qcmd + " " + self.cmd
-        self.attempts = 1 # We start at first attempt, not 0 attempt
+        self.attempts = 0
 
         self.err_log = 'QueueJob_' + script_name + '_error_log_' + QueueJob.QJ_time_stamp + '.txt'
         self.jobs_log = 'QueueJob_' + script_name + '_jobs_log_' + QueueJob.QJ_time_stamp + '.txt'
@@ -43,7 +43,8 @@ class QueueJob:
         #TODO make sleep_time increse for each attempt.
         emsg = "" # placeholder for error massage from CalledProcessError exception
         print "#################### JOB NUMBER %d ####################" % self.job_number
-        while self.attempts <= max_calls:
+        while self.attempts < max_calls:
+            self.attempts += 1
             try:
                 print "ATTEMPT #%d/%d Jobsubmission call\n%s" % (self.attempts, max_calls, self.call)
                 out = subprocess.check_output(self.call, shell=True)
@@ -53,7 +54,7 @@ class QueueJob:
                 print "ATTEMPT #%d/%d *** Sleeping for %d seconds before re-submitting job ***" % (self.attempts, max_calls, sleep_time)
                 emsg = e
                 time.sleep(sleep_time)
-                self.attempts += 1
+                #self.attempts += 1
             else:
                 self.id = out.strip()
                 print "ATTEMPT #%d/%d JOB SUCCESFULLY SUBMITTED!" % (self.attempts, max_calls)

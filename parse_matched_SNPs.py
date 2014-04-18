@@ -21,35 +21,39 @@ def read_gene_info(infile):
 	# ENSG00000238762,22673,22791,1,22673,GL000228.1,22791
 	# ENSG00000240442,21191674,21191827,1,21191674,18,21191827
 	infile = open(infile,"r")
-	lines = infile.readlines(1:) #REMEMBER: skip head line
+	lines = infile.readlines()[1:] #REMEMBER: skip head line
 	info = makehash()
 	info_red = makehash()
-	chr_pattern = re.compile('^([1-9]|1[0-9]|2[0-4]|[X,Y])$') # this should match the numeric range 1-24 and X,Y. Match case insensitive.
+	chr_pattern = re.compile('^([1-9]|1[0-9]|2[0-4]|[X,Y])$', re.IGNORECASE) # this should match the numeric range 1-24 and X,Y. Match case insensitive.
 	for line in lines:
 		words = line.strip().split(',') # comma separated file
 		#chr = words[2]
 		chr = words[5]
 
 		# IMPORTANT: there exists strange chr names such as GL000228.1, LRG_13 etc...
-		if not chr_pattern.match(chr, re.IGNORECASE):
+		if not chr_pattern.match(chr):
 			continue 
 		# Convert everything to numeric to enable comparison afterwards
 		if chr == "X":
 			chr = "23"
 		if chr == "Y":
 			chr = "24"
+
 		#info[chr][words[4]] = words[0] #@TODO test if start exists
 		info[chr][words[0]] = 1
 		#info_red[words[0]]['sta'] = words[4] # old ENSEMBLE Tune
 		#info_red[words[0]]['end'] = words[5] # old ENSEMBLE Tune
-		info_red[words[0]]['sta'] = words[1]
-		info_red[words[0]]['end'] = words[2]
+		info_red[words[0]]['sta'] = words[1] # ===> Transcript Start (bp)
+		info_red[words[0]]['end'] = words[2] # ===> Transcript End (bp)
 	infile.close()
 	return info,info_red
 
 # Function that reads ld files and prints matches SNPs
 def get_matched_snps(path,outfilename):
-
+	#TODO: gene_info,gene_info_red are NOT parsed as arguments to this function.
+	#	- instead they are global variables. BAD PRACTICE!!!! 
+	# gene_info == info
+	# gene_info_red == info_red
 	outfile = open(outfilename,'w')
 	ldfiles = glob.glob(path+"*.ld")
 	for ldfile in ldfiles:
@@ -80,19 +84,28 @@ def get_matched_snps(path,outfilename):
 	
 		# Loop over matched SNPs and report gene density as observed SNP
 		for matched_rsID in matched_snps_boundaries:
-		
-			#genes_in_matched_locus = {}
-			genes_in_matched_locus = 0
+			snp_chr = matched_snps_boundaries[matched_rsID]['chr'] # NB. integer!
+			snp_position = matched_snps_boundaries[matched_rsID]['pos'] # NB. integer!
+
+			genes_in_matched_locus = {} # orig
+			#genes_in_matched_locus = 0 ## tune and pascal counter. Pascal outcomment again 04-17-2014
 		
 			# Loop over all genes on chromosome
 			# TODO Maybe sort and break
 			matched_nearest_gene = "" 
 			matched_nearest_gene_dist = float("inf")
 			#for tss in gene_info[str(matched_snps_boundaries[matched_rsID]['chr'])]:
-			for gene in gene_info[str(matched_snps_boundaries[matched_rsID]['chr'])]:
-				# gene is a key in hash. gene_info[] is a hash
+			#pdb.set_trace()
+			
+			for gene in gene_info[str(snp_chr)]:
+				# matched_snps_boundaries[matched_rsID] ===> "original input snp"
+				# str(matched_snps_boundaries[matched_rsID]['chr']) ===> chromosome number
+				# e.g. gene_info['5'] returns all ENSEMBL IDs in chromosome 5.
+
+				# gene is a key in hash, i.e. a ENSEMBL ID string. gene_info[] is a hash
 				#tss is transcription start site
 				tss = gene_info_red[gene]['sta']
+
 				#e = gene_info[str(matched_snps_boundaries[matched_rsID]['chr'])][tss] 
 				#end = gene_info_red[e]['end']
 				end = gene_info_red[gene]['end']
@@ -102,26 +115,35 @@ def get_matched_snps(path,outfilename):
 				if (int(tss) > matched_snps_boundaries[matched_rsID]['up'] and int(tss) < matched_snps_boundaries[matched_rsID]['down']) \
 				or (int(end) > matched_snps_boundaries[matched_rsID]['up'] and int(end) < matched_snps_boundaries[matched_rsID]['down']) \
 				or (int(tss) < matched_snps_boundaries[matched_rsID]['up'] and int(end) > matched_snps_boundaries[matched_rsID]['down']):
-					#genes_in_matched_locus[gene]= 1
-					genes_in_matched_locus += 1
+					genes_in_matched_locus[gene]= 1
+					#genes_in_matched_locus += 1 # tune and pascal. Pascal outcomment 04-17-2014
 					
 					#pdb.set_trace()
 		
 				# Update nearest gene
-				dist = abs( int(tss) - matched_snps_boundaries[matched_rsID]['pos'] )
+				dist = abs( int(tss) - snp_position ) #
 				if dist < matched_nearest_gene_dist: 
-					#matched_nearest_gene = gene_info[str(matched_snps_boundaries[matched_rsID]['chr'])][tss] 
+					#matched_nearest_gene = gene_info[str(matched_snps_boundaries[matched_rsID]['chr'])][tss] # outcommented by pascal and Tune
+					matched_nearest_gene = gene # pascal new, 04-17-2014. Save ENSEMBLE ID of nearest gene. Saves gene name in correct scope
 					matched_nearest_gene_dist = dist
 		
-			# Add nearest gene to genes in matched locus
-			# genes_in_matched_locus[matched_nearest_gene] = 1
-		
+			# Add nearest gene to genes in matched locus. 
+			# PASCAL NOTE: this ensures that there is always at least ONE gene in the locus
+			# genes_in_matched_locus[matched_nearest_gene] = 1 # orig. OUTCOMMENTED by Tune and Pascal
+			#pdb.set_trace()
 			# Report distance to nearest gene
 			#@DOC Distance is measured as distance to nearest start site
-			matched_dist_to_nearest_gene = int(abs( matched_snps_boundaries[matched_rsID]['pos'] - int(gene_info_red[gene]['sta'])))
+			#matched_dist_to_nearest_gene = int(abs( matched_snps_boundaries[matched_rsID]['pos'] - int(gene_info_red[gene]['sta']))) # pascal and Tune - PASCAL NOTE: CHECK IF THIS IS CORRECT!
+			#print "DEBUG-message | chr = " + str(matched_snps_boundaries[matched_rsID]['chr'])
+			#print "DEBUG-message | gene = " + gene
+			#print "DEBUG-message | position of nearest gene (gene_info_red[gene]['sta']) = " + gene_info_red[gene]['sta']
+			#print "DEBUG-message | gene_info_red[matched_nearest_gene]['sta'] =" + gene_info_red[matched_nearest_gene]['sta']
+			matched_dist_to_nearest_gene = int(abs( snp_position - int(gene_info_red[matched_nearest_gene]['sta']))) # original - works?
 		
+
+
 			# Report gene density
-			#matched_gene_count = len(genes_in_matched_locus)
+			matched_gene_count = len(genes_in_matched_locus)
 	
 			tmp = ldfile.split("/")
 			freq_bin = "-"
@@ -129,7 +151,32 @@ def get_matched_snps(path,outfilename):
 				tmp1 = tmp[len(tmp)-1].split('freq')[1].split('-')
 				freq_bin = tmp1[0]+"-"+tmp1[1]
 	
-			outfile.write("%s\t%s\t%s\t%s\t%s\t%s\n"%(matched_rsID,freq_bin,matched_dist_to_nearest_gene,genes_in_matched_locus,matched_nearest_gene,",".join(genes_in_matched_locus.keys())))
+			#outfile.write("%s\t%s\t%s\t%s\t%s\t%s\n"%(matched_rsID,freq_bin,matched_dist_to_nearest_gene,genes_in_matched_locus,matched_nearest_gene,",".join(genes_in_matched_locus.keys()))) # pascal and tune style
+			#outfile.write("%s\t%s\t%s\t%s\t%s\t%s\n"%(matched_rsID,freq_bin,matched_dist_to_nearest_gene,matched_gene_count,matched_nearest_gene,",".join(genes_in_matched_locus.keys()))) # orig - works, but needed extension
+			
+			#rs201245847     9-10    49791307        1               ENSG00000212587
+			
+			#1=rsID
+			#2=freq_bin
+			#3=chromosome number
+			#4=position of rsID
+			#5=gene count in matched locus (density)
+			#6=dist to nearest gene
+			#7=nearest_gene ENSEMBL_ID (alway present)
+			#8=genes in matches locus, multiple ENSEMBL IDs
+
+			outfile.write("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\n".format( \
+				matched_rsID, \
+				freq_bin, \
+				snp_chr, \
+				snp_position, \
+				matched_gene_count, \
+				matched_dist_to_nearest_gene, \
+				matched_nearest_gene, \
+			",".join(genes_in_matched_locus.keys()) )) # pascal - with added extension
+				
+			# print '<a href="%(url)s">%(url)s</a>' % {'url': my_url}
+			# print('<a href="{0}">{0}</a>'.format(my_url))
 	outfile.close()
 	
 	
