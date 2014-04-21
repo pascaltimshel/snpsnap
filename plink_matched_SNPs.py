@@ -192,7 +192,8 @@ def submit(batch_ids):
 #PATH TO 1000 GENOMES DATA FILES
 #REMEMBER genotype prefix is not just the DIR - it also includes the FILE PREFIXES
 #genotype_prefix = "/home/projects/tp/childrens/snpsnap/data/step1/test_thin0.02/CEU_GBR_TSI_unrelated.phase1" ######## TEST RUN!!!
-genotype_prefix = "/home/projects/tp/childrens/snpsnap/data/step1/full_no_pthin/CEU_GBR_TSI_unrelated.phase1"
+#genotype_prefix = "/home/projects/tp/childrens/snpsnap/data/step1/full_no_pthin/CEU_GBR_TSI_unrelated.phase1"
+genotype_prefix = "/home/projects/tp/childrens/snpsnap/data/step1/full_no_pthin_rmd/CEU_GBR_TSI_unrelated.phase1_dup_excluded" # duplicates removed!
 max_snps_per_bin = 50000 # 50*50,000==2.5e6
 batch_size = 10000 # Used to break down jobs for paralellization
 freq_bin_size = 1
@@ -236,7 +237,8 @@ print("Running with %s option, using cutoff %s"%(args.distance_type,args.distanc
 #prepare queue parameters and commands
 #
 ##TODO@@ Adjust queue parameters??
-queue_name = "cbs"
+queue_name = "cbs" # default
+#queue_name = "idle" 
 walltime="604800" # 60*60*24*7=7 days
 mem_per_job="15gb" #=>> PBS: job killed: mem job total 4323312 kb exceeded limit 3145728 kb
 #walltime="86400" # 60*60*24=1 day
@@ -244,15 +246,17 @@ mem_per_job="15gb" #=>> PBS: job killed: mem job total 4323312 kb exceeded limit
 flags = "sharedmem"
 
 ### Make sure that the genotype prefix is correct ###
-ans = ""
-print "*** SAFETY CHECK! ***"
-print "You specifed --output_dir_path to be: %s" % output_dir_path
-print "The genotype_prefix is set to: %s" % genotype_prefix
-print "You will overwrite files in /snplists and /ldlists if the parameters in step1/ and step2/ do not match"
-print "Plese confirm that this is the correct paths to use by typing 'yes'"
-while ans != 'yes':
- 	ans = raw_input("Confirm: ")
-print "Ok let's start..."
+
+if None:
+	ans = ""
+	print "*** SAFETY CHECK! ***"
+	print "You specifed --output_dir_path to be: %s" % output_dir_path
+	print "The genotype_prefix is set to: %s" % genotype_prefix
+	print "You will overwrite files in /snplists and /ldlists if the parameters in step1/ and step2/ do not match"
+	print "Plese confirm that this is the correct paths to use by typing 'yes'"
+	while ans != 'yes':
+	 	ans = raw_input("Confirm: ")
+	print "Ok let's start..."
 
 
 #if os.listdir(output_dir_path + "/snplists") == []: # 

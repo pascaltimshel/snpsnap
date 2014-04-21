@@ -1,11 +1,15 @@
 #!/usr/bin/env bash
-#@Usage: Run this program in background:
+#USAGE: Run this program in background or via cluster:
 #	gen_testdata.sh &
+#	OR
+#	xmsub -de -o gen_frq.log.out -e gen_frq.log.err -r y -q cbs -N gen-freq -l mem=20gb,walltime=604800,flags=sharedmem /home/projects/tp/childrens/snpsnap/git/gen_frq.sh
 #OUTPUT: 	all output is writte to ../data/<call_param_name>/<prefix>
-#			
-#STDOUT is writting to tmp log file which can be deleted
-#@Goal: make test data set to work on with plink_matched_SNPs.py
-#@DIR: /home/projects9/tp/childrens/snpsnap/src
+
+## Program outline
+#1) process "raw" data using plink with user criteria
+	# possibly set pthin to generate test data
+#2) check for dublicates in .bim file via call to python script
+#3) generate .frq files from processed data via plink
 
 # Make the shell exit with an error when you reference an undefined variable.
 # set -u 
@@ -30,38 +34,42 @@ dir_in="/home/projects/tp/data/1000G/data/phase1"
 prefix_in="CEU_GBR_TSI_unrelated.phase1_release_v3.20101123.snps_indels_svs.genotypes"
 data_in=$dir_in/$prefix_in
 
+dir_out="/home/projects/tp/childrens/snpsnap/data/step1"
 
 ### OUTPUT dir params
 ### Setting call variables
 prefix_out="CEU_GBR_TSI_unrelated.phase1" # THIS IS IMPORTANT
 if [ -n "$pthin" ]; then # "if set" (string variable is non-empty/non-zero). That is, is pthin given
 	# TEST DATA dir
-	dir_output="test_thin${pthin}_${$}"
+	dir_output="${dir_out}/test_thin${pthin}_rmd" # e.g. /home/projects/tp/childrens/snpsnap/data/step1/test_thin0.05
 	call="--bfile $data_in\
 	 --thin $pthin\
 	 --maf $pmaf\
 	 --geno $pgeno\
 	 --hwe $phwe\
 	 --make-bed\
-	 --out ../data/${dir_output}/${prefix_out}\
+	 --out ${dir_output}/${prefix_out}\
 	 --noweb"
 else
 	# FULL DATA (	 --thin $pthin REMOVED)
-	dir_output="full_no_pthin_${$}"
+	dir_output="${dir_out}/full_no_pthin_rmd"
 	call="--bfile $data_in\
 	 --maf $pmaf\
 	 --geno $pgeno\
 	 --hwe $phwe\
 	 --make-bed\
-	 --out ../data/${dir_output}/${prefix_out}\
+	 --out ${dir_output}/${prefix_out}\
 	 --noweb"
 fi
 
-if [ -d ../data/${dir_output} ]; then
-	echo "Removing existing output dir ${dir_output}"
-	rm -r ../data/${dir_output}
+if [ -d ${dir_output} ]; then
+	echo "Output dir ${dir_output}: alread exists. Please remove it before continuing. Exiting"
+	exit 1
+	#echo "Removing existing output dir ${dir_output}"
+	#rm -r ../data/${dir_output}
 fi
-mkdir -p ../data/${dir_output} # no error if existing, make parent directories as needed
+mkdir ${dir_output}
+#mkdir -p ../data/${dir_output} # no error if existing, make parent directories as needed
 
 # ##################################### Make test file ######################################
 
@@ -69,14 +77,32 @@ mkdir -p ../data/${dir_output} # no error if existing, make parent directories a
 # Note the space indentation to seperate arguments
 echo "making call to plink"
 echo "$call"
-plink $call &> ../data/${dir_output}/tmp1.$$.log
+plink $call &> ${dir_output}/tmp1.$$.log
+
+# @@@@@@@@@@@@@@@@@@ Remove Dublicates CALL @@@@@@@@@@@@@@@@@@
+
+call_dup="--input ${dir_output}/${prefix_out}.bim" # e.g. --input /home/projects/tp/childrens/snpsnap/data/step1/full_no_pthin/CEU_GBR_TSI_unrelated.phase1.bim
+# 
+echo "making call to get_duplicates.py"
+echo "$call_dup"
+/home/projects/tp/childrens/snpsnap/git/get_duplicates.py $call_dup
+
+# @@@@@@@@@@@@@@@@@@ Exclude duplicates CALL @@@@@@@@@@@@@@@@@@
+# Notice new out prefix
+prefix_out_clean="${prefix_out}_dup_excluded"
+
+call_excl="--bfile ${dir_output}/${prefix_out}\
+	 --exclude ${dir_output}/duplicates.txt\
+	 --make-bed\
+	 --out ${dir_output}/${prefix_out_clean}\
+	 --noweb"
+plink $call_excl &> ${dir_output}/tmp2.$$.log
 
 # @@@@@@@@@@@@@@@@@@ FREQ CALL @@@@@@@@@@@@@@@@@@
-# Note the DIFFERENCE in --bfile!
+#path_parrent=$(dirname `pwd`)
 
-path_parrent=$(dirname `pwd`)
-call_stat="--bfile $path_parrent/data/${dir_output}/${prefix_out}\
- --out ../data/${dir_output}/${prefix_out}\
+call_stat="--bfile ${dir_output}/${prefix_out_clean}\
+ --out ${dir_output}/${prefix_out_clean}\
  --freq\
  --noweb"
 
@@ -92,7 +118,7 @@ echo "$call_stat"
 	#plink &> combined.log (special syntax)
 	#plink >& combined.log (special syntax)
 	#plink > combined.log 2>&1
-plink $call_stat &> ../data/${dir_output}/tmp2.$$.log
+plink $call_stat &> ${dir_output}/tmp3.$$.log
 
 ###################################### CLEAING and PRINT RUNTIME ######################################
 T="$(($(date +%s)-T))" ## END TIME
@@ -106,7 +132,7 @@ $script_name with PID$$ completed
 RUNTIME
 $t_seconds s
 $t_min min
-$t_hours h" | tee ../data/${dir_output}/tmp.runtime.$$.log
+$t_hours h" | tee ${dir_output}/tmp.runtime.$$.log
 
 
 ## Cleaning tmp log file

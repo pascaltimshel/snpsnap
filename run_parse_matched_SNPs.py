@@ -46,11 +46,13 @@ def run_parse(snplist_prefix, outfilename):
 				cols = line.rstrip('\n').split('\t') # tab seperated - WE MUST KNOW THIS!
 				# cols[0] ==> "input SNP rs-number" (matched_rsID)
 				if len(cols) == expected_cols: #hmmm, potentially bad code
+					if cols[0] in existing_outfile: pdb.set_trace()
 					existing_outfile[cols[0]] = 1
 				else:
 					print "***OBS*** File %s did not contain %d columns as expected." % (outfilename, expected_cols)
 					print "Please check structure of file if you see the message repeatedly"
 					break
+		#pdb.set_trace()
 		for snp_list in snplist_files:
 			with open(snp_list, 'r') as f:
 				# rs28615451
@@ -93,7 +95,6 @@ def submit(path, stat_gene_density_path):
 		# 		jobs.append( QueueJob(command, log_dir_path, queue_name, walltime, mem_per_job , flags, "run_parse_matched_SNPs_"+suffix, script_name=current_script_name) )
 		# elif sum(1 for line in open(outfilename)) == 0: # Files are emtpy
 		# 		jobs.append( QueueJob(command, log_dir_path, queue_name, walltime, mem_per_job , flags, "run_parse_matched_SNPs_"+suffix, script_name=current_script_name) )
-
 	for job in jobs:
 		job.run()
 		time.sleep(2)
@@ -123,14 +124,15 @@ stat_gene_density_path = path + "/stat_gene_density"
 ShellUtils.mkdirs(stat_gene_density_path)
 
 ### Make sure that the genotype prefix is correct ###
-ans = ""
-print "*** SAFETY CHECK! ***"
-print "You specifed --plink_matched_snps_path to be: %s" % args.plink_matched_snps_path
-#print "NB Please check that the path has a trailing slash (/) - It may not work without - FIX THIS!"
-print "Plese confirm that this is the correct path to use by typing 'yes'"
-while ans != 'yes':
- 	ans = raw_input("Confirm: ")
-print "Ok let's start..."
+if True:
+	ans = ""
+	print "*** SAFETY CHECK! ***"
+	print "You specifed --plink_matched_snps_path to be: %s" % args.plink_matched_snps_path
+	#print "NB Please check that the path has a trailing slash (/) - It may not work without - FIX THIS!"
+	print "Plese confirm that this is the correct path to use by typing 'yes'"
+	while ans != 'yes':
+	 	ans = raw_input("Confirm: ")
+	print "Ok let's start..."
 
 
 submit(path, stat_gene_density_path)

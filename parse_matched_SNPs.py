@@ -43,8 +43,11 @@ def read_gene_info(infile):
 		info[chr][words[0]] = 1
 		#info_red[words[0]]['sta'] = words[4] # old ENSEMBLE Tune
 		#info_red[words[0]]['end'] = words[5] # old ENSEMBLE Tune
+		
 		info_red[words[0]]['sta'] = words[1] # ===> Transcript Start (bp)
 		info_red[words[0]]['end'] = words[2] # ===> Transcript End (bp)
+		#info_red[words[0]]['sta'] = words[4] # ===> Gene Start (bp)
+		#info_red[words[0]]['end'] = words[6] # ===> Gene End (bp)
 	infile.close()
 	return info,info_red
 
@@ -98,6 +101,8 @@ def get_matched_snps(path,outfilename):
 			#pdb.set_trace()
 			
 			for gene in gene_info[str(snp_chr)]:
+				# TODO: possible sort gene_info? 
+
 				# matched_snps_boundaries[matched_rsID] ===> "original input snp"
 				# str(matched_snps_boundaries[matched_rsID]['chr']) ===> chromosome number
 				# e.g. gene_info['5'] returns all ENSEMBL IDs in chromosome 5.

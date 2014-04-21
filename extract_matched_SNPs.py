@@ -46,17 +46,23 @@ def get_freq_neighbours(frq, frq_max_deviation,allowed_min_frq,allowed_max_frq):
 	return frq_list
 
 # Function to read observed SNPs
+#TODO insert snippe of obs_snps_file, e.g. /...working-dir.../observedloci.tab
+#TODO change columns to match new .tab file created by Pascal
 def read_obs_snps(obs_snps_file,freq):
 	observed_snps = makehash()
 	infile = open(obs_snps_file,'r')
 	lines = infile.readlines()
 	for line in lines:
 		words = line.strip().split('\t')
-		observed_snps[words[0]]['freq'] = freq[words[0]]
+		observed_snps[words[0]]['freq'] = freq[words[0]] # save "database" frequency of given SNP
 		observed_snps[words[0]]['dist'] = int(words[2])
 		observed_snps[words[0]]['numgenes'] = int(words[3])
 		observed_snps[words[0]]['nearest_gene'] = words[4]
 		observed_snps[words[0]]['genes'] = words[5]
+			# col3==dist
+			# col4==numgenes
+			# col5==nearest_gene
+			# col6==genes
 	infile.close()
 	return observed_snps
 
@@ -98,19 +104,28 @@ def read_randomized_snps(random_snps_file,user_snps):
 	infile.close()
 	for line in lines:
 		words = line.strip().split()
-		if words[0] in user_snps: 
+		if words[0] in user_snps: #NOTE: checks if rsID of random_snps exists in user_snps
 			random_snps[words[1]][words[0]][words[2]][words[3]]['nearest_gene'] = words[4]
 			random_snps[words[1]][words[0]][words[2]][words[3]]['genes'] = words[5]
+
 	return random_snps
 
 # Function to read in summary statiscs and bin SNPs into MAF percentiles
+		#  CHR          SNP   A1   A2          MAF  NCHROBS
+		#    1   rs58108140    A    G       0.2052      536
+		#    1  rs189107123    G    C      0.01306      536
+		#    1  rs180734498    T    C       0.1343      536
+		#    1  rs144762171    C    G      0.02425      536
+		#    1  rs201747181    T   TC      0.01119      536
 def read_freq(freq_file):
 	infile = open(freq_file,'r')
 	lines = infile.readlines()[1:]
 	freq = {}
 	for line in lines:
 		words = line.strip().split()
-		freq[words[1]] = float(words[4])
+		freq[words[1]] = float(words[4]) # save MAF for each SNP
+		# words[1] ==> rsID
+		# words[4] ==> MAF
 	infile.close()
 	return freq
 
@@ -255,7 +270,7 @@ arg_parser.add_argument("--user_snps_file_snpcol", help="SNP rsID column in file
 arg_parser.add_argument("--user_snps_file_sep", help="Separator in file with user-defined SNPs") 
 arg_parser.add_argument("--random_snps_file", help="Path to pre-computed 'matchedsnps.csv' file") 
 arg_parser.add_argument("--working_dir", type=ArgparseAdditionalUtils.check_if_writable, help="Directory in which observed 'observedsnps.csv' resides and output will be written")
-arg_parser.add_argument("--output_snp_nr", type=int, help="Number of matched SNPs to retrieve") # 1000
+arg_parser.add_argument("--output_snp_nr", type=int, help="Number of matched SNPs to retrieve") # 1000 - "Permutations?" TODO: change name to --n_random_snp_sets or --N
 arg_parser.add_argument("--frq_max_deviation", type=int,help="Percentage point deviation on either side of SNP frequency") # 5
 arg_parser.add_argument("--margin_distance", type=int, help="Margin in distance to nearest gene (matched_dist < [observed distance + margin])") # 20000
 arg_parser.add_argument("--margin_genes_in_locus", type=float, help="Deviation of genes in locus") # 0.2
@@ -274,8 +289,45 @@ if not os.path.isdir(args.working_dir + "/"+str(args.output_snp_nr)+"matchedsets
 freq = read_freq(freq_file)
 obs_snps_file = args.working_dir + "/observedloci.tab" # Read observed loci
 observed_snps = read_obs_snps(obs_snps_file,freq) 
-user_snps = read_user_snps(args.user_snps_file,int(args.user_snps_file_snpcol),args.user_snps_file_sep)
+user_snps = read_user_snps(args.user_snps_file,int(args.user_snps_file_snpcol),args.user_snps_file_sep) # reads a single column in a file. returns hash
 random_snps = read_randomized_snps(args.random_snps_file,user_snps)
 matched_snp_sets,matched_snp_nearestgene,matched_snp_genes = get_matched_snps(observed_snps,random_snps,args.frq_max_deviation, allowed_min_frq, allowed_max_frq, args.output_snp_nr,args.margin_distance, args.margin_genes_in_locus)
 write(observed_snps,matched_snp_sets,matched_snp_nearestgene,matched_snp_genes,args.output_snp_nr,args.working_dir)
+
+
+############## Questions ##############
+#### Q1
+# Why read the freq file. Not processed/filtered. WE NEED TO CHANGE THIS
+		#  CHR          SNP   A1   A2          MAF  NCHROBS
+		#    1   rs58108140    A    G       0.2052      536
+		#    1  rs189107123    G    C      0.01306      536
+		#    1  rs180734498    T    C       0.1343      536
+		#    1  rs144762171    C    G      0.02425      536
+		#    1  rs201747181    T   TC      0.01119      536
+#	- What information is used?
+#	-  "/home/projects/tp/data/hapmap/phase2/hapmap_CEU_r23a.frq"???
+# New path is 
+# /home/projects/tp/childrens/snpsnap/data/step1/full_no_pthin/CEU_GBR_TSI_unrelated.phase1.frq
+# size: 452M    CEU_GBR_TSI_unrelated.phase1.frq
+
+#### Q2
+#  what is the 'observedsnps.csv' ?
+# how is it different from --user_snps_file? 
+
+
+
+
+#### Improvements
+# Sampling without replacement
+
+
+###### Possible errors
+## 1
+# read_obs_snps(obs_snps_file,freq)
+#	- what if rsID in obs_snps_file does not exists in freq[] (i.e. our database CEU_GBR_TSI_unrelated.phase1.frq)
+#		observed_snps[words[0]]['freq'] = freq[words[0]] 
+##
+
+
+
 
