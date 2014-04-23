@@ -32,16 +32,27 @@ def makehash():
 
 # Funciton to map frequency to percentile bin
 def get_freq_bin(f):
-	if f > 0.5:
-		f = 1 - f	
-	f_int = math.floor(f*float(100))
-	bin = 0
-	bins = range(0,50,freq_bin_size)
-	for i in range(1,len(bins),1):
-		if f_int >= bins[i-1] and f_int <= bins[i]:
+	f_pct = float(f)*float(100) # just to make sure that f is float..
+	if f_pct > 50:
+		f_pct = 100 - f_pct
+		#TODO: print error code if f > 0.5	
+	#bins = range(0,50,freq_bin_size) # Tune orig. [0,1,...,48,49] ==> len=50
+	bins = range(0,51,freq_bin_size) # NEW. [0,1,...,49,50] ==> len=51
+	bin = None # default value
+	for i in range(0,len(bins)-1,1): # looping over BIN INDEX. [0,1,...,48,49] ==> len=50
+		if bins[i] < f_pct <= bins[i+1]: # bins right-closed and left open intervals ===> ]a;b]
+			bin = i
 			break
-		else:
-			bin += 1	
+	if bin == None:
+		sys.stderr.write( "ERROR: did not find any bin to put SNP with MAF=%s and (f_pct=%s). Bug in code or SNP freq. Exiting...\n" % (f, f_pct) )
+		sys.exit(1)
+	# REMEMBER: f_pct = 0 is NOT included in any bins since IT SHOULD NOT EXIST. (SNPs with freq = 0 does not make sense)
+	# Function returns "lower boundary" of bin, i.e:
+	# 0<f_pct<=1 ==> bin=0
+	# 1<f_pct<=2 ==> bin=1
+	# ....
+	# 48<f_pct<=49 ==> bin=48
+	# 49<f_pct<=50 ==> bin=49
 	return bin
 
 # Funciton to read in summary statiscs and bin SNPs into MAF percentiles
@@ -49,10 +60,11 @@ def get_snps_by_freq(infilename):
 	snps_by_freq = {} 
 	# @@TODO freq_bin_size is unnessesary
 	for bin in range(0,len(range(0,50,freq_bin_size)),1):
-		snps_by_freq[bin] = []
+		snps_by_freq[bin] = [] # TODO: use containers.defaultdict[list] instead
 	infile = open(infilename,'r')
-	lines = infile.readlines()[1:]
-	random.seed()
+	lines = infile.readlines()[1:] # skip header in frequency file
+	infile.close()
+	random.seed(1) # IMPORTANT TO SET SEED to reproduce results and make sure that batches are written in the same way always!
 	random.shuffle(lines)
 	for line in lines:
 		words = line.strip().split()
@@ -64,25 +76,33 @@ def get_snps_by_freq(infilename):
 			# Add to correct bin if still space
 			if len(snps_by_freq[bin]) < max_snps_per_bin:
 				snps_by_freq[bin].append(words[1])
-		infile.close()
+	
 	return snps_by_freq
+
+def write_batch_size_distribution_file():
+	#TODO: fix to local variables
+	# added Pascal 04/21/2014
+	with open(log_dir_path+"/bin_size_distribution.txt", 'w') as f:
+		f.write("bin\tsize\n")
+		for bin in snps_by_freq: # bin is integer, e.g 0,1,2...
+			f.write("%s\t%s\n" % (bin, len(snps_by_freq[bin])) )
+
 
 # Funciton to save into files to be run in plink
 def write_batches():
 	batches = []
-
 	# Construct batch for each frequency bin
 	bins = range(0,50,freq_bin_size)
 	for bin in range(0,len(bins),1):
 
 		subbins = range(0,len(snps_by_freq[bin]),batch_size)
-
 		# Break into sub bins
 		for i in range(0,len(subbins),1):
 			batch_id = "freq" + str(bins[bin]) + "-" + str(bins[bin]+freq_bin_size) + "-part" + str(subbins[i]) + "-" + str(min(subbins[i]+batch_size,len(snps_by_freq[bin])))  
 			outfile_str = output_dir_path + "/snplists/" +  batch_id + ".rsID"
 			outfile = open(outfile_str,'w')
 
+			print "Bin %d | writing batch file: %s" % (bin, outfile_str)
 			for rsID_matched in snps_by_freq[bin][subbins[i]:min(subbins[i]+batch_size,len(snps_by_freq[bin]))]:
 				outfile.write("%s\n"%(rsID_matched))
 			outfile.close()
@@ -194,8 +214,10 @@ def submit(batch_ids):
 #genotype_prefix = "/home/projects/tp/childrens/snpsnap/data/step1/test_thin0.02/CEU_GBR_TSI_unrelated.phase1" ######## TEST RUN!!!
 #genotype_prefix = "/home/projects/tp/childrens/snpsnap/data/step1/full_no_pthin/CEU_GBR_TSI_unrelated.phase1"
 genotype_prefix = "/home/projects/tp/childrens/snpsnap/data/step1/full_no_pthin_rmd/CEU_GBR_TSI_unrelated.phase1_dup_excluded" # duplicates removed!
-max_snps_per_bin = 50000 # 50*50,000==2.5e6
-batch_size = 10000 # Used to break down jobs for paralellization
+#genotype_prefix = "/home/projects/tp/childrens/snpsnap/data/step1/test_thin0.02_rmd/CEU_GBR_TSI_unrelated.phase1_dup_excluded" # TEST DATA!!! duplicates removed!
+#max_snps_per_bin = 50000 # 50*50,000==2.5e6 - DEFAULT VALUE
+max_snps_per_bin = float('Inf') # no limit - use all snps
+batch_size = 10000 # Used to break down jobs for paralellization - DEFAULT VALUE
 freq_bin_size = 1
 
 
@@ -213,6 +235,7 @@ arg_parser.add_argument("--distance_cutoff", help="r2, or kb distance", required
 #arg_parser.add_argument("--genotype_prefix", help="path and file prefix to genetype data", required=True) 
 args = arg_parser.parse_args()
 
+
 #
 # Create directories and logging dirs:
 #
@@ -224,6 +247,20 @@ if args.distance_type == "ld":
 if args.distance_type == "kb":
 	output_dir_path = args.output_dir_path+"/kb"+str(args.distance_cutoff)
 	kb_cutoff = args.distance_cutoff
+
+
+
+### Make sure that the genotype prefix is correct ###
+if True:
+	ans = ""
+	print "*** SAFETY CHECK! ***"
+	print "You specifed --output_dir_path to be: %s" % output_dir_path
+	print "The genotype_prefix is set to: %s" % genotype_prefix
+	print "You will overwrite files in /snplists and /ldlists if the parameters in step1/ and step2/ do not match"
+	print "Plese confirm that this is the correct paths to use by typing 'yes'"
+	while ans != 'yes':
+	 	ans = raw_input("Confirm: ")
+	print "Ok let's start..."
 
 
 ShellUtils.mkdirs(output_dir_path + "/snplists/") #TODO: remove trailing slash and see if it still works
@@ -245,23 +282,14 @@ mem_per_job="15gb" #=>> PBS: job killed: mem job total 4323312 kb exceeded limit
 #mem_per_job="1gb"
 flags = "sharedmem"
 
-### Make sure that the genotype prefix is correct ###
 
-if None:
-	ans = ""
-	print "*** SAFETY CHECK! ***"
-	print "You specifed --output_dir_path to be: %s" % output_dir_path
-	print "The genotype_prefix is set to: %s" % genotype_prefix
-	print "You will overwrite files in /snplists and /ldlists if the parameters in step1/ and step2/ do not match"
-	print "Plese confirm that this is the correct paths to use by typing 'yes'"
-	while ans != 'yes':
-	 	ans = raw_input("Confirm: ")
-	print "Ok let's start..."
 
 
 #if os.listdir(output_dir_path + "/snplists") == []: # 
 #	print "Path " + output_dir_path + "/snplists" + " is empty - going to write snp batches"
 snps_by_freq = get_snps_by_freq(genotype_prefix+".frq")
+write_batch_size_distribution_file()
+
 batch_ids = write_batches()
 #else:
 #	print "Path " + output_dir_path + "/snplists" + " is NOT empty. SKIPPING writing batches"
