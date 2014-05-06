@@ -63,12 +63,23 @@ def get_matched_snps(path,outfilename):
 
 		matched_snps_boundaries = makehash()
 	
+		# Setting freq_bin
+		# example:  ...long_path/freq1-2-part0-10000.ld
+		filename_ld = os.path.basename(ldfile) # gives e.g. freq1-2-part0-10000.ld
+		freq_bin = '??'
+		if 'freq' in filename_ld:
+			tmp1 = filename_ld.split('freq')[1] # gives e.g. 1-2-part0-10000.ld
+			freq_bin = tmp1.split('-')[0] # gives e.g. 1
+		else:
+			print "Warning: unknow ldfile name format. Cannot set freq_bin. Check source code"
+
+
+
 		# Read all SNPs and their LD budies 
 		infile = open(ldfile,'r')
 		lines = infile.readlines()[1:] #skipping header
 		for line in lines:
 			words = line.strip().split()
-			##@TODO insert data snippet
 			if not words[2] in matched_snps_boundaries:
 				# words[2] == input SNP?
 				# CHR_A         BP_A        SNP_A  CHR_B         BP_B        SNP_B           R2
@@ -149,13 +160,8 @@ def get_matched_snps(path,outfilename):
 
 			# Report gene density
 			matched_gene_count = len(genes_in_matched_locus)
-	
-			tmp = ldfile.split("/")
-			freq_bin = "-"
-			if 'freq' in tmp[len(tmp)-1]:
-				tmp1 = tmp[len(tmp)-1].split('freq')[1].split('-')
-				freq_bin = tmp1[0]+"-"+tmp1[1]
-	
+			
+
 			#outfile.write("%s\t%s\t%s\t%s\t%s\t%s\n"%(matched_rsID,freq_bin,matched_dist_to_nearest_gene,genes_in_matched_locus,matched_nearest_gene,",".join(genes_in_matched_locus.keys()))) # pascal and tune style
 			#outfile.write("%s\t%s\t%s\t%s\t%s\t%s\n"%(matched_rsID,freq_bin,matched_dist_to_nearest_gene,matched_gene_count,matched_nearest_gene,",".join(genes_in_matched_locus.keys()))) # orig - works, but needed extension
 			
@@ -163,25 +169,27 @@ def get_matched_snps(path,outfilename):
 			
 			#1=rsID
 			#2=freq_bin
-			#3=chromosome number
+			#3=chromosome number of rsID
 			#4=position of rsID
 			#5=gene count in matched locus (density)
 			#6=dist to nearest gene
-			#7=nearest_gene ENSEMBL_ID (alway present)
-			#8=genes in matches locus, multiple ENSEMBL IDs
+			#7=boundary_upstream #NEW
+			#8=boundary_downstream #NEW
+			#9=nearest_gene ENSEMBL_ID (alway present)
+			#10=genes in matches locus, multiple ENSEMBL IDs
 
-			outfile.write("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\n".format( \
+			outfile.write("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\n".format( \
 				matched_rsID, \
 				freq_bin, \
 				snp_chr, \
 				snp_position, \
 				matched_gene_count, \
 				matched_dist_to_nearest_gene, \
+				matched_snps_boundaries[matched_rsID]['up'], \
+				matched_snps_boundaries[matched_rsID]['down'], \
 				matched_nearest_gene, \
-			",".join(genes_in_matched_locus.keys()) )) # pascal - with added extension
+			";".join(genes_in_matched_locus.keys()) )) # pascal - with added extension
 				
-			# print '<a href="%(url)s">%(url)s</a>' % {'url': my_url}
-			# print('<a href="{0}">{0}</a>'.format(my_url))
 	outfile.close()
 	
 	
@@ -204,7 +212,7 @@ gene_information_file="/home/projects/tp/childrens/snpsnap/data/misc/ensg_mart_e
 #
 arg_parser = argparse.ArgumentParser(description="Parse plink output and construct loci")
 arg_parser.add_argument("--ldfiles_prefix", help="Prefix to Plink .ld files ('*' suffixed in above method)")
-arg_parser.add_argument("--outfilename", help="Filename for outfile")
+arg_parser.add_argument("--outfilename", help="Filename for outfile") # e.g e.g. .;long_path../ld0.5/stat_gene_density/freq0-1.tab
 args = arg_parser.parse_args()
 
 #
