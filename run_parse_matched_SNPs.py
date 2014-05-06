@@ -40,7 +40,7 @@ def run_parse(snplist_prefix, outfilename):
 		with open(outfilename, 'r') as f:
 			lines = f.readlines() # No header...
 			#pdb.set_trace()
-			expected_cols = 8 ######################## OBS ##############################
+			expected_cols = 10 ######################## OBS ##############################
 			for line in lines:
 				# Remove only trailing newline
 				cols = line.rstrip('\n').split('\t') # tab seperated - WE MUST KNOW THIS!
@@ -51,6 +51,10 @@ def run_parse(snplist_prefix, outfilename):
 				else:
 					print "***OBS*** File %s did not contain %d columns as expected." % (outfilename, expected_cols)
 					print "Please check structure of file if you see the message repeatedly"
+					if True:
+						while ans != 'yes':
+						 	ans = raw_input("Do you want to continue submitting jobs (type 'yes')? ")
+						print "Ok let's start..."
 					break
 		#pdb.set_trace()
 		for snp_list in snplist_files:
