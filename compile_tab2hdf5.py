@@ -22,7 +22,9 @@
 import os
 import sys
 import argparse
+import collections
 from queue import QueueJob,ArgparseAdditionalUtils
+
 
 import shutil
 import glob
@@ -94,7 +96,9 @@ from memory_profiler import profile
 ### FUNCTION to edit and concatenate - slow, but only run once!
 @profile
 def write_new_tab_file(inpath, file_tab):
-	""" Read .tab files and edit columns and write them to a concatenated file"""
+	""" Read .tab files and edit columns and write them to a concatenated file. Removes duplicates if any."""
+	snps_db = {}
+	snps_duplicates = collections.defaultdict(list) # dict of lists
 	tabfiles = glob.glob(inpath+"/*.tab")
 	if not len(tabfiles) == 50:
 		print "Error: did not find 50 .tab files as expected in path: %s" % inpath
@@ -125,19 +129,33 @@ def write_new_tab_file(inpath, file_tab):
 					#7 genes_in_matched_locus
 					freq_bin_new = cols[1].split('-')[0] # e.g. 4-5 --> 4
 					snpID = cols[2] + ":" + cols[3] # e.g. 8:2342355
-					outfile.write("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\n".format(\
-																	snpID, \
-																	cols[0], \
-																	freq_bin_new, \
-																	cols[4], \
-																	cols[5], \
-																	cols[6], \
-																	cols[7] ))
+
+					if not snpID in snps_db: # IMPORTANT: checking for possible duplicates!
+						snps_db[snpID] = 1
+					else:
+						if not words in duplicates: # first time we notice a duplicate ==> two entries seen
+							duplicates[snpID].extend([])
+						else:
+							duplicates[words] += 1
+
+					row_str = "{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\n".format(\
+															snpID, \
+															cols[0], \
+															freq_bin_new, \
+															cols[4], \
+															cols[5], \
+															cols[6], \
+															cols[7] )
+
+					outfile.write(row_str)
+
 					# gives cols ===> "snpID" "rsID" "freq_bin" "gene_count" "dist_nearest_gene" "ID_nearest_gene" "ID_genes_in_matched_locus"
 		elapsed_time = time.time() - start_time
 		print "Elapsed_time of writing tab file: %.3f s (%.2f min)" % (elapsed_time, elapsed_time/60)
 		file_tab_size = os.path.getsize(file_tab)
 		print "Size of concatenated tab file: %s bytes (%.1f MB)" % (file_tab_size, file_tab_size/(1024*1024.0))
+		
+		print "*** Warning: user input file contains duplicates"
 
 
 ### FUNCTION THAT READS tab file and MANIPULATES/EDITS COLUMNS
@@ -247,6 +265,7 @@ def dataframe_prim2hdf(file_hdf5, dataframe):
 	# CONSIDER: df.to_hdf('test.hdf','df',mode='w',format='table',chunksize=2000000)
 	store.close()
 
+### THIS FUNCTION WILL NOT SCALE/WORK FOR FULL DATA SETS DUE TO LONG STRING COLUMN: ID_genes_in_matched_locus
 @profile
 def dataframe_meta2hdf(file_hdf5, dataframe):
 	#store = pd.HDFStore(file_hdf5, 'w')
@@ -270,12 +289,6 @@ def dataframe_meta2hdf(file_hdf5, dataframe):
 #Parse Arguments
 #
 arg_parser = argparse.ArgumentParser(description="Read multiple .tab files from e.g. /stat_gene_density and write all tab files to combined file 1KGsnps.h5")
-# arg_parser.add_argument("--input_dir", \
-# 	help="""Input directory: MUST be a 'master dir' containing the directories 
-# [ldlists, log, snplists, stat_gene_density].
-# e.g. /home/projects/tp/childrens/snpsnap/data/step2/1KG_full_queue/ld0.5/ 
-# NB. please use symlinks in the path, i.e. do not use /net/home...""", \
-# 	required=True)
 arg_parser.add_argument("--input_dir", \
 	help="""Input directory CONTAINING tab files].
 e.g. /home/projects/tp/childrens/snpsnap/data/step2/1KG_full_queue/ld0.5/stat_gene_density
@@ -293,9 +306,6 @@ args = arg_parser.parse_args()
 # Trailing slash are removed/corrected - NICE!
 path_input = os.path.abspath(args.input_dir) 
 path_output = os.path.abspath(args.hdf5_dir)
-#prefix_out = '1KGsnp_%s' % args.type
-#file_hdf5 = path_output+"/"+prefix_out+'.h5'
-#file_tab = path_output+"/"+prefix_out+".tab"
 file_hdf5_prim = "{path}/{type}_db.{ext}".format(path=path_output, type=args.type, ext='h5')
 file_hdf5_meta = "{path}/{type}_meta.{ext}".format(path=path_output, type=args.type, ext='h5')
 file_tab = "{path}/{type}_collection.{ext}".format(path=path_output, type=args.type, ext='tab')
@@ -321,7 +331,9 @@ if not ( os.path.exists(file_hdf5_prim) or os.path.exists(file_hdf5_meta) ): # e
 	#df_1KG_snsps = tab2dataframe_with_colmanipulation(file_tab)
 	(df_prim, df_meta) = tab2dataframe(file_tab)
 	dataframe_prim2hdf(file_hdf5_prim, df_prim)
-	#dataframe_meta2hdf(file_hdf5_meta, df_meta) ### OBS: WRITING META DATA DISABLED
+
+	### OBS: WRITING META DATA DISABLED:
+	#dataframe_meta2hdf(file_hdf5_meta, df_meta) 
 else:
 	if os.path.exists(file_hdf5_prim): print "INFO: HDF5 file PRIM EXISTS: %s. Skipping loading CVS and skipping writing new HDF5 file" % file_hdf5_prim
 	if os.path.exists(file_hdf5_meta): print "INFO: HDF5 file META EXISTS: %s. Skipping loading CVS and skipping writing new HDF5 file" % file_hdf5_meta

@@ -56,54 +56,90 @@ def read_user_snps(user_snps_file):
 	# check for match to X:YYYYYY partern: '\d{1-2}:\d+'
 	# check for duplicates in list ---> most important
 	user_snps = {}
+	duplicates = {}
 	infile = open(user_snps_file,'r')
 	lines = infile.readlines()
 	infile.close()
 	for line in lines:
 		words = line.strip()
 		if not words in user_snps:
-			#user_snps.append(words)
 			user_snps[words] = 1
 		else:
-			print "Warning: user input file contains dublicates"
+			print "*** Warning: user input file contains duplicates"
+			if not words in duplicates: # first time we notice a duplicate ==> two entries seen
+				duplicates[words] = 2
+			else:
+				duplicates[words] += 1
+	if duplicates: # dict is non-empty
+		print "*** List of duplicate SNPs"
+		for (k,v) in duplicates.items():
+			print "%s\t%s" % (k,v)
 	print "Read %d unique user SNPs" % len(user_snps)
 	return user_snps
 
-# Function to read in list of all randomized SNPs
-#@memory_profiler.profile
-#@profilehooks.profile
-def lookup_user_snps(file_db, user_snps):
+
+### OLD FUNCTION FOR 
+# #@profilehooks.profile
+# @memory_profiler.profile
+# def lookup_user_snps(file_db, user_snps):
+# 	start_time = time.time()
+
+# 	store = pd.HDFStore(file_db, 'r')
+# 	quoted_list = (', '.join("'" + item + "'" for item in user_snps.keys() ))
+# 	query = "index=[%s]" % quoted_list
+# 	user_snps_df = store.select('dummy', query)
+# 	store.close()
+
+# 	elapsed_time = time.time() - start_time
+# 	print "DONE: lookup_user_snps %s s (%s min)" % (elapsed_time, elapsed_time/60)
+# 	return user_snps_df
+
+@memory_profiler.profile
+def lookup_user_snps_iter(file_db, user_snps):
+	start_time = time.time()
+
 	store = pd.HDFStore(file_db, 'r')
-	quoted_list = (', '.join("'" + item + "'" for item in user_snps.keys() ))
-	#print quoted_list
-	query = "index=[%s]" % quoted_list
-	user_snps_df = store.select('dummy', query)
-	#TODO: print out SNPs that were NOT found in the database
+	user_snps_df = pd.DataFrame()
+	for item in user_snps.keys():
+		df = store.select('dummy', "index=['%s']" % item) # Remember to quote the string!
+		user_snps_df = user_snps_df.append(df)
 	store.close()
+
+	elapsed_time = time.time() - start_time
+	print "DONE: lookup_user_snps_iter %s s (%s min)" % (elapsed_time, elapsed_time/60)
+	
 	return user_snps_df
 
-
 def write_user_snps_stats(path_output, user_snps, df):
+	#TODO: also write out meta data
 	user_snps_stats_file = path_output+"/query_stats.out"
 	snps_not_in_db = []
 	for snp in user_snps.keys():
 		if not (df.index == snp).any():
 			snps_not_in_db.append(snp)
-	if not len(snps_not_in_db)==0:
-		print "Warning: %d SNPs not found in data base:" % len(snps_not_in_db)
+	if snps_not_in_db:
+		print "*** Warning: %d SNPs not found in data base:" % len(snps_not_in_db)
 		#print "List of user SNPs not found in data base:"
 		print "\n".join(snps_not_in_db)
 		#TODO: print list of SNPs not found to file
-	print "Found %d out of %d SNPs in data base" % (df.shape[0], len(user_snps))
+	print "Found %d out of %d SNPs in data base" % (len(df.index), len(user_snps))
+	print "n_uniques found: %d" % len(np.unique(df.index.values))
+	bool_duplicates = pd.Series(df.index).duplicated().values # returns true for duplicates
+	df_duplicate = df.ix[bool_duplicates]
+	print df_duplicate
+	idx_duplicate = df_duplicate.index
+	print "Pandas data frame with index of duplicate:"
+	print df.ix[idx_duplicate]
 	df.to_csv(user_snps_stats_file, sep='\t', header=True, index=True,  mode='w')
 
 
-
 def query_similar_snps(file_db, path_output, df, N_sample_sets, max_freq_deviation, max_distance_deviation, max_genes_count_deviation):
-	user_snps_matrix_file = path_output+"/matrix.out"
 	np.random.seed(1)
 	n_attempts = 5
-
+	user_snps_matrix_file = path_output+"/matrix.out"
+	if os.path.exists(user_snps_matrix_file): # removing any existing file
+		os.remove(user_snps_matrix_file)
+	f_matrix_out = open(user_snps_matrix_file,'a')
 	store = pd.HDFStore(file_db, 'r')
 	for i in xrange(len(df.index)): # pandas DF indecies is zero based like python
 		query_snpID = df.index[i]
@@ -128,12 +164,9 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, max_freq_deviati
 		dist_low = np.repeat(dist, n_attempts)*(1-delta_dist)
 		dist_high = np.repeat(dist, n_attempts)*(1+delta_dist)
 
-		#print (freq_low, freq_high)
-		#print (gene_count_low, gene_count_high)
-		#print (dist_low, dist_high)
 
-		match_ID_old = None
-		match_ID = None
+		match_ID_old = None # placeholder for a Numpy array
+		match_ID = None # placeholder for a Numpy array
 		for i in xrange(n_attempts):
 		    query_freq = '(freq_bin >= %s & freq_bin <= %s)' % (freq_low[i], freq_high[i])
 		    query_gene_count = '(gene_count >= %s & gene_count <= %s)' % (gene_count_low[i], gene_count_high[i])
@@ -141,34 +174,31 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, max_freq_deviati
 		    
 		    query = "%s & %s & %s" % (query_freq, query_gene_count, query_dist)
 		    match_ID = store.select('dummy', query, columns=[]).index.values # return no columns --> only index
-		    #df_matches = store.select('dummy', query)
 		    
-		    print "SNP: {%s} query #%d: found %d hits" % ("placeholder", i, len(match_ID))
+		    print "SNP: {%s} attempt #%d: found %d hits" % (query_snpID, i, len(match_ID))
 		    if len(match_ID) < N_sample_sets:
 		        match_ID_old = match_ID
 		    else: #we have enough matches
+		    	match_ID_old = np.array([]) # empty array. This line ensures that len(match_ID_old) is always valid
 		        break
-
-		#df_matches.head(20)
-		#print len(match_ID_old)
-		#print len(match_ID)
 
 
 		if len(match_ID) < N_sample_sets:
 			print "******** Found SNP with too few matches; n_matches=%s" % len(match_ID)
+			print "Using sampling with replacement to get enough samples"
+			match_ID_final = np.random.choice(match_ID, size=N_sample_sets, replace=True, p=None) # sample uniformly from NEW matches
 		else:
 			match_ID_uniq_new = np.setdiff1d(match_ID, match_ID_old, assume_unique=True) #Return the sorted, unique values in ar1 that are not in ar2
-			#print len(match_ID_uniq_new)# validated: gives same result as print len(match_ID) - len(match_ID_old)
 			n_elements_to_fill = N_sample_sets - len(match_ID_old)
-			#print n_elements_to_fill
 			match_ID_uniq_new_sample = np.random.choice(match_ID_uniq_new, size=n_elements_to_fill, replace=False, p=None) # sample uniformly from NEW matches
 			match_ID_final = np.concatenate((match_ID_old, match_ID_uniq_new_sample))
-			#print len(match_ID_final)
 
-			with open(user_snps_matrix_file,'a') as f_handle:
-			    np.savetxt(f_handle, np.insert(match_ID_final, 0, query_snpID), fmt="%s", newline="\t")
+		np.savetxt(f_matrix_out, np.insert(match_ID_final, 0, query_snpID), fmt="%s", newline="\t") #delimiter="\n"
+		f_matrix_out.write("\n")
+
+
 	
-
+	f_matrix_out.close()
 	store.close()
 
 
@@ -202,14 +232,16 @@ path_output = os.path.abspath(args.output_dir)
 
 (file_db, file_meta) = locate_HDF5_data(path_data, prefix) # Locate DB files. TODO: make function more robust
 user_snps = read_user_snps(args.user_snps_file) # Read input SNPs. Return dict
-user_snps_df = lookup_user_snps(file_db, user_snps) # Query DB, return DF
-write_user_snps_stats(path_output, user_snps, user_snps_df) # Report matches to DB and write stats file
+
+#user_snps_df = lookup_user_snps(file_db, user_snps) # Query DB, return DF
+user_snps_df = lookup_user_snps_iter(file_db, user_snps) # Query DB, return DF
 print user_snps_df
-query_similar_snps(file_db, path_output, user_snps_df, args.N_sample_sets, args.max_freq_deviation, args.max_distance_deviation, args.max_genes_count_deviation)
+
+write_user_snps_stats(path_output, user_snps, user_snps_df) # Report matches to DB and write stats file
+#print user_snps_df
+#query_similar_snps(file_db, path_output, user_snps_df, args.N_sample_sets, args.max_freq_deviation, args.max_distance_deviation, args.max_genes_count_deviation)
 
 
-#matched_snp_sets,matched_snp_nearestgene,matched_snp_genes = get_matched_snps(observed_snps,random_snps,args.max_freq_deviation, allowed_min_frq, allowed_max_frq, args.output_snp_nr,args.max_distance_deviation, args.max_genes_count_deviation)
-#write(observed_snps,matched_snp_sets,matched_snp_nearestgene,matched_snp_genes,args.output_snp_nr,args.working_dir)
 
 
 
