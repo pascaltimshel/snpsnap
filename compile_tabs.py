@@ -94,6 +94,7 @@ from memory_profiler import profile
 
 
 ### FUNCTION to edit and concatenate - slow, but only run once!
+## WORKS OK (TESTED ON NEW COL STRUCTURE - with boundaries) - DO NOT DELETE
 @profile
 def write_new_tab_file(inpath, file_tab):
 	""" Read .tab files and edit columns and write them to a concatenated file. Removes duplicates if any."""
@@ -106,7 +107,7 @@ def write_new_tab_file(inpath, file_tab):
 		print "Aborting script..."
 		sys.exit(1)
 	# Sorting on freq bin
-	tabfiles.sort(key=lambda x: int(x.split('/')[-1].split('freq')[-1].split('-')[0])) # this step is not needed. Unreadable code
+	tabfiles.sort(key=lambda x: int(x.split('/')[-1].split('freq')[-1].split('-')[0])) # this step is not strictly needed. Unreadable code
 	with open(file_tab, 'w') as outfile: 
 		start_time = time.time()
 		print "Start writing to concatenated tab file file: %s" % os.path.basename(file_tab)
@@ -125,28 +126,35 @@ def write_new_tab_file(inpath, file_tab):
 					#3 snp_position 
 					#4 matched_gene_count
 					#5 matched_dist_to_nearest_gene 
-					#6 matched_nearest_gene 
-					#7 genes_in_matched_locus
-					freq_bin_new = cols[1].split('-')[0] # e.g. 4-5 --> 4
+					#6=boundary_upstream #NEW
+					#7=boundary_downstream #NEW
+					#8 matched_nearest_gene 
+					#9 genes_in_matched_locus
+
+					#freq_bin_new = cols[1].split('-')[0] # e.g. 4-5 --> 4
 					snpID = cols[2] + ":" + cols[3] # e.g. 8:2342355
 
-					if not snpID in snps_db: # IMPORTANT: checking for possible duplicates!
-						snps_db[snpID] = 1
+					# IMPORTANT: checking for possible duplicates!
+					if not snpID in snps_db: 
+						snps_db[snpID] = cols[0]
 					else:
-						if not words in duplicates: # first time we notice a duplicate ==> two entries seen
-							duplicates[snpID].extend([])
+						if not snpID in snps_duplicates: # first time we notice a duplicate ==> two entries seen
+							snps_duplicates[snpID].extend([snps_db[snpID], cols[0]]) # rsID of first encounter == snps_db[snpID]
 						else:
-							duplicates[words] += 1
+							snps_duplicates[snpID].append(cols[0])
+						print "Found duplicate chrID mapping: %s in pool {%s}" % ( snpID, ";".join(snps_duplicates[snpID]) )
 
-					row_str = "{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\n".format(\
+					row_str = "{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\n".format(\
 															snpID, \
 															cols[0], \
-															freq_bin_new, \
+															cols[1], \
 															cols[4], \
 															cols[5], \
 															cols[6], \
-															cols[7] )
-
+															cols[7], \
+															cols[8], \
+															cols[9])
+					## Write to file
 					outfile.write(row_str)
 
 					# gives cols ===> "snpID" "rsID" "freq_bin" "gene_count" "dist_nearest_gene" "ID_nearest_gene" "ID_genes_in_matched_locus"
@@ -154,8 +162,11 @@ def write_new_tab_file(inpath, file_tab):
 		print "Elapsed_time of writing tab file: %.3f s (%.2f min)" % (elapsed_time, elapsed_time/60)
 		file_tab_size = os.path.getsize(file_tab)
 		print "Size of concatenated tab file: %s bytes (%.1f MB)" % (file_tab_size, file_tab_size/(1024*1024.0))
-		
-		print "*** Warning: user input file contains duplicates"
+		if snps_duplicates: # snps_duplicates is non-empty
+			print "*** INFO: found in total %d SNPs with more than one copy of the snpID (chr:pos)" % len(snps_duplicates)
+			print "Writing the follwing list to file ??."
+			for (k,v) in snps_duplicates.items():
+				print "%s\t%s" % ( k, ";".join(snps_duplicates[k]) )
 
 
 ### FUNCTION THAT READS tab file and MANIPULATES/EDITS COLUMNS
@@ -190,6 +201,88 @@ def write_new_tab_file(inpath, file_tab):
 # 	return df
 
 
+
+
+### FUNCTION to read all tabs and append to data frame.
+## Will use DataFrame string manipulation to make correct collection
+## Will REMOVE rows with duplicates
+## Write DataFrame to CVS
+@profile
+def tab2collection(inpath, file_tab, file_dup):
+	tabfiles = glob.glob(inpath+"/*.tab")
+	if not len(tabfiles) == 50:
+		print "Error: did not find 50 .tab files as expected in path: %s" % inpath
+		print "Number of tabfiles found: %s" % len(tabfiles)
+		print "Aborting script..."
+		sys.exit(1)
+	# Sorting on freq bin
+	tabfiles.sort(key=lambda x: int(x.split('/')[-1].split('freq')[-1].split('-')[0])) # this step is not strictly needed. Unreadable code
+	
+	# Columns in input tabfiles:
+	#0 rsID 
+	#1 freq_bin 
+	#2 snp_chr
+	#3 snp_position 
+	#4 gene_count
+	#5 dist_to_nearest_gene 
+	#6=loci_upstream #NEW
+	#7=loci_downstream #NEW
+	#8 ID_nearest_gene 
+	#9 ID_in_matched_locus
+
+	header_str = "rsID freq_bin snp_chr snp_position gene_count dist_nearest_gene loci_upstream loci_downstream ID_nearest_gene ID_genes_in_matched_locus"
+	df = pd.DataFrame()
+	print "START: reading tab files and appending to DataFrame..."
+	start_time = time.time()
+	for counter, tabfile in enumerate(tabfiles, start=1):
+		print "Reading tabfile #%s/#%s into DataFrame: %s" % (counter, len(tabfiles), os.path.basename(tabfile))
+		colnames =header_str.split()
+		df = df.append(pd.read_csv(tabfile, names=colnames, delim_whitespace=True)) # appending read CSV. consider not setting names
+	elapsed_time = time.time() - start_time
+	print "END: read CSV file into DataFrame in %s s (%s min)" % (elapsed_time, elapsed_time/60)
+
+	print "START: mapping snpID strings..."
+	start_time = time.time()
+	df['snpID'] = df.snp_chr.map(str) + ":" + df.snp_position.map(str) # http://stackoverflow.com/questions/11858472/pandas-combine-string-and-int-columns
+	elapsed_time = time.time() - start_time
+	print "END: manipulating snpID in %s s (%s min)" % (elapsed_time, elapsed_time/60)
+
+	print "Setting index on DataFrame and dropping columns"
+	df.set_index('snpID', inplace=True)
+	df.drop(['snp_chr', 'snp_position'], axis=1, inplace=True) # Deletes unnecessary columns
+
+
+	print "START: removing duplicate snpID in df.index..."
+	start_time = time.time()
+	idx_bool = pd.Series(df.index).duplicated().values # returns bool for all values that are duplicated
+	df_dup = df.ix[df.index[idx_bool]] # selecting rows with duplicate index
+	df.drop(df.index[idx_bool], inplace=True) # dropping duplicate values.
+	elapsed_time = time.time() - start_time
+	print "END: removing duplicate snpID in %s s (%s min)" % (elapsed_time, elapsed_time/60)
+
+	print "### Results from duplicate removal ###"
+	print "N duplicates: %d" % len(df_dup)
+	print "Size of DataFrame after duplicate removal: %d" % len(df)
+
+	# print "START: editing freq_bin strings..."
+	# start_time = time.time()
+	# df['freq_bin'] = df.freq_bin.str.split('-').str.get(0).apply(int) # Converting freq_bin into 'int' so we can sort later on
+	# elapsed_time = time.time() - start_time
+	# print "END: editing freq_bin in %s s (%s min)" % (elapsed_time, elapsed_time/60)
+
+	print "START: writing DataFrames to CSV..."
+	start_time = time.time()
+	df_dup.to_csv(file_dup, sep='\t', header=True, index=True, index_label='snpID')
+	df.to_csv(file_tab, sep='\t', header=True, index=True, index_label='snpID')
+	elapsed_time = time.time() - start_time
+	print "END: Done writing collection file: %.3f s (%.2f min)" % (elapsed_time, elapsed_time/60)
+	
+	file_tab_size = os.path.getsize(file_tab)
+	print "Size of concatenated tab file: %s bytes (%.1f MB)" % (file_tab_size, file_tab_size/(1024*1024.0))
+
+	print df.head(200)
+
+
 ### FUNCTION to read tab file
 ## NEW HEADER - function work! and use
 # @profile
@@ -204,35 +297,58 @@ def write_new_tab_file(inpath, file_tab):
 # 	df.drop(['ID_genes_in_matched_locus'], axis=1, inplace=True) # Deletes unnecessary columns - THIS WORKS. Keep
 # 	return (df df_meta)
 
-### FUNCTION THAT READS SPECIFIC COLUMNS
-### SPLITs CVS file into two DataFrames: meta
+
+# ### FUNCTION THAT READS SPECIFIC COLUMNS
+# ### SPLITs CVS file into two DataFrames: meta
+# @profile
+# def tab2dataframe_split_meta_and_prim(file_tab):
+# 	## FULL HEADER STRING (look for updates!): "snpID rsID freq_bin gene_count dist_nearest_gene ID_nearest_gene ID_genes_in_matched_locus"
+# 	#0 snpID 
+# 	#1 rsID 
+# 	#2 freq_bin
+# 	#3 gene_count
+# 	#4 dist_nearest_gene 
+# 	#5 ID_nearest_gene
+# 	#6 ID_genes_in_matched_locus 
+# 	header_str_prim = "snpID rsID freq_bin gene_count dist_nearest_gene"
+# 	header_str_meta = "ID_nearest_gene ID_genes_in_matched_locus"
+# 	colnames_prim=header_str_prim.split()
+# 	colnames_meta=header_str_meta.split()
+# 	start_time = time.time()
+# 	#usecols: a subset of columns to return, results in much faster parsing time and lower memory usage.
+# 	print "START: reading CSV file PRIM..."
+# 	df_prim = pd.read_csv(file_tab, index_col=0, names=colnames_prim, delim_whitespace=True, usecols=[0, 1, 2, 3, 4]) # index is snpID
+# 	elapsed_time = time.time() - start_time
+# 	print "END: read CSV file PRIM into DataFrame in %s s (%s min)" % (elapsed_time, elapsed_time/60)
+# 	print "START: reading CSV file META..."
+# 	df_meta = pd.read_csv(file_tab, index_col=0, names=colnames_meta, delim_whitespace=True, usecols=[5, 6]) # index is snpID
+# 	elapsed_time = time.time() - start_time
+# 	print "END: read CSV file META into DataFrame in %s s (%s min)" % (elapsed_time, elapsed_time/60)
+# 	return (df_prim, df_meta)
+
+
+### NEW FUNCTION THAT READS SPECIFIC COLUMNS. 
+# CSV contains header!
+# UPDATED HEADER!
+# NO SPLITTING INTO prim and meta
 @profile
 def tab2dataframe(file_tab):
-	## FULL HEADER STRING (look for updates!): "snpID rsID freq_bin gene_count dist_nearest_gene ID_nearest_gene ID_genes_in_matched_locus"
+	# Columns in COLLECTION:
 	#0 snpID 
 	#1 rsID 
-	#2 freq_bin
+	#2 freq_bin 
 	#3 gene_count
-	#4 dist_nearest_gene 
-	#5 ID_nearest_gene
-	#6 ID_genes_in_matched_locus 
-	header_str_prim = "snpID rsID freq_bin gene_count dist_nearest_gene"
-	header_str_meta = "ID_nearest_gene ID_genes_in_matched_locus"
-	colnames_prim=header_str_prim.split()
-	colnames_meta=header_str_meta.split()
-	start_time = time.time()
-	#usecols: a subset of columns to return, results in much faster parsing time and lower memory usage.
+	#4 dist_to_nearest_gene 
+	#5=loci_upstream #NEW
+	#6=loci_downstream #NEW
+	#7 ID_nearest_gene 
+	#8 ID_in_matched_locus
 	print "START: reading CSV file PRIM..."
-	df_prim = pd.read_csv(file_tab, index_col=0, names=colnames_prim, delim_whitespace=True, usecols=[0, 1, 2, 3, 4]) # index is snpID
+	start_time = time.time()
+	df_prim = pd.read_csv(file_tab, index_col=0, header=0, delim_whitespace=True, usecols=[0, 1, 2, 3, 4]) # index is snpID
 	elapsed_time = time.time() - start_time
 	print "END: read CSV file PRIM into DataFrame in %s s (%s min)" % (elapsed_time, elapsed_time/60)
-	print "START: reading CSV file META..."
-	df_meta = pd.read_csv(file_tab, index_col=0, names=colnames_meta, delim_whitespace=True, usecols=[5, 6]) # index is snpID
-	elapsed_time = time.time() - start_time
-	print "END: read CSV file META into DataFrame in %s s (%s min)" % (elapsed_time, elapsed_time/60)
-	return (df_prim, df_meta)
-
-
+	return df_prim
 
 
 @profile
@@ -266,22 +382,24 @@ def dataframe_prim2hdf(file_hdf5, dataframe):
 	store.close()
 
 ### THIS FUNCTION WILL NOT SCALE/WORK FOR FULL DATA SETS DUE TO LONG STRING COLUMN: ID_genes_in_matched_locus
-@profile
-def dataframe_meta2hdf(file_hdf5, dataframe):
-	#store = pd.HDFStore(file_hdf5, 'w')
-	store = pd.HDFStore(file_hdf5, 'w', complevel=9, complib='blosc')
-	start_time = time.time()
-	print "START: Writing to HDF5 file: %s" % file_hdf5
-	#store.put('dummy', dataframe, format='table', append=False, expectedrows=dataframe.shape[0], min_itemsize=100) ===> failed!
-	store.put('dummy', dataframe, format='table', append=False, expectedrows=dataframe.shape[0], min_itemsize=100) 
-		#chunksize=5000000 ===> failed
-		#chunkshape' to (10,)
-		#min_itemsize
-	elapsed_time = time.time() - start_time
-	print "END: Elapsed_time of writing file: %.3f s (%.2f min)" % (elapsed_time, elapsed_time/60)
-	file_hdf5_size = os.path.getsize(file_hdf5)
-	print "Size of HDF5 file: %s bytes (%.1f MB)" % (file_hdf5_size, file_hdf5_size/(1024*1024.0))
-	store.close()
+## KEEP THIS FUNCTION FOR LATER USE.
+## IT CONTAINS DECENT CODE!
+# @profile
+# def dataframe_meta2hdf(file_hdf5, dataframe):
+# 	#store = pd.HDFStore(file_hdf5, 'w')
+# 	store = pd.HDFStore(file_hdf5, 'w', complevel=9, complib='blosc')
+# 	start_time = time.time()
+# 	print "START: Writing to HDF5 file: %s" % file_hdf5
+# 	#store.put('dummy', dataframe, format='table', append=False, expectedrows=dataframe.shape[0], min_itemsize=100) ===> failed!
+# 	store.put('dummy', dataframe, format='table', append=False, expectedrows=dataframe.shape[0], min_itemsize=100) 
+# 		#chunksize=5000000 ===> failed
+# 		#chunkshape' to (10,)
+# 		#min_itemsize
+# 	elapsed_time = time.time() - start_time
+# 	print "END: Elapsed_time of writing file: %.3f s (%.2f min)" % (elapsed_time, elapsed_time/60)
+# 	file_hdf5_size = os.path.getsize(file_hdf5)
+# 	print "Size of HDF5 file: %s bytes (%.1f MB)" % (file_hdf5_size, file_hdf5_size/(1024*1024.0))
+# 	store.close()
 
 
 
@@ -309,6 +427,7 @@ path_output = os.path.abspath(args.hdf5_dir)
 file_hdf5_prim = "{path}/{type}_db.{ext}".format(path=path_output, type=args.type, ext='h5')
 file_hdf5_meta = "{path}/{type}_meta.{ext}".format(path=path_output, type=args.type, ext='h5')
 file_tab = "{path}/{type}_collection.{ext}".format(path=path_output, type=args.type, ext='tab')
+file_dup = "{path}/{type}_duplicates.{ext}".format(path=path_output, type=args.type, ext='tab')
 # sanity check. TODO: remove this later!
 if True:	
 	if not args.type in path_input:
@@ -323,20 +442,24 @@ if True:
 ##Read .tab files into one combined data frame
 if not os.path.exists(file_tab):
 	#concatenate_tab_files(path_input, file_tab)
-	write_new_tab_file(path_input, file_tab)
+	#write_new_tab_file(path_input, file_tab)
+	tab2collection(path_input, file_tab, file_dup)
 else:	
 	print "INFO: Tab file EXISTS: %s. Skipping writing new concatenated file" % file_tab
 
-if not ( os.path.exists(file_hdf5_prim) or os.path.exists(file_hdf5_meta) ): # enter if block if NONE of them exists
+#if not ( os.path.exists(file_hdf5_prim) or os.path.exists(file_hdf5_meta) ): # enter if block if NONE of them exists
+if not ( os.path.exists(file_hdf5_prim) ): # enter if block if NONE of them exists
 	#df_1KG_snsps = tab2dataframe_with_colmanipulation(file_tab)
-	(df_prim, df_meta) = tab2dataframe(file_tab)
-	dataframe_prim2hdf(file_hdf5_prim, df_prim)
+	#(df_prim, df_meta) = tab2dataframe_split_meta_and_prim(file_tab)
+	
+	df_prim = tab2dataframe(file_tab)
+	#dataframe_prim2hdf(file_hdf5_prim, df_prim)
 
 	### OBS: WRITING META DATA DISABLED:
 	#dataframe_meta2hdf(file_hdf5_meta, df_meta) 
 else:
 	if os.path.exists(file_hdf5_prim): print "INFO: HDF5 file PRIM EXISTS: %s. Skipping loading CVS and skipping writing new HDF5 file" % file_hdf5_prim
-	if os.path.exists(file_hdf5_meta): print "INFO: HDF5 file META EXISTS: %s. Skipping loading CVS and skipping writing new HDF5 file" % file_hdf5_meta
+	#if os.path.exists(file_hdf5_meta): print "INFO: HDF5 file META EXISTS: %s. Skipping loading CVS and skipping writing new HDF5 file" % file_hdf5_meta
 
 # #TODO: make function that compresses .tab file after dataframe is created.
 
