@@ -55,7 +55,8 @@ def read_user_snps(user_snps_file):
 	#TODO error check:
 	# check for match to X:YYYYYY partern: '\d{1-2}:\d+'
 	# check for duplicates in list ---> most important
-	user_snps = {}
+	#user_snps = {}
+	user_snps = []
 	duplicates = {}
 	infile = open(user_snps_file,'r')
 	lines = infile.readlines()
@@ -63,7 +64,8 @@ def read_user_snps(user_snps_file):
 	for line in lines:
 		words = line.strip()
 		if not words in user_snps:
-			user_snps[words] = 1
+			#user_snps[words] = 1
+			user_snps.append(words)
 		else:
 			print "*** Warning: user input file contains duplicates"
 			if not words in duplicates: # first time we notice a duplicate ==> two entries seen
@@ -97,14 +99,16 @@ def read_user_snps(user_snps_file):
 @memory_profiler.profile
 def lookup_user_snps_iter(file_db, user_snps):
 	start_time = time.time()
-
 	store = pd.HDFStore(file_db, 'r')
-	user_snps_df = pd.DataFrame()
-	for item in user_snps.keys():
+	list_of_df = []
+	#user_snps_df = pd.DataFrame() # APPEND VERSION - WORKS, but NO control of column order. Consider: pd.DataFrame(columns=colnames)
+	for item in user_snps:
+	#for item in user_snps.keys():
 		df = store.select('dummy', "index=['%s']" % item) # Remember to quote the string!
-		user_snps_df = user_snps_df.append(df)
+		list_of_df.append(df)
+		#user_snps_df = user_snps_df.append(df) # APPEND VERSION - WORKS.
 	store.close()
-
+	user_snps_df = pd.concat(list_of_df)
 	elapsed_time = time.time() - start_time
 	print "DONE: lookup_user_snps_iter %s s (%s min)" % (elapsed_time, elapsed_time/60)
 	
@@ -114,7 +118,8 @@ def write_user_snps_stats(path_output, user_snps, df):
 	#TODO: also write out meta data
 	user_snps_stats_file = path_output+"/query_stats.out"
 	snps_not_in_db = []
-	for snp in user_snps.keys():
+	for snp in user_snps:
+	#for snp in user_snps.keys():
 		if not (df.index == snp).any():
 			snps_not_in_db.append(snp)
 	if snps_not_in_db:
@@ -123,13 +128,14 @@ def write_user_snps_stats(path_output, user_snps, df):
 		print "\n".join(snps_not_in_db)
 		#TODO: print list of SNPs not found to file
 	print "Found %d out of %d SNPs in data base" % (len(df.index), len(user_snps))
-	print "n_uniques found: %d" % len(np.unique(df.index.values))
-	bool_duplicates = pd.Series(df.index).duplicated().values # returns true for duplicates
-	df_duplicate = df.ix[bool_duplicates]
-	print df_duplicate
-	idx_duplicate = df_duplicate.index
-	print "Pandas data frame with index of duplicate:"
-	print df.ix[idx_duplicate]
+
+	# print "*** Warning: Number of unique snpIDs (index) found: %d" % len(np.unique(df.index.values))
+	# bool_duplicates = pd.Series(df.index).duplicated().values # returns true for duplicates
+	# df_duplicate = df.ix[bool_duplicates]
+	# print df_duplicate
+	# idx_duplicate = df_duplicate.index
+	# print "Pandas data frame with index of duplicate:"
+	# print df.ix[idx_duplicate]
 	df.to_csv(user_snps_stats_file, sep='\t', header=True, index=True,  mode='w')
 
 
@@ -211,13 +217,14 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, max_freq_deviati
 arg_parser = argparse.ArgumentParser(description="Program to get background distribution matching user input SNPs on the following parameters {MAF, distance to nearest gene, gene density}")
 arg_parser.add_argument("--user_snps_file", help="Path to file with user-defined SNPs", required=True) # TODO: make the program read from STDIN via '-'
 arg_parser.add_argument("--output_dir", type=ArgparseAdditionalUtils.check_if_writable, help="Directory in which output files, i.e. random SNPs will be written", required=True)
+arg_parser.add_argument("--set_files", help="Bool; if set then write out set files to rand_set..gz. Default is false", action='store_true')
 arg_parser.add_argument("--distance_type", help="ld or kb", required=True)
 arg_parser.add_argument("--distance_cutoff", help="r2, or kb distance", required=True)
 arg_parser.add_argument("--N_sample_sets", type=int, help="Number of matched SNPs to retrieve", required=True) # 1000 - "Permutations?" TODO: change name to --n_random_snp_sets or --N
 #TODO: add argument that describes if ABSOLUTE of PERCENTAGE deviation should be used
 arg_parser.add_argument("--max_freq_deviation", type=int,help="Maximal deviation of SNP MAF bin [MAF +/- deviation]", default=5) # 5
 arg_parser.add_argument("--max_distance_deviation", type=int, help="Maximal PERCENTAGE POINT deviation of distance to nearest gene [distance +/- %deviation])", default=5) # 20000
-	#TODO: CHECK THAT max_distance_deviation > 1 %
+#TODO: CHECK THAT max_distance_deviation > 1 %
 arg_parser.add_argument("--max_genes_count_deviation", type=float, help="Maximal PERCENTAGE POINT deviation of genes in locus [gene_density +/- %deviation]", default=5) # 0.2
 args = arg_parser.parse_args()
 
@@ -230,16 +237,16 @@ prefix = args.distance_type + args.distance_cutoff
 
 path_output = os.path.abspath(args.output_dir)
 
+
 (file_db, file_meta) = locate_HDF5_data(path_data, prefix) # Locate DB files. TODO: make function more robust
-user_snps = read_user_snps(args.user_snps_file) # Read input SNPs. Return dict
+user_snps = read_user_snps(args.user_snps_file) # Read input SNPs. Return list
 
 #user_snps_df = lookup_user_snps(file_db, user_snps) # Query DB, return DF
 user_snps_df = lookup_user_snps_iter(file_db, user_snps) # Query DB, return DF
-print user_snps_df
 
 write_user_snps_stats(path_output, user_snps, user_snps_df) # Report matches to DB and write stats file
 #print user_snps_df
-#query_similar_snps(file_db, path_output, user_snps_df, args.N_sample_sets, args.max_freq_deviation, args.max_distance_deviation, args.max_genes_count_deviation)
+query_similar_snps(file_db, path_output, user_snps_df, args.N_sample_sets, args.max_freq_deviation, args.max_distance_deviation, args.max_genes_count_deviation)
 
 
 
