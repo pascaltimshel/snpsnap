@@ -10,9 +10,11 @@ import glob
 
 import pandas as pd
 import numpy as np
+import gzip
 
+import datetime
 import time
-import timeit
+#import timeit
 #import cProfile #or profile
 import memory_profiler
 import profilehooks
@@ -21,6 +23,13 @@ import pdb
 
 ## Example calls:
 #./snpsnap_query.py --user_snps_file /Users/pascaltimshel/git/snpsnap/samples/sample_10randSNPs.list --output_dir /Users/pascaltimshel/snpsnap/data/query --distance_type ld --distance_cutoff 0.5 --N_sample_sets 10
+
+# test data, 10 samples, match, no-sets
+#./snpsnap_query.py --user_snps_file /Users/pascaltimshel/git/snpsnap/samples/sample_10randSNPs.list --output_dir /Users/pascaltimshel/snpsnap/data/query --distance_type ld --distance_cutoff 0.5 match --N_sample_sets 1000
+
+# test data, 10 samples, annotate
+#./snpsnap_query.py --user_snps_file /Users/pascaltimshel/git/snpsnap/samples/sample_10randSNPs.list --output_dir /Users/pascaltimshel/snpsnap/data/query --distance_type ld --distance_cutoff 0.5 annotate
+
 
 
 ## TODO:
@@ -38,16 +47,26 @@ import pdb
 # 		sys.exit(1)
 # 	if "db" in files[0]: pass
 
-def locate_HDF5_data(path, prefix):
+def locate_db_file(path, prefix):
 	#TODO fix this. Make checks
 	file_db = "{path}/{type}_db.{ext}".format(path=path, type=prefix, ext='h5')
-	file_meta = "{path}/{type}_meta.{ext}".format(path=path, type=prefix, ext='h5')
+	# META FILE DISAPLED TEMPORARY
+	#file_meta = "{path}/{type}_meta.{ext}".format(path=path, type=prefix, ext='h5')
 	#if not ( os.path.exists(file_db) and os.path.exists(file_meta) ): # both file must exists
 	if not os.path.exists(file_db): # TODO- FIX THIS LATER
-		print "Could not find database files. Exiting"
+		print "Could not find collection file: %s." % file_db
+		print "Exiting..." 
 		sys.exit(1)
-	return (file_db, file_meta)
+	#return (file_db, file_meta)
+	return file_db
 
+def locate_collection_file(path, prefix):
+	file_collection = "{path}/{type}_collection.{ext}".format(path=path, type=prefix, ext='tab.gz')
+	if not os.path.exists(file_collection): # TODO- FIX THIS LATER
+		print "Could not find collection file: %s." % file_collection
+		print "Exiting..." 
+		sys.exit(1)
+	return file_collection
 
 
 # Function to read userdefined list of SNPs
@@ -105,30 +124,37 @@ def lookup_user_snps_iter(file_db, user_snps):
 	for item in user_snps:
 	#for item in user_snps.keys():
 		df = store.select('dummy', "index=['%s']" % item) # Remember to quote the string!
+		#TODO: check length of df. MUST BE EXACTLY ONE!!! ****
+		#TODO: immediately write out snps/items with wrong len(df)?
 		list_of_df.append(df)
 		#user_snps_df = user_snps_df.append(df) # APPEND VERSION - WORKS.
 	store.close()
 	user_snps_df = pd.concat(list_of_df)
 	elapsed_time = time.time() - start_time
-	print "DONE: lookup_user_snps_iter %s s (%s min)" % (elapsed_time, elapsed_time/60)
+	print "END: lookup_user_snps_iter in %s s (%s min)" % (elapsed_time, elapsed_time/60)
 	
 	return user_snps_df
 
-def write_user_snps_stats(path_output, user_snps, df):
-	#TODO: also write out meta data
-	user_snps_stats_file = path_output+"/query_stats.out"
+
+def write_snps_not_in_db(path_output, user_snps, df):
+	user_snps_not_found = path_output+"/snps_not_found.tab"
+
+	print "START: doing write_snps_not_in_db"
+	start_time = time.time()
 	snps_not_in_db = []
 	for snp in user_snps:
 	#for snp in user_snps.keys():
 		if not (df.index == snp).any():
 			snps_not_in_db.append(snp)
-	if snps_not_in_db:
+	if snps_not_in_db: # if non-empty
 		print "*** Warning: %d SNPs not found in data base:" % len(snps_not_in_db)
-		#print "List of user SNPs not found in data base:"
 		print "\n".join(snps_not_in_db)
-		#TODO: print list of SNPs not found to file
-	print "Found %d out of %d SNPs in data base" % (len(df.index), len(user_snps))
 
+		# WRITING SNPs not found to FILE
+		with open(user_snps_not_found, 'w') as f:
+			for snp in snps_not_in_db:
+				f.write(snp+"\n")
+	print "Found %d out of %d SNPs in data base" % (len(df.index), len(user_snps))
 	# print "*** Warning: Number of unique snpIDs (index) found: %d" % len(np.unique(df.index.values))
 	# bool_duplicates = pd.Series(df.index).duplicated().values # returns true for duplicates
 	# df_duplicate = df.ix[bool_duplicates]
@@ -136,8 +162,40 @@ def write_user_snps_stats(path_output, user_snps, df):
 	# idx_duplicate = df_duplicate.index
 	# print "Pandas data frame with index of duplicate:"
 	# print df.ix[idx_duplicate]
+	elapsed_time = time.time() - start_time
+	print "END: write_snps_not_in_db in %s s (%s min)" % (elapsed_time, elapsed_time/60)
+
+def write_user_snps_stats(path_output, df):
+	user_snps_stats_file = path_output+"/snps_stats.tab"
 	df.to_csv(user_snps_stats_file, sep='\t', header=True, index=True,  mode='w')
 
+@memory_profiler.profile
+def read_collection(file_collection):
+	"""Function that reads tab seperated gzip collection file"""
+	# Columns in COLLECTION:
+	#0 snpID 
+	#1 rsID 
+	#2 freq_bin 
+	#3 gene_count
+	#4 dist_to_nearest_gene 
+	#5=loci_upstream #NEW
+	#6=loci_downstream #NEW
+	#7 ID_nearest_gene 
+	#8 ID_in_matched_locus
+	print "START: reading CSV file PRIM..."
+	start_time = time.time()
+	f_tab = gzip.open(file_collection, 'rb')
+	df_collection = pd.read_csv(f_tab, index_col=0, header=0, delim_whitespace=True) # index is snpID
+	f_tab.close()
+	elapsed_time = time.time() - start_time
+	print "END: read CSV file PRIM into DataFrame in %s s (%s min)" % (elapsed_time, elapsed_time/60)
+	return df_collection
+
+def write_user_snps_annotation(path_output, df, df_collection):
+	user_snps_annotated_file = path_output+"/snps_annotated.tab"
+	df_user_snp_found_index = df.index # index of (found) user snps
+	df_user_snps_annotated = df_collection.ix[df_user_snp_found_index]
+	df_user_snps_annotated.to_csv(user_snps_annotated_file, sep='\t', header=True, index=True,  mode='w')
 
 def query_similar_snps(file_db, path_output, df, N_sample_sets, max_freq_deviation, max_distance_deviation, max_genes_count_deviation):
 	np.random.seed(1)
@@ -201,54 +259,128 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, max_freq_deviati
 
 		np.savetxt(f_matrix_out, np.insert(match_ID_final, 0, query_snpID), fmt="%s", newline="\t") #delimiter="\n"
 		f_matrix_out.write("\n")
-
-
 	
 	f_matrix_out.close()
 	store.close()
 
+def write_set_files(path_output, df_collection):
+	user_snps_annotated_file = path_output+"/set_file.tab"
+
+	#TODO: make index of set
+	#TODO: compress file? --> no
+
+
+
+def ParseArguments():
+	""" Handles program parameters and returns an argument class containing 
+	all parameters """
+	#TODO: check input variable types!
+	# check for integers ans strings
+	# check for distance and distance cutoff value: ONLY CERTAIN VALUES ALLOWED
+	arg_parser = argparse.ArgumentParser(description="Program to get background distribution matching user input SNPs on the following parameters {MAF, distance to nearest gene, gene density}")
+	subparsers = arg_parser.add_subparsers(dest='subcommand',
+									   title='subcommands in this script',
+									   description='valid subcommands. set subcommand after main program required arguments',
+									   help='You can get additional help by writing <program-name> <subcommand> --help')
+
+	## Subparsers
+	arg_parser_annotate = subparsers.add_parser('annotate')
+	#arg_parser_annotate.set_defaults(func=run_annotate)
+	arg_parser_match = subparsers.add_parser('match')
+	#arg_parser_annotate.set_defaults(func=run_match)
+
+
+	arg_parser.add_argument("--user_snps_file", help="Path to file with user-defined SNPs", required=True) # TODO: make the program read from STDIN via '-'
+	arg_parser.add_argument("--output_dir", type=ArgparseAdditionalUtils.check_if_writable, help="Directory in which output files, i.e. random SNPs will be written", required=True)
+	arg_parser.add_argument("--distance_type", help="ld or kb", required=True)
+	arg_parser.add_argument("--distance_cutoff", help="r2, or kb distance", required=True)
+
+	### MATCH arguments
+	arg_parser_match.add_argument("--N_sample_sets", type=int, help="Number of matched SNPs to retrieve", required=True) # 1000 - "Permutations?" TODO: change name to --n_random_snp_sets or --N
+	#TODO: add argument that describes if ABSOLUTE of PERCENTAGE deviation should be used
+	arg_parser_match.add_argument("--max_freq_deviation", type=int,help="Maximal deviation of SNP MAF bin [MAF +/- deviation]", default=5) # 5
+	arg_parser_match.add_argument("--max_distance_deviation", type=int, help="Maximal PERCENTAGE POINT deviation of distance to nearest gene [distance +/- %deviation])", default=5) # 20000
+	#TODO: CHECK THAT max_distance_deviation > 1 %
+	arg_parser_match.add_argument("--max_genes_count_deviation", type=float, help="Maximal PERCENTAGE POINT deviation of genes in locus [gene_density +/- %deviation]", default=5) # 0.2
+	arg_parser_match.add_argument("--set_files", help="Bool; if set then write out set files to rand_set..gz. Default is false", action='store_true')
+
+	args = arg_parser.parse_args()
+
+	# PRINT RUNNING DESCRIPTION 
+	now = datetime.datetime.now()
+	print '# ' + ' '.join(sys.argv)
+	print '# ' + now.strftime("%a %b %d %Y %H:%M")
+	print '# CWD: ' + os.getcwd()
+	print '# COMMAND LINE PARAMETERS SET TO:'
+	for arg in dir(args):
+		if arg[:1]!='_':
+			print '# \t' + "{:<30}".format(arg) +\
+				  "{:<30}".format(getattr(args, arg))
+
+	return args
+
+def run_match(path_data, path_output, prefix, user_snps_file, N_sample_sets, max_freq_deviation, max_distance_deviation, max_genes_count_deviation, set_files):
+	print "running match"
+	file_db = locate_db_file(path_data, prefix) # Locate DB files. TODO: make function more robust
+	file_collection = locate_collection_file(path_data, prefix) # Locate DB files. TODO: make function more robust
+
+	user_snps = read_user_snps(user_snps_file) # Read input SNPs. Return list
+
+	user_snps_df = lookup_user_snps_iter(file_db, user_snps) # Query DB, return DF
+
+	write_snps_not_in_db(path_output, user_snps, user_snps_df) # Report number of matches to DB (print STDOUT)
+	write_user_snps_stats(path_output, user_snps_df) # write stats file (no meta annotation)
+	query_similar_snps(file_db, path_output, user_snps_df, N_sample_sets, max_freq_deviation, max_distance_deviation, max_genes_count_deviation)
+
+	### TODO: complete write function!
+	if set_files: # if argument is true, then run set files
+		df_collection = read_collection(file_collection)
+		write_set_files()
+
+def run_annotate(path_data, path_output, prefix, user_snps_file):
+	print "running annotate"
+	file_db = locate_db_file(path_data, prefix) # Locate DB files. TODO: make function more robust
+	file_collection = locate_collection_file(path_data, prefix) # Locate DB files. TODO: make function more robust
+	user_snps = read_user_snps(user_snps_file) # Read input SNPs. Return list
+
+	user_snps_df = lookup_user_snps_iter(file_db, user_snps) # Query DB, return DF
+	df_collection = read_collection(file_collection)
+	write_user_snps_annotation(path_output, user_snps_df, df_collection)
+
+
+def main():	
+	args = ParseArguments()
+
+	### CONSTANTS ###
+	#path_data = "/Users/pascaltimshel/snpsnap/data/step3/tmp" ## HARD CODED PATH!!
+	path_data = os.path.abspath("/Users/pascaltimshel/snpsnap/data/step3") ## HARD CODED PATH!!
+	prefix = args.distance_type + args.distance_cutoff
+	path_output = os.path.abspath(args.output_dir)
+
+	user_snps_file = args.user_snps_file
+
+
+
+	## Run appropriate subfunction
+	if args.subcommand == "match":
+		max_freq_deviation = args.max_freq_deviation
+		max_distance_deviation = args.max_distance_deviation
+		max_genes_count_deviation = args.max_genes_count_deviation
+		N_sample_sets = args.N_sample_sets
+		set_files = args.set_files
+		run_match(path_data, path_output, prefix, user_snps_file, N_sample_sets, max_freq_deviation, max_distance_deviation, max_genes_count_deviation, set_files)
+	elif args.subcommand == "annotate":
+		run_annotate(path_data, path_output, prefix, user_snps_file)
+	else:
+		print "ERROR: command line arguments not passed correctly. Fix source code!"
+		print "Exiting..."
+		sys.exit(1)
 
 
 
 
-#TODO: check input variable types!
-# check for integers ans strings
-# check for distance and distance cutoff value: ONLY CERTAIN VALUES ALLOWED
-arg_parser = argparse.ArgumentParser(description="Program to get background distribution matching user input SNPs on the following parameters {MAF, distance to nearest gene, gene density}")
-arg_parser.add_argument("--user_snps_file", help="Path to file with user-defined SNPs", required=True) # TODO: make the program read from STDIN via '-'
-arg_parser.add_argument("--output_dir", type=ArgparseAdditionalUtils.check_if_writable, help="Directory in which output files, i.e. random SNPs will be written", required=True)
-arg_parser.add_argument("--set_files", help="Bool; if set then write out set files to rand_set..gz. Default is false", action='store_true')
-arg_parser.add_argument("--distance_type", help="ld or kb", required=True)
-arg_parser.add_argument("--distance_cutoff", help="r2, or kb distance", required=True)
-arg_parser.add_argument("--N_sample_sets", type=int, help="Number of matched SNPs to retrieve", required=True) # 1000 - "Permutations?" TODO: change name to --n_random_snp_sets or --N
-#TODO: add argument that describes if ABSOLUTE of PERCENTAGE deviation should be used
-arg_parser.add_argument("--max_freq_deviation", type=int,help="Maximal deviation of SNP MAF bin [MAF +/- deviation]", default=5) # 5
-arg_parser.add_argument("--max_distance_deviation", type=int, help="Maximal PERCENTAGE POINT deviation of distance to nearest gene [distance +/- %deviation])", default=5) # 20000
-#TODO: CHECK THAT max_distance_deviation > 1 %
-arg_parser.add_argument("--max_genes_count_deviation", type=float, help="Maximal PERCENTAGE POINT deviation of genes in locus [gene_density +/- %deviation]", default=5) # 0.2
-args = arg_parser.parse_args()
-
-
-### CONSTANTS ###
-#path_data = "/Users/pascaltimshel/snpsnap/data/step3/tmp" ## HARD CODED PATH!!
-path_data = "/Users/pascaltimshel/snpsnap/data/step3" ## HARD CODED PATH!!
-path_data = os.path.abspath(path_data) # make sure that trailing newline is removed. DELETE LATER!
-prefix = args.distance_type + args.distance_cutoff
-
-path_output = os.path.abspath(args.output_dir)
-
-
-(file_db, file_meta) = locate_HDF5_data(path_data, prefix) # Locate DB files. TODO: make function more robust
-user_snps = read_user_snps(args.user_snps_file) # Read input SNPs. Return list
-
-#user_snps_df = lookup_user_snps(file_db, user_snps) # Query DB, return DF
-user_snps_df = lookup_user_snps_iter(file_db, user_snps) # Query DB, return DF
-
-write_user_snps_stats(path_output, user_snps, user_snps_df) # Report matches to DB and write stats file
-#print user_snps_df
-query_similar_snps(file_db, path_output, user_snps_df, args.N_sample_sets, args.max_freq_deviation, args.max_distance_deviation, args.max_genes_count_deviation)
-
-
+if __name__ == '__main__':
+	main()
 
 
 
