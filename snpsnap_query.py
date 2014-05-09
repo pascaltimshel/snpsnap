@@ -82,6 +82,9 @@ def read_user_snps(user_snps_file):
 	infile.close()
 	for line in lines:
 		words = line.strip()
+		if not words: # string is empty
+			print "Found empty line in user_snps_file %s" % user_snps_file
+			continue
 		if not words in user_snps:
 			#user_snps[words] = 1
 			user_snps.append(words)
@@ -115,7 +118,6 @@ def read_user_snps(user_snps_file):
 # 	print "DONE: lookup_user_snps %s s (%s min)" % (elapsed_time, elapsed_time/60)
 # 	return user_snps_df
 
-@memory_profiler.profile
 def lookup_user_snps_iter(file_db, user_snps):
 	start_time = time.time()
 	store = pd.HDFStore(file_db, 'r')
@@ -169,7 +171,7 @@ def write_user_snps_stats(path_output, df):
 	user_snps_stats_file = path_output+"/snps_stats.tab"
 	df.to_csv(user_snps_stats_file, sep='\t', header=True, index=True,  mode='w')
 
-@memory_profiler.profile
+#@memory_profiler.profile
 def read_collection(file_collection):
 	"""Function that reads tab seperated gzip collection file"""
 	# Columns in COLLECTION:
@@ -198,14 +200,23 @@ def write_user_snps_annotation(path_output, df, df_collection):
 	df_user_snps_annotated.to_csv(user_snps_annotated_file, sep='\t', header=True, index=True,  mode='w')
 
 def query_similar_snps(file_db, path_output, df, N_sample_sets, max_freq_deviation, max_distance_deviation, max_genes_count_deviation):
-	np.random.seed(1)
-	n_attempts = 5
+	np.random.seed(1) # Always set seed to be able to reproduce result. np.choice is dependent on seed()
+	n_attempts = 5 # use this variable to adjust balance between speed (n_attempts low) and getting best matches (n_attempts high)
+	
+	user_snps_few_matches_file = path_output+"/snps_few_matches.tab"
+	#snps_few_matches = {}
+	df_snps_few_matches = None
+
 	user_snps_matrix_file = path_output+"/matrix.out"
-	if os.path.exists(user_snps_matrix_file): # removing any existing file
+	if os.path.exists(user_snps_matrix_file): # removing any existing file. REASON: we are appending to matrix_file
 		os.remove(user_snps_matrix_file)
 	f_matrix_out = open(user_snps_matrix_file,'a')
+	f_matrix_out.write('Input_SNP\t%s\n' % "\t".join(['Set_'+str(i) for i in xrange(1,N_sample_sets+1)])) #IMPORTANT: writing out header!
+	
 	store = pd.HDFStore(file_db, 'r')
-	for i in xrange(len(df.index)): # pandas DF indecies is zero based like python
+
+	idx_input_snps = range(len(df.index)) # REMEMBER: both python and pandas are zero-based
+	for i in idx_input_snps:
 		query_snpID = df.index[i]
 		freq = df.ix[i,'freq_bin']
 		gene_count = df.ix[i,'gene_count']
@@ -231,43 +242,99 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, max_freq_deviati
 
 		match_ID_old = None # placeholder for a Numpy array
 		match_ID = None # placeholder for a Numpy array
-		for i in xrange(n_attempts):
-		    query_freq = '(freq_bin >= %s & freq_bin <= %s)' % (freq_low[i], freq_high[i])
-		    query_gene_count = '(gene_count >= %s & gene_count <= %s)' % (gene_count_low[i], gene_count_high[i])
-		    query_dist = '(dist_nearest_gene  >= %s & dist_nearest_gene  <= %s)' % (dist_low[i], dist_high[i])
+		for attempt in xrange(n_attempts):
+		    query_freq = '(freq_bin >= %s & freq_bin <= %s)' % (freq_low[attempt], freq_high[attempt])
+		    query_gene_count = '(gene_count >= %s & gene_count <= %s)' % (gene_count_low[attempt], gene_count_high[attempt])
+		    query_dist = '(dist_nearest_gene  >= %s & dist_nearest_gene  <= %s)' % (dist_low[attempt], dist_high[attempt])
 		    
 		    query = "%s & %s & %s" % (query_freq, query_gene_count, query_dist)
 		    match_ID = store.select('dummy', query, columns=[]).index.values # return no columns --> only index
 		    
-		    print "SNP: {%s} attempt #%d: found %d hits" % (query_snpID, i, len(match_ID))
+		    
 		    if len(match_ID) < N_sample_sets:
 		        match_ID_old = match_ID
 		    else: #we have enough matches
 		    	match_ID_old = np.array([]) # empty array. This line ensures that len(match_ID_old) is always valid
 		        break
 
-
+		print "SNP #%d/%d: ID {%s}: found %d hits" % (i+1, len(idx_input_snps), query_snpID, len(match_ID))
 		if len(match_ID) < N_sample_sets:
-			print "******** Found SNP with too few matches; n_matches=%s" % len(match_ID)
-			print "Using sampling with replacement to get enough samples"
-			match_ID_final = np.random.choice(match_ID, size=N_sample_sets, replace=True, p=None) # sample uniformly from NEW matches
+			print "*** Found SNP with too few matches; n_matches=%s. Using sampling with replacement to get enough samples ***" % len(match_ID)
+			
+			if df_snps_few_matches is None: # if true, create DataFrame with correct ordering of columns
+				cols = np.append(df.columns.values, 'n_matches')
+				df_snps_few_matches= pd.DataFrame(columns=cols) #df.columns is a Index object
+			row_query = df.ix[i]
+			row_query['n_matches'] = len(match_ID)
+			df_snps_few_matches = df_snps_few_matches.append(row_query) # select row (df.ix[i]) --> gives Series object
+
+			# Sample snpIDs uniformly from the matches we have at hand until we have enough samples.
+			match_ID_final = np.random.choice(match_ID, size=N_sample_sets, replace=True, p=None)
 		else:
 			match_ID_uniq_new = np.setdiff1d(match_ID, match_ID_old, assume_unique=True) #Return the sorted, unique values in ar1 that are not in ar2
 			n_elements_to_fill = N_sample_sets - len(match_ID_old)
 			match_ID_uniq_new_sample = np.random.choice(match_ID_uniq_new, size=n_elements_to_fill, replace=False, p=None) # sample uniformly from NEW matches
 			match_ID_final = np.concatenate((match_ID_old, match_ID_uniq_new_sample))
 
-		np.savetxt(f_matrix_out, np.insert(match_ID_final, 0, query_snpID), fmt="%s", newline="\t") #delimiter="\n"
-		f_matrix_out.write("\n")
-	
+		# version TOLIST() print
+		# insert query_snpID as first element and CONVERT to list
+		ID_list = np.insert(match_ID_final, 0, query_snpID).tolist() # np.array --> python list. NB: check that a 'flat' list is returned
+		f_matrix_out.write("\t".join(ID_list)+'\n')
+
+		# version NUMPY print. problem: extra tab is added to the end
+		#np.savetxt(f_matrix_out, np.insert(match_ID_final, 0, query_snpID), fmt="%s", newline="\t") #delimiter="\n"
+		#f_matrix_out.write("\n")
 	f_matrix_out.close()
 	store.close()
 
-def write_set_files(path_output, df_collection):
-	user_snps_annotated_file = path_output+"/set_file.tab"
+	### Writing out few_matches (if any)
+	if df_snps_few_matches is not None:
+		df_snps_few_matches.to_csv(user_snps_few_matches_file, sep='\t', index=True, header=True, index_label='snpID', mode='w') 
 
-	#TODO: make index of set
-	#TODO: compress file? --> no
+def write_set_file(path_output, df_collection):
+	user_snps_set_file = path_output+"/set_file.tab"
+	matrix_file = path_output+"/matrix.out" #TODO OBS: FIX THIS. the file name should be parsed to the function
+	#TODO: check 'integrity' of df_matrix before reading?
+	# TWO DIFFERENT VERSIONS. None of them set the index explicitly, but rely either on header or pandas naming columns [0,1,2,...] where 0 is giving to the index
+	
+	# version READ HEADER: gives index {set1, set2,...}
+	#df_matrix = pd.read_csv(matrix_file, index_col=0, header=0, delim_whitespace=True) # index is PARRENT snpID.
+	
+	# version SKIP HEADER: gives index {0, 1, 2}
+	df_matrix = pd.read_csv(matrix_file, index_col=0, header=None, skiprows=1, delim_whitespace=True) # index is PARRENT snpID.
+
+	if os.path.exists(user_snps_set_file):
+		print "user_snps_set_file exists. removing file before annotating..."
+		os.remove(user_snps_set_file)
+
+	f_set = open(user_snps_set_file, 'a')
+	idx_input_snps = range(len(df_matrix)) # REMEMBER: both python and pandas are zero-based
+	print "START: creating set_file"
+	start_time = time.time()
+	for i in idx_input_snps: # len(df_matrix) is equal to the number of user_snps found in db.
+		print "SNP #%s/#%s: creating and writing to CSV set_file" % (i+1, len(idx_input_snps))
+		parrent_snp = df_matrix.index[i] # type --> string
+		match_snps = df_matrix.ix[i] # series
+		set_idx = df_matrix.columns.values 	# copying COLUMN NAMES to np.array, better than: set_idx = range(1,len(df_matrix.columns)+1)
+											# gives np.array([1, 2, 3, 4,...]) because 0 is taking by 'index' when header is skipped
+		df_container = pd.DataFrame(set_idx, columns=['set']) # SEMI IMPORTANT: new data frame + setting name of column
+		df_container.ix[:,'input_snp'] = parrent_snp # creating new column with identical elements
+
+		df_match = df_collection.ix[match_snps.values] # IMPORTANT: fetching snps from collection
+		df_match.index.name = df_collection.index.name # Copy index name, e.g. df_match.index.name = 'snpID'
+		df_match.reset_index(inplace=True) # 'freeing' snpID index. Index is now 0,1,2... 
+
+		df_final = pd.concat([df_container, df_match], axis=1) # Concatenating: notice ORDER of data frames.
+		df_final.set_index('set',inplace=True) # SEMI important: setting index. THEN YOU MUST PRINT index and index_label
+		# Writing/appending to CSV file
+		if i==0: # write out header - ONLY FIRST TIME!
+			df_final.to_csv(f_set, sep='\t', index=True, header=True, index_label='set') # filehandle in appending mode is given
+		else:
+			df_final.to_csv(f_set, sep='\t', index=True, header=False) # filehandle in appending mode is given
+	
+	elapsed_time = time.time() - start_time
+	print "END: creating set_file %s s (%s min)" % (elapsed_time, elapsed_time/60)
+
 
 
 
@@ -299,10 +366,10 @@ def ParseArguments():
 	arg_parser_match.add_argument("--N_sample_sets", type=int, help="Number of matched SNPs to retrieve", required=True) # 1000 - "Permutations?" TODO: change name to --n_random_snp_sets or --N
 	#TODO: add argument that describes if ABSOLUTE of PERCENTAGE deviation should be used
 	arg_parser_match.add_argument("--max_freq_deviation", type=int,help="Maximal deviation of SNP MAF bin [MAF +/- deviation]", default=5) # 5
-	arg_parser_match.add_argument("--max_distance_deviation", type=int, help="Maximal PERCENTAGE POINT deviation of distance to nearest gene [distance +/- %deviation])", default=5) # 20000
+	arg_parser_match.add_argument("--max_distance_deviation", type=int, help="Maximal PERCENTAGE POINT deviation of distance to nearest gene [distance +/- %%deviation])", default=5) # 20000
 	#TODO: CHECK THAT max_distance_deviation > 1 %
-	arg_parser_match.add_argument("--max_genes_count_deviation", type=float, help="Maximal PERCENTAGE POINT deviation of genes in locus [gene_density +/- %deviation]", default=5) # 0.2
-	arg_parser_match.add_argument("--set_files", help="Bool; if set then write out set files to rand_set..gz. Default is false", action='store_true')
+	arg_parser_match.add_argument("--max_genes_count_deviation", type=float, help="Maximal PERCENTAGE POINT deviation of genes in locus [gene_density +/- %%deviation]", default=5) # 0.2
+	arg_parser_match.add_argument("--set_file", help="Bool (switch, takes no value after argument); if set then write out set files to rand_set..gz. Default is false", action='store_true')
 
 	args = arg_parser.parse_args()
 
@@ -319,31 +386,30 @@ def ParseArguments():
 
 	return args
 
-def run_match(path_data, path_output, prefix, user_snps_file, N_sample_sets, max_freq_deviation, max_distance_deviation, max_genes_count_deviation, set_files):
+def run_match(path_data, path_output, prefix, user_snps_file, N_sample_sets, max_freq_deviation, max_distance_deviation, max_genes_count_deviation, set_file):
 	print "running match"
 	file_db = locate_db_file(path_data, prefix) # Locate DB files. TODO: make function more robust
 	file_collection = locate_collection_file(path_data, prefix) # Locate DB files. TODO: make function more robust
-
 	user_snps = read_user_snps(user_snps_file) # Read input SNPs. Return list
-
 	user_snps_df = lookup_user_snps_iter(file_db, user_snps) # Query DB, return DF
-
-	write_snps_not_in_db(path_output, user_snps, user_snps_df) # Report number of matches to DB (print STDOUT)
+	write_snps_not_in_db(path_output, user_snps, user_snps_df) # Report number of matches to DB (print STDOUT and file)
+	
 	write_user_snps_stats(path_output, user_snps_df) # write stats file (no meta annotation)
 	query_similar_snps(file_db, path_output, user_snps_df, N_sample_sets, max_freq_deviation, max_distance_deviation, max_genes_count_deviation)
 
 	### TODO: complete write function!
-	if set_files: # if argument is true, then run set files
+	if set_file: # if argument is true, then run set files
 		df_collection = read_collection(file_collection)
-		write_set_files()
+		write_set_file(path_output, df_collection)
 
 def run_annotate(path_data, path_output, prefix, user_snps_file):
 	print "running annotate"
 	file_db = locate_db_file(path_data, prefix) # Locate DB files. TODO: make function more robust
 	file_collection = locate_collection_file(path_data, prefix) # Locate DB files. TODO: make function more robust
 	user_snps = read_user_snps(user_snps_file) # Read input SNPs. Return list
-
 	user_snps_df = lookup_user_snps_iter(file_db, user_snps) # Query DB, return DF
+	write_snps_not_in_db(path_output, user_snps, user_snps_df) # Report number of matches to DB (print STDOUT and file)
+	
 	df_collection = read_collection(file_collection)
 	write_user_snps_annotation(path_output, user_snps_df, df_collection)
 
@@ -360,21 +426,23 @@ def main():
 	user_snps_file = args.user_snps_file
 
 
-
+	start_time = time.time()
 	## Run appropriate subfunction
 	if args.subcommand == "match":
 		max_freq_deviation = args.max_freq_deviation
 		max_distance_deviation = args.max_distance_deviation
 		max_genes_count_deviation = args.max_genes_count_deviation
 		N_sample_sets = args.N_sample_sets
-		set_files = args.set_files
-		run_match(path_data, path_output, prefix, user_snps_file, N_sample_sets, max_freq_deviation, max_distance_deviation, max_genes_count_deviation, set_files)
+		set_file = args.set_file
+		run_match(path_data, path_output, prefix, user_snps_file, N_sample_sets, max_freq_deviation, max_distance_deviation, max_genes_count_deviation, set_file)
 	elif args.subcommand == "annotate":
 		run_annotate(path_data, path_output, prefix, user_snps_file)
 	else:
 		print "ERROR: command line arguments not passed correctly. Fix source code!"
 		print "Exiting..."
 		sys.exit(1)
+	elapsed_time = time.time() - start_time
+	print "TOTAL RUNTIME: %s s (%s min)" % (elapsed_time, elapsed_time/60)
 
 
 
