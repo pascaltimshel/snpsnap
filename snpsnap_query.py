@@ -119,6 +119,7 @@ def read_user_snps(user_snps_file):
 # 	return user_snps_df
 
 def lookup_user_snps_iter(file_db, user_snps):
+	print "START: lookup_user_snps_iter"
 	start_time = time.time()
 	store = pd.HDFStore(file_db, 'r')
 	list_of_df = []
@@ -199,15 +200,97 @@ def write_user_snps_annotation(path_output, df, df_collection):
 	df_user_snps_annotated = df_collection.ix[df_user_snp_found_index]
 	df_user_snps_annotated.to_csv(user_snps_annotated_file, sep='\t', header=True, index=True,  mode='w')
 
+def few_matches_score(x, lim, scale):
+	score = 'unknow'
+	# scale = []
+	# if scale_order == 'low_is_bad':
+	# 	scale = ['very bad', 'bad', 'medium', 'good', 'very good']
+	# elif scale_order == 'low_is_good':
+	# 	scale = ['very good', 'good', 'medium', 'bad', 'very bad']
+	# else:
+	# 	score = '[error: bad scale]'
+	# 	return 
+
+	if len(scale)+1 != len(lim):
+		score = '[error: lim parsed to few_matches_score does not match internal scale]'
+		return score
+
+	if lim[0]<=x<=lim[1]:
+		score = scale[0]
+	elif lim[1]<=x<=lim[2]:
+		score = scale[1]
+	elif lim[2]<=x<=lim[3]:
+		score = scale[2]
+	elif lim[3]<=x<=lim[4]:
+		score = scale[3]
+	elif lim[4]<=x<=lim[5]:
+		score = scale[4]
+	else:
+		score = '[error: wrong limits]'
+	return score
+
+def few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps):
+	user_snps_few_matches_file = path_output+"/snps_few_matches.tab"
+	user_snps_few_matches_report = path_output+"/snps_report.txt"
+	#score_N = ''
+	#score_median = ''
+
+	pct_N_few_matches = ( len(df_snps_few_matches)/float(N_snps) )*100
+
+	median_n_matches = df_snps_few_matches.ix[:,'n_matches'].median()
+	pct_median_few_matches = ( median_n_matches/float(N_sample_sets) )*100
+	
+	scale_N = ['very good', 'good', 'ok', 'poor', 'very poor']
+	scale_median = ['very poor', 'poor', 'ok', 'good', 'very good']
+	# About the use of this few_matches_score:
+	# 1) check that the criteria for scale and lim lengths is ok
+	# 2) function does ONLY support 5 scores ATM
+	# 3) IMPORTANT: limits may have to be reversed for it to work. See the function code..
+	score_N = few_matches_score(pct_N_few_matches, [0,1,5,10,25,100], scale_N) #low_is_good
+	score_median = few_matches_score(pct_median_few_matches, [100,75,50,30,15,0][::-1], scale_median) #low_is_bad
+
+	#TODO: print scale_order (pass as argument to function)
+	# print_str_score_N = "Rating 'number of few matches' = '{rating:s}' ({pct:.4g}%, {count:d} few_matches out of {total:d} valid input SNPs)".format(rating=score_N, 
+	# 																											pct=pct_N_few_matches, 
+	# 																											count=len(df_snps_few_matches),
+	# 																											total=N_snps)
+	# print_str_score_median = "Rating 'over sampling' = '{rating:s}' ({pct:.4g}%, median SNPs to sample from in few_matches is {median:.6g} compared to {total:d} N_sample_sets)".format(rating=score_median, 
+	# 																											pct=pct_median_few_matches, 
+	# 																											median=median_n_matches,
+	# 																											total=N_sample_sets)
+	
+
+	tmp1 = "Rating 'number of few matches' = '{rating:s}' with scale [{scale:s}]".format(rating=score_N, scale=(', '.join("'" + item + "'" for item in scale_N)) )
+	tmp2 = "Percent 'few matches' = {pct:.4g}% ({count:d} 'few matches' out of {total:d} valid input SNPs)".format(pct=pct_N_few_matches, count=len(df_snps_few_matches), total=N_snps)
+	write_str_score_N = '\n'.join([tmp1, tmp2])
+
+	tmp1 = "Rating 'over sampling' = '{rating:s}' with scale [{scale:s}]".format(rating=score_median, scale=(', '.join("'" + item + "'" for item in scale_median)) )
+	tmp2 = "Relative sample size = {pct:.4g}% (high is good; median SNPs to sample from in 'few matches' is {median:.6g} compared to {total:d} N_sample_sets)".format(pct=pct_median_few_matches, median=median_n_matches, total=N_sample_sets)
+	write_str_score_median = '\n'.join([tmp1, tmp2])
+
+	print "################# Score ###############"
+	print write_str_score_N
+	print write_str_score_median
+	print "######################################"
+
+	with open(user_snps_few_matches_report, 'w') as f:
+		f.write(write_str_score_N+'\n')
+		f.write(write_str_score_median+'\n')
+
+	# Write few_matches
+	df_snps_few_matches.to_csv(user_snps_few_matches_file, sep='\t', index=True, header=True, index_label='snpID', mode='w') 
+
+	
+
+
+
 def query_similar_snps(file_db, path_output, df, N_sample_sets, max_freq_deviation, max_distance_deviation, max_genes_count_deviation):
 	np.random.seed(1) # Always set seed to be able to reproduce result. np.choice is dependent on seed()
 	n_attempts = 5 # use this variable to adjust balance between speed (n_attempts low) and getting best matches (n_attempts high)
 	
-	user_snps_few_matches_file = path_output+"/snps_few_matches.tab"
-	#snps_few_matches = {}
 	df_snps_few_matches = None
 
-	user_snps_matrix_file = path_output+"/matrix.out"
+	user_snps_matrix_file = path_output+"/snps_matrix.tab"
 	if os.path.exists(user_snps_matrix_file): # removing any existing file. REASON: we are appending to matrix_file
 		os.remove(user_snps_matrix_file)
 	f_matrix_out = open(user_snps_matrix_file,'a')
@@ -262,6 +345,7 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, max_freq_deviati
 			print "*** Found SNP with too few matches; n_matches=%s. Using sampling with replacement to get enough samples ***" % len(match_ID)
 			
 			if df_snps_few_matches is None: # if true, create DataFrame with correct ordering of columns
+				pd.set_option('mode.chained_assignment',None) # OBS: avoids SettingWithCopy exception when doing: row_query['n_matches'] = len(match_ID)
 				cols = np.append(df.columns.values, 'n_matches')
 				df_snps_few_matches= pd.DataFrame(columns=cols) #df.columns is a Index object
 			row_query = df.ix[i]
@@ -287,13 +371,15 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, max_freq_deviati
 	f_matrix_out.close()
 	store.close()
 
-	### Writing out few_matches (if any)
-	if df_snps_few_matches is not None:
-		df_snps_few_matches.to_csv(user_snps_few_matches_file, sep='\t', index=True, header=True, index_label='snpID', mode='w') 
+	### Calculate score and write few_matches (if any)
+	if df_snps_few_matches is not None: 
+		#CALL FUNCTION
+		N_snps = len(idx_input_snps)
+		few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps)
 
 def write_set_file(path_output, df_collection):
 	user_snps_set_file = path_output+"/set_file.tab"
-	matrix_file = path_output+"/matrix.out" #TODO OBS: FIX THIS. the file name should be parsed to the function
+	matrix_file = path_output+"/snps_matrix.tab" #TODO OBS: FIX THIS. the file name should be parsed to the function
 	#TODO: check 'integrity' of df_matrix before reading?
 	# TWO DIFFERENT VERSIONS. None of them set the index explicitly, but rely either on header or pandas naming columns [0,1,2,...] where 0 is giving to the index
 	
