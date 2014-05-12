@@ -3,13 +3,10 @@
 import sys
 import glob
 import os
-from datetime import datetime
 import time
-import subprocess 
 
 from queue import QueueJob,ShellUtils,ArgparseAdditionalUtils
 import pdb
-import argparse
 
 
 script = "/home/projects/tp/childrens/snpsnap/git/parse_matched_SNPs.py" # Updated path
@@ -18,18 +15,20 @@ current_script_name = os.path.basename(__file__)
 
 
 # Submit
-def submit(path, stat_gene_density_path):
-	#prefix = os.path.abspath(path+"/ldlists/freq")
+def submit():
+	files = glob.glob(path_snplist+'/*.txt')
 	jobs = []
-	for i in range(0,50,1): # 0...49. allways 50 freq bins. No problem here.
-		user_snps_file = "PLACE HOLDER"
-		output_dir = "PLACE HOLDER"
+	for (counter, filename) in enumerate(files, start=1):
+		pheno = os.path.splitext(os.path.basename(filename))[0]
+		print "processing file #%d/#%d: %s" % (counter, len(files), pheno)
+		user_snps_file = filename # full path
+		output_dir = path_output_main +
 		N_sample_sets = "PLACE HOLDER"
 		command = "{program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type ld --distance_cutoff 0.5 match --N_sample_sets {N} --max_freq_deviation {freq} --max_distance_deviation {dist} --max_genes_count_deviation {gene_cound}".format()
 
 		run = run_parse(snplist_prefix, outfilename)
 		if run:
-			jobs.append( QueueJob(command, log_dir_path, queue_name, walltime, mem_per_job , flags, "run_parse_matched_SNPs_"+suffix, script_name=current_script_name) )
+			jobs.append( QueueJob(command, log_dir_path, queue_name, walltime, mem_per_job , flags, logname="wrapper_"+pheno, script_name=current_script_name) )
 		# if not os.path.exists(outfilename):
 		# 		jobs.append( QueueJob(command, log_dir_path, queue_name, walltime, mem_per_job , flags, "run_parse_matched_SNPs_"+suffix, script_name=current_script_name) )
 		# elif sum(1 for line in open(outfilename)) == 0: # Files are emtpy
@@ -47,9 +46,15 @@ mem_per_job="10gb"
 flags = "sharedmem"
 
 
-path = os.path.abspath(args.plink_matched_snps_path) # Trailing slash are removed/corrected - NICE!
+## Constants
+path_snplist = "/home/projects/tp/childrens/snpsnap/data/gwas/gwascatalog_140201_listsBIGbim"
+#path_snplist = "/home/projects/tp/childrens/snpsnap/data/gwas/gwascatalog_140201_lists"
+
+path_output_main = "/home/projects/tp/childrens/snpsnap/data/query/gwascatalog"
+
 log_dir_path = path + "/log" #PASCAL: PROBLEM fixed with extra slash
 ShellUtils.mkdirs(log_dir_path)
+
 
 ### Make sure that the genotype prefix is correct ###
 if True:
@@ -61,7 +66,7 @@ if True:
 	print "Ok let's start..."
 
 
-submit(path, stat_gene_density_path)
+submit(path_snplist)
 
 
 
