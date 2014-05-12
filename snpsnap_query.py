@@ -30,10 +30,15 @@ import pdb
 # test data, 10 samples, annotate
 #./snpsnap_query.py --user_snps_file /Users/pascaltimshel/git/snpsnap/samples/sample_10randSNPs.list --output_dir /Users/pascaltimshel/snpsnap/data/query --distance_type ld --distance_cutoff 0.5 annotate
 
+########### OBS ############
+# Hardcoded paths: path_data, e.g. os.path.abspath("/Users/pascaltimshel/snpsnap/data/step3")
 
+############################
 
 ## TODO:
 # setup login module
+
+
 
 # def locate_HDF5_data(path, prefix):
 # 	#TODO: this function should be directed to a path containing ALL the HDF5 files
@@ -505,6 +510,7 @@ def main():
 
 	### CONSTANTS ###
 	#path_data = "/Users/pascaltimshel/snpsnap/data/step3/tmp" ## HARD CODED PATH!!
+	#path_data = os.path.abspath("/Users/pascaltimshel/snpsnap/data/step3") ## HARD CODED PATH!!
 	path_data = os.path.abspath("/Users/pascaltimshel/snpsnap/data/step3") ## HARD CODED PATH!!
 	prefix = args.distance_type + args.distance_cutoff
 	path_output = os.path.abspath(args.output_dir)
