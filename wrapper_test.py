@@ -6,18 +6,21 @@ import os
 import time
 
 #import subprocess
-import launch_subprocess
+from launch_subprocess import LaunchSubprocess,HelperUtils
+
+import logging
+logger = logging.getLogger() # This includes the submodule (launch_subprocess) logger too
+#logger.setLevel(logging.ERROR)
+#logger.disabled = True
+#handler = logging.StreamHandler()
+#handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(name)s: BLABLABLASSD %(message)s'))
+#logger.addHandler(handler)
+
 
 import pdb
 
 
-## Make loggin module shut up
-# import submodule
-# log = logging.getLogger() # This includes the submodule logger too
-# log.setLevel(logging.WARNING)
-# handler = logging.StreamHandler()
-# handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(name)s: %(message)s'))
-# log.addHandler(handler)
+
 
 
 # # Submit
@@ -65,7 +68,7 @@ def submit():
 		command_shell = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type ld --distance_cutoff 0.5 match --N_sample_sets {N} --max_freq_deviation {freq} --max_distance_deviation {dist} --max_genes_count_deviation {gene_count}".format(program=script, snplist=filename, outputdir=output_dir, N=1000, freq=5, dist=20, gene_count=20)
 		#command_seq = "--user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type ld --distance_cutoff 0.5 match --N_sample_sets {N} --max_freq_deviation {freq} --max_distance_deviation {dist} --max_genes_count_deviation {gene_count}".format(snplist=filename, outputdir=output_dir, N=1000, freq=5, dist=20, gene_count=20)
 		print command_shell
-		processes.append( LaunchProcess(logdir=log_dir_path, logname=pheno, script_name=current_script_name) )
+		processes.append( LaunchSubprocess(cmd=command_shell, logdir=log_dir_path, log_root=current_script_name, tag=pheno) ) #file_output=pheno,
 		time.sleep(1)
 	for p in processes:
 		p.run_Log()
@@ -74,7 +77,7 @@ def submit():
 
 ################ Constants ############
 script = "/home/unix/ptimshel/git/snpsnap/snpsnap_query.py" # Updated path
-current_script_name = os.path.basename(__file__)
+current_script_name = os.path.basename(__file__).replace('.py','')
 
 
 path_snplist = "/cvar/jhlab/snpsnap/data/input_lists/gwascatalog_140201_listsBIGbim"
@@ -85,9 +88,13 @@ path_snplist = "/cvar/jhlab/snpsnap/data/input_lists/gwascatalog_140201_listsBIG
 path_output_main = "/cvar/jhlab/snpsnap/data/query/gwascatalog"
 
 log_dir_path = path_output_main + "/log"
-mkdirs(log_dir_path)
+HelperUtils.mkdirs(log_dir_path)
 
 processes = submit()
+
+for p in processes:
+	p.check_fhandles()
+
 
 ## TODO: implement argparse
 # logdir
