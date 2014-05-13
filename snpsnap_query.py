@@ -17,7 +17,7 @@ import time
 #import timeit
 #import cProfile #or profile
 import memory_profiler
-import profilehooks
+#import profilehooks
 
 import pdb
 
@@ -289,7 +289,7 @@ def few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps):
 		f.write(write_str_score_N+'\n')
 		f.write(write_str_score_median+'\n')
 		f.write(write_str_score_table+'\n')
-		
+
 
 	# Write few_matches
 	df_snps_few_matches.to_csv(user_snps_few_matches_file, sep='\t', index=True, header=True, index_label='snpID', mode='w') 

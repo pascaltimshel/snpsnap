@@ -23,18 +23,41 @@ def mkdirs(file_path):
 
 # Submit
 def submit():
-	files = glob.glob(path_snplist+'/*.txt')[0:2] #REMOVE LATER
+	files = glob.glob(path_snplist+'/*.txt')[0:5] #REMOVE LATER
 	jobs = []
+	filehandles = []
 	for (counter, filename) in enumerate(files, start=1):
 		pheno = os.path.splitext(os.path.basename(filename))[0]
 		print "processing file #%d/#%d: %s" % (counter, len(files), pheno)
 		user_snps_file = filename # full path
 		output_dir = path_output_main+"/"+pheno 
-		command = "{program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type ld --distance_cutoff 0.5 match --N_sample_sets {N} --max_freq_deviation {freq} --max_distance_deviation {dist} --max_genes_count_deviation {gene_count}".format(program=script, snplist=filename, outputdir=output_dir, N=1000, freq=5, dist=20, gene_count=20)
-		print command
-		p=subprocess.Popen(command, stdin=subprocess.PIPE,stdout=subprocess.PIPE)
+		command_shell = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type ld --distance_cutoff 0.5 match --N_sample_sets {N} --max_freq_deviation {freq} --max_distance_deviation {dist} --max_genes_count_deviation {gene_count}".format(program=script, snplist=filename, outputdir=output_dir, N=1000, freq=5, dist=20, gene_count=20)
+		#command_seq = "--user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type ld --distance_cutoff 0.5 match --N_sample_sets {N} --max_freq_deviation {freq} --max_distance_deviation {dist} --max_genes_count_deviation {gene_count}".format(snplist=filename, outputdir=output_dir, N=1000, freq=5, dist=20, gene_count=20)
+		print command_shell
+		f_out = open(current_script_name+'_'+pheno+'.out', 'w')
+		f_err = open(current_script_name+'_'+pheno+'.err', 'w')
+		filehandles.append( (f_out, f_err) )
+		#f_log = open(current_script_name+'.log', 'w')
+		p=subprocess.Popen(command_shell, stdout=f_out,stderr=f_err, shell=True)
+		#p.communicate()
+		print "done with pheno %s" % pheno
+		#time.sleep(2)
+
+
+		#p=subprocess.Popen(command_shell, stdout=subprocess.PIPE,stderr=subprocess.PIPE, shell=True)
+		#p=subprocess.Popen([script, command_seq], stdin=subprocess.PIPE,stdout=subprocess.PIPE)
 		jobs.append(p)
-	return jobs
+		#stdout = p.stdout.read()
+		#stderr = p.stderr.read()
+		#print "1HERE IS STDOUT: " + str(stdout)
+		#print "2HERE IS STDERR: " + str(stderr)
+	#return jobs
+	return (jobs, filehandles)
+
+def check_fhandles(filehandles):
+	for f in filehandles:
+		print "f_out closed: %s" % f[0].closed
+		print "f_err closed: %s" % f[1].closed
 
 
 def display_pids(jobs):
@@ -42,11 +65,30 @@ def display_pids(jobs):
 	for p in jobs:
 		print p.pid
 
+def process_wait(jobs):
+	print "waiting for all jobs"
+	for (n, p) in enumerate(jobs, start=1):
+		print "#%d/#%d: waiting for PID %s" % ( n, len(jobs), p.pid )
+		p.wait()
+
+def process_communicate(jobs):
+	print "communicating with all jobs"
+	for (n, p) in enumerate(jobs, start=1):
+		print "#%d/#%d: communicating with PID %s" % ( n, len(jobs), p.pid )
+		(stdout, stderr) = p.communicate()
+		print "HERE IS STDOUT: " + str(stdout)
+		print "HERE IS STDERR: " + str(stderr)
+
 def listen_to_jobs(jobs):
-	pass
+	#pass
 	#exit_codes = [p.wait() for p in p1, p2] #p.communicate() #now wait
-	#for p in jobs:
-		#(stdout, stderr) = p.communicate()
+	for p in jobs:
+		print "Listen to PID %s" % p.pid
+		#pdb.set_trace()
+		(stdout, stderr) = p.communicate()
+		print "HERE IS STDOUT: " + str(stdout)
+		print "HERE IS STDERR: " + str(stderr)
+
 
 ################ Constants ############
 script = "/home/unix/ptimshel/git/snpsnap/snpsnap_query.py" # Updated path
@@ -77,7 +119,16 @@ mkdirs(log_dir_path)
 # 	print "Ok let's start..."
 
 
-submit()
+#jobs = submit()
+(jobs, filehandles) = submit()
+check_fhandles(filehandles)
+display_pids(jobs)
+#process_wait(jobs)
+process_communicate(jobs)
+check_fhandles(filehandles)
+#listen_to_jobs(jobs)
+
+
 
 
 
