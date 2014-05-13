@@ -265,22 +265,31 @@ def few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps):
 	# 																											total=N_sample_sets)
 	
 
-	tmp1 = "Rating 'number of few matches' = '{rating:s}' with scale [{scale:s}]".format(rating=score_N, scale=(', '.join("'" + item + "'" for item in scale_N)) )
-	tmp2 = "Percent 'few matches' = {pct:.4g}% ({count:d} 'few matches' out of {total:d} valid input SNPs)".format(pct=pct_N_few_matches, count=len(df_snps_few_matches), total=N_snps)
+	tmp1 = "# Rating 'number of few matches' = '{rating:s}' with scale [{scale:s}]".format(rating=score_N, scale=(', '.join("'" + item + "'" for item in scale_N)) )
+	tmp2 = "# Percent 'few matches' = {pct:.4g}% ({count:d} 'few matches' out of {total:d} valid input SNPs)".format(pct=pct_N_few_matches, count=len(df_snps_few_matches), total=N_snps)
 	write_str_score_N = '\n'.join([tmp1, tmp2])
 
-	tmp1 = "Rating 'over sampling' = '{rating:s}' with scale [{scale:s}]".format(rating=score_median, scale=(', '.join("'" + item + "'" for item in scale_median)) )
-	tmp2 = "Relative sample size = {pct:.4g}% (high is good; median SNPs to sample from in 'few matches' is {median:.6g} compared to {total:d} N_sample_sets)".format(pct=pct_median_few_matches, median=median_n_matches, total=N_sample_sets)
+	tmp1 = "# Rating 'over sampling' = '{rating:s}' with scale [{scale:s}]".format(rating=score_median, scale=(', '.join("'" + item + "'" for item in scale_median)) )
+	tmp2 = "# Relative sample size = {pct:.4g}% (high is good; median SNPs to sample from in 'few matches' is {median:.6g} compared to {total:d} N_sample_sets)".format(pct=pct_median_few_matches, median=median_n_matches, total=N_sample_sets)
 	write_str_score_median = '\n'.join([tmp1, tmp2])
 
+	tmp1 = "# {0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}".format("rating_few_matches", "pct_few_matches", "N_few_matches", "N_input_snps", 
+															"rating_over_sampling", "pct_over_sampling", "median_sample_size", "N_sample_sets")
+	#tmp1 = "# rating_few_matches\tpct_few_matches\tN_few_matches\tN_input_snps\trating_over_sampling\tpct_over_sampling\tmedian_sample_size\tN_sample_sets"
+	tmp2 = "{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}".format(score_N, pct_N_few_matches, len(df_snps_few_matches), N_snps,
+															score_median, pct_median_few_matches, median_n_matches, N_sample_sets)
+	write_str_score_table = '\n'.join([tmp1, tmp2])
 	print "################# Score ###############"
 	print write_str_score_N
 	print write_str_score_median
+	print write_str_score_table
 	print "######################################"
 
 	with open(user_snps_few_matches_report, 'w') as f:
 		f.write(write_str_score_N+'\n')
 		f.write(write_str_score_median+'\n')
+		f.write(write_str_score_table+'\n')
+		
 
 	# Write few_matches
 	df_snps_few_matches.to_csv(user_snps_few_matches_file, sep='\t', index=True, header=True, index_label='snpID', mode='w') 
