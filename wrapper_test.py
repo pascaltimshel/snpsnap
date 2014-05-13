@@ -9,9 +9,12 @@ import time
 from launch_subprocess import LaunchSubprocess,HelperUtils
 
 import logging
-logger = logging.getLogger() # This includes the submodule (launch_subprocess) logger too
+#current_script_name = os.path.basename(__file__).replace('.py','')
+#logging.getLogger('').addHandler(logging.NullHandler())
+#logger = logging.getLogger() # This includes the submodule (launch_subprocess) logger too
 #logger.setLevel(logging.ERROR)
 #logger.disabled = True
+
 #handler = logging.StreamHandler()
 #handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(name)s: BLABLABLASSD %(message)s'))
 #logger.addHandler(handler)
@@ -65,10 +68,10 @@ def submit():
 		print "processing file #%d/#%d: %s" % (counter, len(files), pheno)
 		user_snps_file = filename # full path
 		output_dir = path_output_main+"/"+pheno 
-		command_shell = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type ld --distance_cutoff 0.5 match --N_sample_sets {N} --max_freq_deviation {freq} --max_distance_deviation {dist} --max_genes_count_deviation {gene_count}".format(program=script, snplist=filename, outputdir=output_dir, N=1000, freq=5, dist=20, gene_count=20)
+		command_shell = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type ld --distance_cutoff 0.5 match --N_sample_sets {N} --max_freq_deviation {freq} --max_distance_deviation {dist} --max_genes_count_deviation {gene_count}".format(program=script2call, snplist=filename, outputdir=output_dir, N=1000, freq=5, dist=20, gene_count=20)
 		#command_seq = "--user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type ld --distance_cutoff 0.5 match --N_sample_sets {N} --max_freq_deviation {freq} --max_distance_deviation {dist} --max_genes_count_deviation {gene_count}".format(snplist=filename, outputdir=output_dir, N=1000, freq=5, dist=20, gene_count=20)
 		print command_shell
-		processes.append( LaunchSubprocess(cmd=command_shell, logdir=log_dir_path, log_root=current_script_name, tag=pheno) ) #file_output=pheno,
+		processes.append( LaunchSubprocess(cmd=command_shell, logdir=log_dir_path, log_root=current_script_name, file_output=pheno, tag=pheno) ) #
 		time.sleep(1)
 	for p in processes:
 		p.run_Log()
@@ -76,7 +79,8 @@ def submit():
 
 
 ################ Constants ############
-script = "/home/unix/ptimshel/git/snpsnap/snpsnap_query.py" # Updated path
+script2call = "/home/unix/ptimshel/git/snpsnap/snpsnap_query.py" # Updated path
+
 current_script_name = os.path.basename(__file__).replace('.py','')
 
 
@@ -93,8 +97,14 @@ HelperUtils.mkdirs(log_dir_path)
 processes = submit()
 
 for p in processes:
-	p.check_fhandles()
+	p.fhandle_check()
+	p.get_pid()
 
+for p in processes:
+	p.process_communicate()
+	p.process_check_returncode()
+	p.fhandle_close()
+	p.fhandle_check()
 
 ## TODO: implement argparse
 # logdir
