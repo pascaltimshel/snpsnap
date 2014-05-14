@@ -6,8 +6,9 @@ import os
 import time
 
 #import subprocess
-from launch_subprocess import LaunchSubprocess,HelperUtils
+from plaunch import LaunchSubprocess,HelperUtils
 
+import re
 import logging
 #current_script_name = os.path.basename(__file__).replace('.py','')
 #logging.getLogger('').addHandler(logging.NullHandler())
@@ -66,6 +67,7 @@ def submit():
 	files.sort()
 	processes = []
 	for (counter, filename) in enumerate(files, start=1):
+		filename = re.sub(r'[()]', '', filename) #### OBS: changing file names!
 		pheno = os.path.splitext(os.path.basename(filename))[0]
 		print "processing file #%d/#%d: %s" % (counter, len(files), pheno)
 		user_snps_file = filename # full path
@@ -95,9 +97,9 @@ path_snplist = "/cvar/jhlab/snpsnap/data/input_lists/gwascatalog_140201_listsBIG
 #path_output_main = "/home/projects/tp/childrens/snpsnap/data/query/gwascatalog"
 path_output_main = "/cvar/jhlab/snpsnap/data/query/gwascatalog"
 
-path_output_sub = path_output_main + "/output"
+path_output_sub = path_output_main + "/output_subprocess"
 HelperUtils.mkdirs(path_output_sub)
-log_dir_path = path_output_main + "/log"
+log_dir_path = path_output_main + "/log_subprocess"
 HelperUtils.mkdirs(log_dir_path)
 
 processes = submit()

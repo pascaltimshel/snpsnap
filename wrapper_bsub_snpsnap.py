@@ -6,8 +6,9 @@ import os
 import time
 
 #import subprocess
-from launch_subprocess import LaunchBsub,LaunchSubprocess,HelperUtils
+from plaunch import LaunchBsub, LaunchSubprocess, HelperUtils
 
+import re
 import logging
 #current_script_name = os.path.basename(__file__).replace('.py','')
 #logging.getLogger('').addHandler(logging.NullHandler())
@@ -31,35 +32,28 @@ def submit():
 	files.sort()
 	processes = []
 	for (counter, filename) in enumerate(files, start=1):
+		filename = re.sub(r'[()]', '', filename) #### OBS: changing file names!
 		pheno = os.path.splitext(os.path.basename(filename))[0]
 		print "processing file #%d/#%d: %s" % (counter, len(files), pheno)
 		user_snps_file = filename # full path
 		output_dir = path_output_sub+"/"+pheno
 		HelperUtils.mkdirs(output_dir)
+		#TODO: consider the potential problems with 'use' environment
 		command_shell = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type ld --distance_cutoff 0.5 match --N_sample_sets {N} --max_freq_deviation {freq} --max_distance_deviation {dist} --max_genes_count_deviation {gene_count}".format(program=script2call, snplist=filename, outputdir=output_dir, N=1000, freq=5, dist=20, gene_count=20)
-		#command_seq = "--user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type ld --distance_cutoff 0.5 match --N_sample_sets {N} --max_freq_deviation {freq} --max_distance_deviation {dist} --max_genes_count_deviation {gene_count}".format(snplist=filename, outputdir=output_dir, N=1000, freq=5, dist=20, gene_count=20)
-		#print command_shell
-		processes.append( LaunchSubprocess(cmd=command_shell, logdir=log_dir_path, log_root=current_script_name, file_output=pheno+'.txt', tag=pheno) ) #
-		#time.sleep(1)
-
-		# run = run_parse(snplist_prefix, outfilename)
-		# if run:
-		# 	jobs.append( QueueJob(command, log_dir_path, queue_name, walltime, mem_per_job , flags, logname="wrapper_"+pheno, script_name=current_script_name) )
-		
-
+		processes.append( LaunchBsub(cmd=command_shell, queue_name=queue_name, walltime=walltime, mem=mem, jobname=pheno, projectname='snpsnp', logdir=log_dir_path, log_root=current_script_name, file_output=pheno+'.txt', no_output=False, email=email) ) #
+		#cmd, queue_name, walltime, mem, jobname='NoJobName', logdir=os.getcwd(), log_root='unknown_root_name', file_output= __name__+'.tmp.out', no_output=False, email=False
 	for p in processes:
-		#p.run_Log() # writes stdout and stdout to "file_output" file
-		p.run_Pipe()
+		sys.exit(0)
+		p.run()
 	return processes
 
 
 ################ Constants ############
-#queue_name = "urgent" #@TODO Change queue to idle if Pascal should run it
-queue_name = "cbs" #@TODO Change queue to idle if Pascal should run it
-walltime="86400" # 60*60*24=1 day
-#mem_per_job="1gb" #tunes default
-mem_per_job="10gb"
-flags = "sharedmem"
+#queue_name = "hour" # [bhour, bweek] priority
+queue_name = "priority" # [bhour, bweek] priority
+walltime="1" # hours
+mem="1"
+email='pascal.timshel@gmail.com'
 
 script2call = "/home/unix/ptimshel/git/snpsnap/snpsnap_query.py" # Updated path
 
@@ -76,25 +70,9 @@ HelperUtils.mkdirs(log_dir_path)
 
 processes = submit()
 
-# run_Pipe() method calls
+print "PRINTING IDs"
 for p in processes:
-	p.get_pid()
-
-with open(path_output_main+'/gwastable.tab', 'w') as f: 
-	for p in processes:
-		lines = p.process_communicate_and_read_pipe_lines()
-		for (i, line) in enumerate(lines):
-			#print line
-			if "# rating_few_matches" in line:
-				row = "{}\t{}".format(p.tag, lines[i+1]) # next line
-				print row
-				f.write(row+"\n")
-
-
-for p in processes:
-	p.process_check_returncode()
-
-
+	print p.id
 
 
 ## TODO: implement argparse
