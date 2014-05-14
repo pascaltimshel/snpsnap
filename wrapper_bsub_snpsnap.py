@@ -6,7 +6,7 @@ import os
 import time
 
 #import subprocess
-from launch_subprocess import LaunchSubprocess,HelperUtils
+from launch_subprocess import LaunchBsub,LaunchSubprocess,HelperUtils
 
 import logging
 #current_script_name = os.path.basename(__file__).replace('.py','')
@@ -41,7 +41,7 @@ def submit():
 		#print command_shell
 		processes.append( LaunchSubprocess(cmd=command_shell, logdir=log_dir_path, log_root=current_script_name, file_output=pheno+'.txt', tag=pheno) ) #
 		#time.sleep(1)
-		
+
 		# run = run_parse(snplist_prefix, outfilename)
 		# if run:
 		# 	jobs.append( QueueJob(command, log_dir_path, queue_name, walltime, mem_per_job , flags, logname="wrapper_"+pheno, script_name=current_script_name) )
