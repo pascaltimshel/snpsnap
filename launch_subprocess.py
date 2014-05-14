@@ -99,7 +99,7 @@ class LaunchSubprocess(object):
     #LP_time_stamp = datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H.%M.%S') # date/time string e.g. 2012-12-15_01:21:05
 	#LP_logname = 'LP_' + script_name + '_' + LP.LP_time_stamp + '.txt'
 	
-	def __init__(self, cmd, logdir, log_root='unknown_root_name', file_output=os.path.join(os.getcwd(), __name__+'.tmp.log'), tag='NoTag'):
+	def __init__(self, cmd, logdir=os.getcwd(), log_root='unknown_root_name', file_output= __name__+'.tmp.log', tag='NoTag'): #file_output=os.path.join(os.getcwd(), __name__+'.tmp.log'
 		#self.logger = Logger(self.__class__.__name__).get()
 		self.tag = tag
 		self.cmd = cmd
@@ -110,50 +110,76 @@ class LaunchSubprocess(object):
 		#self.script_name = script_name
 
 	def run_Log(self):
+		#TODO: consider moving the argument file_output= __name__+'.tmp.log' FROM __init__ TO here
 		path_output = os.path.join(self.logdir, self.file_output)
 		self.fh_output = open(path_output, 'w')
 		self.process=subprocess.Popen(self.cmd, stdout=self.fh_output, stderr=subprocess.STDOUT, shell=True)
 
 
-	def run_Pipe():
+	def run_Pipe(self):
 		self.process=subprocess.Popen(self.cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell=True)
+
+
+	def run(self):
+		self.process=subprocess.Popen(self.cmd, stdout=None, stderr=None, shell=True)
 
 	#def write_pipe_to_file(self):
 	#	path_output = os.path.join(self.logdir, self.file_output)
+	# for line in p.stdout.readlines():
+	#     print line
+
+	def fhandle_pipe(self):
+		""" Method only for run_Pipe(). Returns file object that provides output from the child process. """
+		self.logger.info( "[PID:%s|Tag:%s]\tparsed STDOUT filehandle" % ( self.process.pid, self.tag ) )
+		return self.process.stdout
 
 
 	def fhandle_check(self):
 		if self.fh_output:
-			self.logger.info( "[PID %s, Tag %s] filehandle is closed: %s" % ( self.process.pid, self.tag, self.fh_output.closed ) )
+			self.logger.info( "[PID:%s|Tag:%s]\tfilehandle is closed: %s" % ( self.process.pid, self.tag, self.fh_output.closed ) )
 		else:
-			self.logger.warning( "[PID %s, Tag %s] filehandle does not exists" % ( self.process.pid, self.tag ) )
+			self.logger.warning( "[PID:%s|Tag:%s]\tfilehandle does not exists" % ( self.process.pid, self.tag ) )
 
 	def fhandle_close(self):
 		#TODO: only if fh exists
-		self.logger.info( "[PID %s, Tag %s] closing filehandle" % ( self.process.pid, self.tag ) )
+		self.logger.info( "[PID:%s|Tag:%s]\tclosing filehandle" % ( self.process.pid, self.tag ) )
 		self.fh_output.close()
 
 	def get_pid(self):
 		return self.process.pid
 
 	def process_wait(self):
-		self.logger.info( "[PID %s, Tag %s] waiting for process" % ( self.process.pid, self.tag ) )
+		self.logger.info( "[PID:%s|Tag:%s]\twaiting for process to finish" % ( self.process.pid, self.tag ) )
 		self.process.wait()
 
-	def process_communicate(self):
-		self.logger.info( "[PID %s, Tag %s] communicating with process" % ( self.process.pid, self.tag ) )
+	def process_communicate_and_read_pipe_lines(self):
+		""" Method only for run_Pipe(). Returns list of lines from output of the child process. """
+		self.logger.info( "[PID:%s|Tag:%s]\tcommunicating with process. Then reading lines..." % ( self.process.pid, self.tag ) )
 		(stdout, stderr) = self.process.communicate()
-		self.logger.info( "[PID %s, Tag %s] STDOUT\n%s" % ( self.process.pid, self.tag, str(stdout) ) )
-		self.logger.info( "[PID %s, Tag %s] STDERR\n%s" % ( self.process.pid, self.tag, str(stderr) ) )
+		if stderr is not None:
+			self.logger.warning( "[PID:%s|Tag:%s]\tSTDERR is not empty (None). Not saving STDERR: %s" % ( self.process.pid, self.tag, stderr ) )
+		stdout_lines = stdout.splitlines() # consider keepends=[True]
+		self.logger.info( "[PID:%s|Tag:%s]\tRead %d lines..." % ( self.process.pid, self.tag, len(stdout_lines) ) )
+		# Returns list of lines WITHOUT NEWLINES
+		return stdout_lines
 
+	def process_communicate(self):
+		#Note The data read is buffered in memory, so do not use this method if the data size is large or unlimited.
+		self.logger.info( "[PID:%s|Tag:%s]\tcommunicating with process" % ( self.process.pid, self.tag ) )
+		(stdout, stderr) = self.process.communicate()
+		self.logger.debug( "[PID:%s|Tag:%s]\tSTDOUT\n%s" % ( self.process.pid, self.tag, stdout ) )
+		self.logger.debug( "[PID:%s|Tag:%s]\tSTDERR\n%s" % ( self.process.pid, self.tag, stderr ) )
+		#print stdout
+		#print stderr
+		return (stdout, stderr)
 
 	def process_check_returncode(self):
 		""" This function must be called after [wait, communicate or poll] """
 		code = self.process.returncode
 		if code != 0:
-			self.logger.error("[PID %s, Tag %s] returned non-zero returncode-code: %s" % ( self.process.pid, self.tag, code) )
+			self.logger.error("[PID:%s|Tag:%s]\treturned non-zero returncode-code: %s" % ( self.process.pid, self.tag, code) )
 		else:
-			self.logger.info("[PID %s, Tag %s] returncode-code OK: %s" % ( self.process.pid, self.tag, code) )
+			self.logger.info("[PID:%s|Tag:%s]\treturncode-code OK: %s" % ( self.process.pid, self.tag, code) )
 		return code
 
 

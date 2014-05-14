@@ -518,9 +518,8 @@ def main():
 	args = ParseArguments()
 
 	### CONSTANTS ###
-	#path_data = "/Users/pascaltimshel/snpsnap/data/step3/tmp" ## HARD CODED PATH!!
-	#path_data = os.path.abspath("/Users/pascaltimshel/snpsnap/data/step3") ## HARD CODED PATH!!
-	path_data = os.path.abspath("/Users/pascaltimshel/snpsnap/data/step3") ## HARD CODED PATH!!
+	#path_data = os.path.abspath("/Users/pascaltimshel/snpsnap/data/step3") ## OSX - HARD CODED PATH!!
+	path_data = os.path.abspath("/cvar/jhlab/snpsnap/data/step3/ld0.5") ## BROAD - HARD CODED PATH!!
 	prefix = args.distance_type + args.distance_cutoff
 	path_output = os.path.abspath(args.output_dir)
 
