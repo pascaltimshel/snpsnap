@@ -61,15 +61,15 @@ import pdb
 
 # Submit
 def submit():
-	#files = glob.glob(path_snplist+'/*.txt')[0:2] 
-	#files = ['/cvar/jhlab/snpsnap/data/input_lists/samples/sample_10randSNPs.list']
-	files = ['/home/unix/ptimshel/git/snpsnap/samples/sample_10randSNPs_fewmatches.list']
+	files = glob.glob(path_snplist+'/*.txt') #[0:2], OBS: folder also contains "not_mapped.log"
+	#files = ['/home/unix/ptimshel/git/snpsnap/samples/sample_10randSNPs_fewmatches.list']
+	files.sort()
 	processes = []
 	for (counter, filename) in enumerate(files, start=1):
 		pheno = os.path.splitext(os.path.basename(filename))[0]
 		print "processing file #%d/#%d: %s" % (counter, len(files), pheno)
 		user_snps_file = filename # full path
-		output_dir = path_output_main+"/"+pheno
+		output_dir = path_output_sub+"/"+pheno
 		HelperUtils.mkdirs(output_dir)
 		command_shell = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type ld --distance_cutoff 0.5 match --N_sample_sets {N} --max_freq_deviation {freq} --max_distance_deviation {dist} --max_genes_count_deviation {gene_count}".format(program=script2call, snplist=filename, outputdir=output_dir, N=1000, freq=5, dist=20, gene_count=20)
 		#command_seq = "--user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type ld --distance_cutoff 0.5 match --N_sample_sets {N} --max_freq_deviation {freq} --max_distance_deviation {dist} --max_genes_count_deviation {gene_count}".format(snplist=filename, outputdir=output_dir, N=1000, freq=5, dist=20, gene_count=20)
@@ -95,6 +95,8 @@ path_snplist = "/cvar/jhlab/snpsnap/data/input_lists/gwascatalog_140201_listsBIG
 #path_output_main = "/home/projects/tp/childrens/snpsnap/data/query/gwascatalog"
 path_output_main = "/cvar/jhlab/snpsnap/data/query/gwascatalog"
 
+path_output_sub = path_output_main + "/output"
+HelperUtils.mkdirs(path_output_sub)
 log_dir_path = path_output_main + "/log"
 HelperUtils.mkdirs(log_dir_path)
 
@@ -108,10 +110,10 @@ with open(path_output_main+'/gwastable.tab', 'w') as f:
 	for p in processes:
 		lines = p.process_communicate_and_read_pipe_lines()
 		for (i, line) in enumerate(lines):
-			#pdb.set_trace()
-			print line
+			#print line
 			if "# rating_few_matches" in line:
-				row = "{}\t{}".format(p.tag, line[i+1]) # next line
+				row = "{}\t{}".format(p.tag, lines[i+1]) # next line
+				print row
 				f.write(row+"\n")
 
 
