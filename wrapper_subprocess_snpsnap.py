@@ -76,7 +76,7 @@ def submit():
 		command_shell = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type ld --distance_cutoff 0.5 match --N_sample_sets {N} --max_freq_deviation {freq} --max_distance_deviation {dist} --max_genes_count_deviation {gene_count}".format(program=script2call, snplist=filename, outputdir=output_dir, N=1000, freq=5, dist=20, gene_count=20)
 		#command_seq = "--user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type ld --distance_cutoff 0.5 match --N_sample_sets {N} --max_freq_deviation {freq} --max_distance_deviation {dist} --max_genes_count_deviation {gene_count}".format(snplist=filename, outputdir=output_dir, N=1000, freq=5, dist=20, gene_count=20)
 		#print command_shell
-		processes.append( LaunchSubprocess(cmd=command_shell, logdir=log_dir_path, log_root=current_script_name, file_output=pheno+'.txt', tag=pheno) ) #
+		processes.append( LaunchSubprocess(cmd=command_shell, logdir=log_dir_path, log_root=current_script_name, file_output=pheno+'.txt', jobname=pheno) ) #
 		#time.sleep(1)
 	for p in processes:
 		#p.run_Log() # writes stdout and stdout to "file_output" file
@@ -97,9 +97,9 @@ path_snplist = "/cvar/jhlab/snpsnap/data/input_lists/gwascatalog_140201_listsBIG
 #path_output_main = "/home/projects/tp/childrens/snpsnap/data/query/gwascatalog"
 path_output_main = "/cvar/jhlab/snpsnap/data/query/gwascatalog"
 
-path_output_sub = path_output_main + "/output_subprocess"
+path_output_sub = path_output_main + "/subprocess_output"
 HelperUtils.mkdirs(path_output_sub)
-log_dir_path = path_output_main + "/log_subprocess"
+log_dir_path = path_output_main + "/subprocess_log"
 HelperUtils.mkdirs(log_dir_path)
 
 processes = submit()
@@ -108,13 +108,13 @@ processes = submit()
 for p in processes:
 	p.get_pid()
 
-with open(path_output_main+'/gwastable.tab', 'w') as f: 
+with open(path_output_main+'/subprocess_gwastable.tab', 'w') as f: 
 	for p in processes:
 		lines = p.process_communicate_and_read_pipe_lines()
 		for (i, line) in enumerate(lines):
 			#print line
 			if "# rating_few_matches" in line:
-				row = "{}\t{}".format(p.tag, lines[i+1]) # next line
+				row = "{}\t{}".format(p.jobname, lines[i+1]) # next line
 				print row
 				f.write(row+"\n")
 
