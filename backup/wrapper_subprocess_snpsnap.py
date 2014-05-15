@@ -5,9 +5,8 @@ import glob
 import os
 import time
 
-from pplaunch import LaunchBsub, LaunchSubprocess
-from pphelper import HelperUtils
-from pplogger import Logger
+#import subprocess
+from plaunch import LaunchSubprocess,HelperUtils
 
 import re
 import logging
@@ -77,11 +76,10 @@ def submit():
 		command_shell = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type ld --distance_cutoff 0.5 match --N_sample_sets {N} --max_freq_deviation {freq} --max_distance_deviation {dist} --max_genes_count_deviation {gene_count}".format(program=script2call, snplist=filename, outputdir=output_dir, N=10000, freq=2, dist=5, gene_count=5)
 		#command_seq = "--user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type ld --distance_cutoff 0.5 match --N_sample_sets {N} --max_freq_deviation {freq} --max_distance_deviation {dist} --max_genes_count_deviation {gene_count}".format(snplist=filename, outputdir=output_dir, N=1000, freq=5, dist=20, gene_count=20)
 		#print command_shell
-		processes.append( LaunchSubprocess(cmd=command_shell, path_stdout=path_stdout, logger=logger, jobname=pheno) ) #
+		processes.append( LaunchSubprocess(cmd=command_shell, logdir=log_dir_path, log_root=current_script_name, file_output=pheno+'.txt', jobname=pheno) ) #
 		#time.sleep(1)
-		#p.run_Log(file_output=pheno+'.txt') # writes stdout and stdout to "file_output" file in PATH path_stdout. NO WAITING since output goes to file
-
 	for p in processes:
+		#p.run_Log() # writes stdout and stdout to "file_output" file
 		p.run_Pipe()
 	return processes
 
@@ -101,14 +99,8 @@ path_output_main = "/cvar/jhlab/snpsnap/data/query/gwascatalog"
 
 path_output_sub = path_output_main + "/subprocess_output"
 HelperUtils.mkdirs(path_output_sub)
-path_stdout = path_output_main + "/subprocess_stdout"
-HelperUtils.mkdirs(path_stdout)
-
-## Setup-logger
-logger = Logger(__name__, path_stdout).get()
-#logger.setLevel(logging.WARNING)
-logger.setLevel(logging.INFO)
-
+log_dir_path = path_output_main + "/subprocess_log"
+HelperUtils.mkdirs(log_dir_path)
 
 processes = submit()
 

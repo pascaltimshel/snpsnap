@@ -5,10 +5,7 @@ import glob
 import os
 import time
 
-#from plaunch import LaunchBsub, LaunchSubprocess, HelperUtils
-from pplaunch import LaunchBsub, LaunchSubprocess
-from pphelper import HelperUtils
-from pplogger import Logger
+from plaunch import LaunchBsub, LaunchSubprocess, HelperUtils
 
 import re
 import subprocess
@@ -35,6 +32,13 @@ def submit():
 	files.sort()
 	processes = []
 	for (counter, filename) in enumerate(files, start=1):
+		# tmp_before = os.path.splitext(os.path.basename(filename))[0]
+		# tmp_after = re.sub(r'[()]', '', tmp_before) #### OBS: changing file names!
+		# tmp_before_red = tmp_before.replace('(', '\(').replace(')', '\)')
+		# if "(" in tmp_before:
+		# 	print "mv {}.txt {}.txt".format(tmp_before_red, tmp_after)
+		# continue
+		#filename = re.sub(r'[()]', '', filename) #### OBS: changing file names!
 		pheno = os.path.splitext(os.path.basename(filename))[0]
 		print "processing file #%d/#%d: %s" % (counter, len(files), pheno)
 		user_snps_file = filename # full path
@@ -42,23 +46,10 @@ def submit():
 		HelperUtils.mkdirs(output_dir)
 		#TODO: consider the potential problems with 'use' environment
 		command_shell = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type ld --distance_cutoff 0.5 match --N_sample_sets {N} --max_freq_deviation {freq} --max_distance_deviation {dist} --max_genes_count_deviation {gene_count}".format(program=script2call, snplist=filename, outputdir=output_dir, N=1000, freq=5, dist=20, gene_count=20)
-		processes.append( LaunchBsub(cmd=command_shell, queue_name=queue_name, walltime=walltime, mem=mem, jobname=pheno, projectname='snpsnp', path_stdout=path_stdout, file_output=pheno+'.txt', no_output=False, email=email, logger=logger) ) #
+		processes.append( LaunchBsub(cmd=command_shell, queue_name=queue_name, walltime=walltime, mem=mem, jobname=pheno, projectname='snpsnp', logdir=log_dir_path, log_root=current_script_name, file_output=pheno+'.txt', no_output=False, email=email) ) #
 	for p in processes:
 		p.run()
 	return processes
-
-def check_jobs(processes, logger):
-	logger.info("PRINTING IDs")
-	list_of_pids = []
-	for p in processes:
-		logger.info(p.id)
-		list_of_pids.append(p.id)
-
-	logger.info( " ".join(list_of_pids) )
-	LaunchBsub.report_status(list_of_pids, logger)
-
-	logger.info( "############ %s IS DONE ###############" % current_script_name)
-
 
 
 ################ Constants ############
@@ -78,16 +69,22 @@ path_output_main = "/cvar/jhlab/snpsnap/data/query/gwascatalog"
 
 path_output_sub = path_output_main + "/output"
 HelperUtils.mkdirs(path_output_sub)
-path_stdout = path_output_main + "/stdout"
-HelperUtils.mkdirs(path_stdout)
+log_dir_path = path_output_main + "/log"
+HelperUtils.mkdirs(log_dir_path)
 
-## Setup-logger
-logger = Logger(__name__, path_stdout).get()
-#logger.setLevel(logging.WARNING)
-logger.setLevel(logging.INFO)
-
-
-# NOW RUN FUNCTIONS
 processes = submit()
-check_jobs(processes, logger)
+
+print "PRINTING IDs"
+list_of_pids = []
+for p in processes:
+	print p.id
+	list_of_pids.append(p.id)
+
+print " ".join(list_of_pids)
+LaunchBsub.report_status(list_of_pids)
+
+
+print "############ %s IS DONE ###############" % current_script_name
+
+
 
