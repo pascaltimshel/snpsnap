@@ -242,7 +242,11 @@ def few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps):
 
 	pct_N_few_matches = ( len(df_snps_few_matches)/float(N_snps) )*100
 
-	median_n_matches = df_snps_few_matches.ix[:,'n_matches'].median()
+	if len(df_snps_few_matches) == 0: # NO few_matches found
+		median_n_matches = N_snps
+	else:
+		median_n_matches = df_snps_few_matches.ix[:,'n_matches'].median()
+
 	pct_median_few_matches = ( median_n_matches/float(N_sample_sets) )*100
 	
 	scale_N = ['very good', 'good', 'ok', 'poor', 'very poor']
@@ -266,7 +270,7 @@ def few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps):
 	
 
 	tmp1 = "# Rating 'number of few matches' = '{rating:s}' with scale [{scale:s}]".format(rating=score_N, scale=(', '.join("'" + item + "'" for item in scale_N)) )
-	tmp2 = "# Percent 'few matches' = {pct:.4g}% ({count:d} 'few matches' out of {total:d} valid input SNPs)".format(pct=pct_N_few_matches, count=len(df_snps_few_matches), total=N_snps)
+	tmp2 = "# Percent 'few matches' = {pct:.4g}% (low is good; {count:d} 'few matches' out of {total:d} valid input SNPs)".format(pct=pct_N_few_matches, count=len(df_snps_few_matches), total=N_snps)
 	write_str_score_N = '\n'.join([tmp1, tmp2])
 
 	tmp1 = "# Rating 'over sampling' = '{rating:s}' with scale [{scale:s}]".format(rating=score_median, scale=(', '.join("'" + item + "'" for item in scale_median)) )
@@ -313,6 +317,7 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, max_freq_deviati
 	store = pd.HDFStore(file_db, 'r')
 
 	idx_input_snps = range(len(df.index)) # REMEMBER: both python and pandas are zero-based
+	N_snps = len(idx_input_snps)
 	for i in idx_input_snps:
 		query_snpID = df.index[i]
 		freq = df.ix[i,'freq_bin']
@@ -354,14 +359,20 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, max_freq_deviati
 		    	match_ID_old = np.array([]) # empty array. This line ensures that len(match_ID_old) is always valid
 		        break
 
-		print "SNP #%d/%d: ID {%s}: found %d hits" % (i+1, len(idx_input_snps), query_snpID, len(match_ID))
+		print "SNP #%d/%d: ID {%s}: found %d hits" % (i+1, N_snps, query_snpID, len(match_ID))
+		
+		# Unfortunately, we cannot create the 'df_snps_few_matches' DataFrame before we know the columns in df
+		if df_snps_few_matches is None: # if true, create DataFrame with correct ordering of columns
+			pd.set_option('mode.chained_assignment',None) # OBS: avoids SettingWithCopy exception when doing: row_query['n_matches'] = len(match_ID)
+			cols = np.append(df.columns.values, 'n_matches')
+			df_snps_few_matches= pd.DataFrame(columns=cols) #df.columns is a Index object
+
 		if len(match_ID) < N_sample_sets:
 			print "*** Found SNP with too few matches; n_matches=%s. Using sampling with replacement to get enough samples ***" % len(match_ID)
-			
-			if df_snps_few_matches is None: # if true, create DataFrame with correct ordering of columns
-				pd.set_option('mode.chained_assignment',None) # OBS: avoids SettingWithCopy exception when doing: row_query['n_matches'] = len(match_ID)
-				cols = np.append(df.columns.values, 'n_matches')
-				df_snps_few_matches= pd.DataFrame(columns=cols) #df.columns is a Index object
+			# if df_snps_few_matches is None: # if true, create DataFrame with correct ordering of columns
+			# 	pd.set_option('mode.chained_assignment',None) # OBS: avoids SettingWithCopy exception when doing: row_query['n_matches'] = len(match_ID)
+			# 	cols = np.append(df.columns.values, 'n_matches')
+			# 	df_snps_few_matches= pd.DataFrame(columns=cols) #df.columns is a Index object
 			row_query = df.ix[i]
 			row_query['n_matches'] = len(match_ID)
 			df_snps_few_matches = df_snps_few_matches.append(row_query) # select row (df.ix[i]) --> gives Series object
@@ -384,12 +395,13 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, max_freq_deviati
 		#f_matrix_out.write("\n")
 	f_matrix_out.close()
 	store.close()
+	
+	#CALL REPORT FUNCTION
+	few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps)
 
 	### Calculate score and write few_matches (if any)
-	if df_snps_few_matches is not None: 
-		#CALL FUNCTION
-		N_snps = len(idx_input_snps)
-		few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps)
+	#if df_snps_few_matches is not None: 
+		# few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps)
 
 def write_set_file(path_output, df_collection):
 	user_snps_set_file = path_output+"/set_file.tab"

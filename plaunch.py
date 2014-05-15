@@ -12,6 +12,8 @@ import re
 import subprocess
 import logging
 
+import copy
+
 import pdb
 
 
@@ -131,7 +133,7 @@ class LaunchBsub(object):
 				if match: 
 					self.id = match.group(1) # or .groups()[0]
 				else:
-					pdb.set_trace()
+					self.id = 'fail_in_regex'
 					self.logger.error( "ATTEMPT #%d/%d| could not recieve JOBID matching regex" % (self.attempts, max_calls) )
 				self.logger.info( "ATTEMPT #%d/%d| JOB SUCCESFULLY SUBMITTED!" % (self.attempts, max_calls) )
 				self.logger.info( "ATTEMPT #%d/%d| JOBID IS %s" % (self.attempts, max_calls, self.id) )
@@ -153,6 +155,88 @@ class LaunchBsub(object):
 		#     QJ_err_log.write( 'JOB FAIL #%d   Last error message is\n' % LaunchBsub.LB_job_fails )
 		#     QJ_err_log.write( '%s \n\n' % emsg )
 
+	@staticmethod
+	def _report_bacct(pid, jobname):
+		keep = ''
+		call = "bacct -l %s" % pid
+		try:
+			out = subprocess.check_output(call, shell=True)
+		except subprocess.CalledProcessError as e:
+			emsg = e
+			print "call: %s\nerror in report_bacct: %s" % (call, emsg)
+		else:
+		# Accounting information about this job:
+		#      CPU_T     WAIT     TURNAROUND   STATUS     HOG_FACTOR    MEM    SWAP
+		#      35.24       31             80     done         0.4404    99M    483M
+			lines = out.splitlines()
+			#print "called: %s" % call
+			#print "got out:\n%s" % out
+			for (i, line) in enumerate(lines):
+				line = line.strip()
+				if 'Accounting information about this job:' in line:
+					header = lines[i+1].split()
+					values = lines[i+2].split()
+					#NB: len(header) must be equal to len(values) for zip() to work?
+					combined = map("=".join, zip(header, values)) #List_C = ['{} {}'.format(x,y) for x,y in zip(List_A,List_B)]
+					keep = "|".join(combined)
+					break
+			#cols = keep.split()
+		keep = "{pid}|{name}|{status_line}".format(pid=pid, name=jobname, status_line=keep)
+		return keep
+
+
+	@staticmethod
+	def report_status(pids): #LB_List_Of_Instances
+		sleep_time = 10 # seconds
+		incomplete = copy.deepcopy(pids)
+		finished = []
+		failed = []
+		#**TODO: make sure that pids and incomplete is UNIQUE
+		#TODO: make sure that len(finished) NEVER becomes larger than len(pids)
+		counter = 0
+		start_time = time.time()
+		while len(finished) < len(pids):
+			counter += 1
+			elapsed_time = time.time() - start_time
+			print "Checking status: #{:d} | Run time = {:.5g} s ({:.3g} min)".format( counter, elapsed_time, elapsed_time/float(60) )
+			lines = ['']
+			call = "bjobs -aw {jobs}".format( jobs=" ".join(incomplete) ) #consider bjobs -aw
+			try:
+				out = subprocess.check_output(call, shell=True)
+			except subprocess.CalledProcessError as e:
+				emsg = e
+				print "call: %s\nerror in report_status: %s" % (call, emsg)
+			else:
+				lines = out.splitlines()[1:] #skipping header
+				#print "called: %s" % call
+				#print "got out:\n%s" % out
+			for line in lines:
+				cols = line.strip().split()
+				(tmp_pid, tmp_status, tmp_jobname) = (cols[0], cols[2], cols[6])
+				#[RUN,EXIT,DONE,PENDING?]
+				if tmp_status == 'EXIT':
+					print "{pid}|{name}: jobstatus = EXIT".format(pid=tmp_pid, name=tmp_jobname)
+					report_line = LaunchBsub._report_bacct(tmp_pid, tmp_jobname)
+					incomplete.remove(tmp_pid)
+					failed.append(report_line)
+					finished.append(report_line)
+				elif tmp_status == 'DONE':
+					print "{pid}|{name}: jobstatus = DONE".format(pid=tmp_pid, name=tmp_jobname)
+					report_line = LaunchBsub._report_bacct(tmp_pid, tmp_jobname)
+					incomplete.remove(tmp_pid)
+					finished.append(report_line)
+
+			#consider sleeping for some time
+			time.sleep(sleep_time)
+		# All jobs are NOW somehow finished
+		print "########### FINISHED JOBS ##############"
+		for job in finished:
+			print job
+		print "########### FAILED JOBS ##############"
+		for job in failed:
+			print job
+
+
 
 	def check_status(self):
 		""" Function to check status of jobs """
@@ -161,6 +245,56 @@ class LaunchBsub(object):
 	def get_runtime(self):
 		""" Function to retrive runtime of completed job and print it nicely formatted """
 		pass
+
+
+		# ptimshel@copper:~/git/snpsnap> bjobs -aw
+		# JOBID   USER    STAT  QUEUE      FROM_HOST   EXEC_HOST   JOB_NAME   SUBMIT_TIME
+		# 6728139 ptimshel RUN   interactive copper      node1382    /bin/bash  May 14 15:29
+		# 6769527 ptimshel EXIT  bhour      copper      node1695    Hypertension May 14 21:47
+		# 6769508 ptimshel EXIT  bhour      copper      node1698    Fasting_glucose-related_traits_interaction_with_BMI May 14 21:47
+		# 6769555 ptimshel EXIT  bhour      copper      node1005    Menopause_age_at_onset May 14 21:47
+		# 6769571 ptimshel EXIT  bhour      copper      node1337    Myopia_pathological May 14 21:47
+		# 6769466 ptimshel EXIT  bhour      copper      node1359    Bone_mineral_density_spine May 14 21:47
+		# 6769553 ptimshel EXIT  bhour      copper      node1006    Menarche_age_at_onset May 14 21:47
+		# 6769539 ptimshel EXIT  bhour      copper      node1403    Liver_enzyme_levels_gamma-glutamyl_transferase May 14 21:47
+		# 6769581 ptimshel EXIT  bhour      copper      node1407    Phospholipid_levels_plasma May 14 21:47
+		# 6769512 ptimshel DONE  bhour      copper      node1719    Graves_disease May 14 21:47
+		# 6769525 ptimshel DONE  bhour      copper      node1370    Hematological_and_biochemical_traits May 14 21:47
+		# 6769505 ptimshel DONE  bhour      copper      node1355    F-cell_distribution May 14 21:47
+		# 6769586 ptimshel DONE  bhour      copper      node1372    Primary_biliary_cirrhosis May 14 21:47
+
+		# long gone...
+		#6754631 6754629
+		#6754630 done
+
+		#6769626 6769629 6769631 6769636
+
+		# Accounting information about this job:
+		#      CPU_T     WAIT     TURNAROUND   STATUS     HOG_FACTOR    MEM    SWAP
+		#      35.24       31             80     done         0.4404    99M    483M
+
+
+		# Wed May 14 19:38:20: Dispatched to <node1370>;
+		# Wed May 14 19:39:23: Completed <exit>; TERM_RUNLIMIT: job killed after reaching
+		#                       LSF run time limit.
+
+		# Accounting information about this job:
+		#      CPU_T     WAIT     TURNAROUND   STATUS     HOG_FACTOR    MEM    SWAP
+		#      43.94       30             93     exit         0.4724    90M    478M
+		# ------------------------------------------------------------------------------
+
+		# SUMMARY:      ( time unit: second )
+		#  Total number of done jobs:       0      Total number of exited jobs:     1
+		#  Total CPU time consumed:      43.9      Average CPU time consumed:    43.9
+		#  Maximum CPU time of a job:    43.9      Minimum CPU time of a job:    43.9
+		#  Total wait time in queues:    30.0
+		#  Average wait time in queue:   30.0
+		#  Maximum wait time in queue:   30.0      Minimum wait time in queue:   30.0
+		#  Average turnaround time:        93 (seconds/job)
+		#  Maximum turnaround time:        93      Minimum turnaround time:        93
+		#  Average hog factor of a job:  0.47 ( cpu time / turnaround time )
+		#  Maximum hog factor of a job:  0.47      Minimum hog factor of a job:  0.47
+
 
 
 
