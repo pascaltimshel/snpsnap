@@ -187,7 +187,7 @@ class LaunchBsub(object):
 
 	@staticmethod
 	def report_status(pids): #LB_List_Of_Instances
-		sleep_time = 10 # seconds
+		sleep_time = 15 # seconds
 		incomplete = copy.deepcopy(pids)
 		finished = []
 		failed = []

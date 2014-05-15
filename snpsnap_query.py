@@ -243,7 +243,7 @@ def few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps):
 	pct_N_few_matches = ( len(df_snps_few_matches)/float(N_snps) )*100
 
 	if len(df_snps_few_matches) == 0: # NO few_matches found
-		median_n_matches = N_snps
+		median_n_matches = N_sample_sets
 	else:
 		median_n_matches = df_snps_few_matches.ix[:,'n_matches'].median()
 
