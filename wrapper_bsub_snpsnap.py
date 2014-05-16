@@ -30,21 +30,22 @@ import pdb
 
 # Submit
 def submit():
-	files = glob.glob(path_snplist+'/*.txt') #[0:2] #OBS: folder also contains "not_mapped.log"
+	files = glob.glob(path_snplist+'/*.txt')[0:10] #OBS: folder also contains "not_mapped.log"
 	#files = ['/home/unix/ptimshel/git/snpsnap/samples/sample_10randSNPs_fewmatches.list']
 	files.sort()
 	processes = []
 	for (counter, filename) in enumerate(files, start=1):
 		pheno = os.path.splitext(os.path.basename(filename))[0]
-		print "processing file #%d/#%d: %s" % (counter, len(files), pheno)
+		logger.info( "processing file #%d/#%d: %s" % (counter, len(files), pheno) )
 		user_snps_file = filename # full path
 		output_dir = path_output_sub+"/"+pheno
 		HelperUtils.mkdirs(output_dir)
 		#TODO: consider the potential problems with 'use' environment
-		command_shell = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type ld --distance_cutoff 0.5 match --N_sample_sets {N} --max_freq_deviation {freq} --max_distance_deviation {dist} --max_genes_count_deviation {gene_count}".format(program=script2call, snplist=filename, outputdir=output_dir, N=1000, freq=5, dist=20, gene_count=20)
+		command_shell = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type ld --distance_cutoff 0.5 match --N_sample_sets {N} --max_freq_deviation {freq} --max_distance_deviation {dist} --max_genes_count_deviation {gene_count}".format(program=script2call, snplist=filename, outputdir=output_dir, N=10000, freq=1, dist=5, gene_count=5)
 		processes.append( LaunchBsub(cmd=command_shell, queue_name=queue_name, walltime=walltime, mem=mem, jobname=pheno, projectname='snpsnp', path_stdout=path_stdout, file_output=pheno+'.txt', no_output=False, email=email, logger=logger) ) #
 	for p in processes:
 		p.run()
+		time.sleep(5)
 	return processes
 
 def check_jobs(processes, logger):
@@ -55,7 +56,8 @@ def check_jobs(processes, logger):
 		list_of_pids.append(p.id)
 
 	logger.info( " ".join(list_of_pids) )
-	LaunchBsub.report_status(list_of_pids, logger)
+	#LaunchBsub.report_status(list_of_pids, logger)
+	LaunchBsub.report_status_multiprocess(list_of_pids, logger)
 
 	logger.info( "############ %s IS DONE ###############" % current_script_name)
 
@@ -64,7 +66,7 @@ def check_jobs(processes, logger):
 ################ Constants ############
 queue_name = "hour" # [bhour, bweek] priority
 #queue_name = "priority" # [bhour, bweek] priority
-walltime="30" # hh:mmm, e.g. [24:00=1day | 10:00=10hrs | 120=2hrs | 1:0=1hrs
+walltime="59" # hh:mmm, e.g. [24:00=1day | 10:00=10hrs | 120=2hrs | 1:0=1hrs
 mem="1" # gb
 #email='pascal.timshel@gmail.com'
 email=False
@@ -82,7 +84,8 @@ path_stdout = path_output_main + "/stdout"
 HelperUtils.mkdirs(path_stdout)
 
 ## Setup-logger
-logger = Logger(__name__, path_stdout).get()
+#logger = Logger(__name__, path_stdout).get() # gives __name__ == main
+logger = Logger(current_script_name, path_stdout).get()
 #logger.setLevel(logging.WARNING)
 logger.setLevel(logging.INFO)
 

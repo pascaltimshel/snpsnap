@@ -11,6 +11,7 @@ import re
 
 import subprocess
 import logging
+import multiprocessing
 
 from pplogger import Logger
 from pphelper import HelperUtils
@@ -18,6 +19,30 @@ from pphelper import HelperUtils
 import copy
 
 import pdb
+
+
+def report_bacct(pid, jobname):
+	keep = ''
+	call = "bacct -l %s" % pid
+	try:
+		out = subprocess.check_output(call, shell=True)
+	except subprocess.CalledProcessError as e:
+		emsg = e
+		print "%s" %e
+	else:
+		lines = out.splitlines()
+		for (i, line) in enumerate(lines):
+			line = line.strip()
+			if 'Accounting information about this job:' in line:
+				header = lines[i+1].split()
+				values = lines[i+2].split()
+				combined = map("=".join, zip(header, values)) #List_C = ['{} {}'.format(x,y) for x,y in zip(List_A,List_B)]
+				keep = "|".join(combined)
+				break
+	keep = "{pid}|{name}|{status_line}".format(pid=pid, name=jobname, status_line=keep)
+	return keep
+
+
 
 
 class LaunchBsub(object):
@@ -116,6 +141,7 @@ class LaunchBsub(object):
 		#     QJ_err_log.write( 'JOB FAIL #%d   Last error message is\n' % LaunchBsub.LB_job_fails )
 		#     QJ_err_log.write( '%s \n\n' % emsg )
 
+
 	@staticmethod
 	def _report_bacct(pid, jobname, logger):
 		keep = ''
@@ -177,20 +203,29 @@ class LaunchBsub(object):
 				(tmp_pid, tmp_status, tmp_jobname) = (cols[0], cols[2], cols[6])
 				#[RUN,EXIT,DONE,PENDING?]
 				if tmp_status == 'EXIT':
-					#logger.info( "{pid}|{name}: jobstatus = EXIT".format(pid=tmp_pid, name=tmp_jobname) )
+					logger.info( "{pid}|{name}: jobstatus = EXIT. Waiting for _report_bacct...".format(pid=tmp_pid, name=tmp_jobname) )
+					t1 = time.time()
 					report_line = LaunchBsub._report_bacct(tmp_pid, tmp_jobname, logger)
+					elapsed_time = time.time() - t1
+					logger.info( "_report_bacct runtime: %s s (%s min)" % ( elapsed_time, elapsed_time/float(60) ) )
 					incomplete.remove(tmp_pid)
 					failed.append(report_line)
 					finished.append(report_line)
 				elif tmp_status == 'DONE':
-					#logger.info( "{pid}|{name}: jobstatus = DONE".format(pid=tmp_pid, name=tmp_jobname, logger) )
+					logger.info( "{pid}|{name}: jobstatus = DONE. Waiting for _report_bacct...".format(pid=tmp_pid, name=tmp_jobname) )
+					t1 = time.time()
 					report_line = LaunchBsub._report_bacct(tmp_pid, tmp_jobname, logger)
+					elapsed_time = time.time() - t1
+					logger.info( "_report_bacct runtime: %s s (%s min)" % ( elapsed_time, elapsed_time/float(60) ) )
 					incomplete.remove(tmp_pid)
 					finished.append(report_line)
 
 			#consider sleeping for some time
 			time.sleep(sleep_time)
 		# All jobs are NOW somehow finished
+		elapsed_time = time.time() - start_time
+		logger.info( "Checking status: #{:d} | Run time = {:.5g} s ({:.3g} min)".format( counter, elapsed_time, elapsed_time/float(60) ) )
+		logger.info( "Checking status: #{:d} | Finished={:d}, Incomplete={:d}, Total={:d} [Fails={:d}]".format( counter, len(finished), len(incomplete), len(pids), len(failed) ) )
 		logger.critical("########### FINISHED JOBS ##############")
 		for job in finished:
 			logger.critical(job)
@@ -199,6 +234,93 @@ class LaunchBsub(object):
 			logger.critical(job)
 
 
+
+	@staticmethod
+	def report_status_multiprocess(pids, logger): #LB_List_Of_Instances
+		sleep_time = 5 # seconds
+		incomplete = copy.deepcopy(pids)
+		finished = []
+		failed = []
+		done = []
+		#**TODO: make sure that pids and incomplete is UNIQUE
+		#TODO: make sure that len(finished) NEVER becomes larger than len(pids)
+		counter = 0
+		start_time = time.time()
+		while len(finished) < len(pids):
+			counter += 1
+			elapsed_time = time.time() - start_time
+			logger.info( "Checking status: #{:d} | Run time = {:.5g} s ({:.3g} min)".format( counter, elapsed_time, elapsed_time/float(60) ) )
+			logger.info( "Checking status: #{:d} | Finished={:d}, Incomplete={:d}, Total={:d} [Fails={:d}]".format( counter, len(finished), len(incomplete), len(pids), len(failed) ) )
+			lines = ['']
+			call = "bjobs -aw {jobs}".format( jobs=" ".join(incomplete) ) #consider bjobs -aw
+			try:
+				out = subprocess.check_output(call, shell=True)
+			except subprocess.CalledProcessError as e:
+				emsg = e
+				logger.error( "call: %s\nerror in report_status: %s" % (call, emsg) )
+			else:
+				lines = out.splitlines()[1:] #skipping header
+				#logger.info( "called: %s" % call )
+				#logger.info( "got out:\n%s" % out )
+			pids2check = []
+			for line in lines:
+				cols = line.strip().split()
+				(tmp_pid, tmp_status, tmp_jobname) = (cols[0], cols[2], cols[6])
+				#[RUN,EXIT,DONE,PENDING?]
+				#batch_size = 10
+				if tmp_status == 'EXIT':
+					logger.info( "{pid}|{name}: jobstatus = EXIT".format(pid=tmp_pid, name=tmp_jobname) )
+					#report_line = LaunchBsub._report_bacct(tmp_pid, tmp_jobname, logger)
+					pids2check.append( (tmp_pid, tmp_jobname, logger) ) # append 3 element tuple
+					incomplete.remove(tmp_pid)
+					report_line = '{pid}|{name}'.format(pid=tmp_pid, name=tmp_jobname)
+					failed.append(report_line)
+					#finished.append(report_line)
+				elif tmp_status == 'DONE':
+					logger.info( "{pid}|{name}: jobstatus = DONE".format(pid=tmp_pid, name=tmp_jobname) )
+					#report_line = LaunchBsub._report_bacct(tmp_pid, tmp_jobname, logger)
+					pids2check.append( (tmp_pid, tmp_jobname, logger) ) # append 3 element tuple
+					incomplete.remove(tmp_pid)
+					report_line = '{pid}|{name}'.format(pid=tmp_pid, name=tmp_jobname)
+					done.append(report_line)
+					#finished.append(report_line)
+			logger.info( "Got %d pids2check." % len(pids2check) )
+			if pids2check:
+				n_processes = len(pids2check)
+				t1 = time.time()
+				pool = multiprocessing.Pool(n_processes)
+				elapsed_time = time.time() - t1
+				logger.info( "Making multiprocessing pool. Time to load pool: %s s (%s min)" % ( elapsed_time, elapsed_time/float(60) ) )
+				t1 = time.time()
+				for i in range(n_processes):
+					#apply_async(func[, args[, kwds[, callback]]])
+					(tmp_pid, tmp_jobname, logger) = pids2check[i]
+					#pdb.set_trace()
+					#logger.info( "i is %d" % ( i ) )
+					pool.apply_async(report_bacct, args=(tmp_pid, tmp_jobname), callback=finished.append)
+				pool.close()
+				pool.join()
+				elapsed_time = time.time() - t1
+				logger.info( "Time to run join() pool: %s s (%s min)" % ( elapsed_time, elapsed_time/float(60) ) )
+
+			#consider sleeping for some time
+			time.sleep(sleep_time)
+		# All jobs are NOW somehow finished
+		elapsed_time = time.time() - start_time
+		logger.info( "Checking status: #{:d} | Run time = {:.5g} s ({:.3g} min)".format( counter, elapsed_time, elapsed_time/float(60) ) )
+		logger.info( "Checking status: #{:d} | Finished={:d}, Incomplete={:d}, Total={:d} [Fails={:d}]".format( counter, len(finished), len(incomplete), len(pids), len(failed) ) )
+		logger.critical("########### ALL JOBS ##############")
+		for job in finished:
+			logger.critical(job)
+		logger.critical("########### DONE JOBS ##############")
+		for job in done:
+			logger.critical(job)
+		logger.critical("########### FAILED JOBS ##############")
+		for job in failed:
+			logger.critical(job)
+
+
+#6840302 6840303 6840304 6840306 6840307 6840309 6840310 6840312 6840313 6840315
 
 	def check_status(self):
 		""" Function to check status of jobs """
