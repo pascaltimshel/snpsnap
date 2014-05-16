@@ -48,21 +48,24 @@ def report_bacct(pid, jobname):
 class LaunchBsub(object):
 	LB_job_counter = 0
 	LB_job_fails = 0
-	def __init__(self, cmd, queue_name, walltime, mem, jobname='NoJobName', projectname='NoProjectName', path_stdout=os.getcwd(), file_output= __name__+'.tmp.out', no_output=False, email=False, logger=False): #file_output=os.path.join(os.getcwd(), __name__+'.tmp.log'
+	def __init__(self, cmd, queue_name, walltime, mem, jobname='NoJobName', projectname='NoProjectName', path_stdout=os.getcwd(), file_output=None, no_output=False, email=False, logger=False): #file_output=os.path.join(os.getcwd(), __name__+'.tmp.log'
 		LaunchBsub.LB_job_counter += 1 # Counter the number of jobs
+		self.job_number = LaunchBsub.LB_job_counter
+		
 		self.path_stdout = HelperUtils.check_if_writable(path_stdout)
 		if logger: #TODO: check that logger is of class Logger?
 			self.logger = logger
-		else: # create new logger
-			self.logger = Logger(self.__class__.__name__, path_stdout).get() #*** find out why .get() is necessary
+		else: # create new logger, with name e.g. LauchBsub_NoLoggerParsed_2014-05-15_23.08.59.log
+			self.logger = Logger(self.__class__.__name__+"_NoLoggerParsed", path_stdout).get() #*** find out why .get() is necessary
 		
 		#OBS: updating variable
 		if no_output:
 			self.file_output = '/dev/null'
+		elif file_output is None:
+			self.file_output = "bsub_outfile_ID{job_number}.{ext}".format(job_number=job_number, ext='out')
 		else:
 			self.file_output = os.path.join(self.path_stdout, file_output)
 
-		self.job_number = LaunchBsub.LB_job_counter
 		self.jobname = jobname
 		self.projectname = projectname
 		self.status = ""
@@ -75,6 +78,7 @@ class LaunchBsub(object):
 		#TODO self.p_cpu ## n (e.g. 2 or 1-4)
 		#TODO self.p_n_span
 		#TODO -N --> If you use both -o and -N, the output is stored in the output file and the job report is sent by mail.
+		#TODO: overwrite output files with -oo ?
 
 		self.cmd = cmd
 		if email:
@@ -178,6 +182,7 @@ class LaunchBsub(object):
 		incomplete = copy.deepcopy(pids)
 		finished = []
 		failed = []
+		done = []
 		#**TODO: make sure that pids and incomplete is UNIQUE
 		#TODO: make sure that len(finished) NEVER becomes larger than len(pids)
 		counter = 0
@@ -209,8 +214,8 @@ class LaunchBsub(object):
 					elapsed_time = time.time() - t1
 					logger.info( "_report_bacct runtime: %s s (%s min)" % ( elapsed_time, elapsed_time/float(60) ) )
 					incomplete.remove(tmp_pid)
-					failed.append(report_line)
 					finished.append(report_line)
+					failed.append(report_line)
 				elif tmp_status == 'DONE':
 					logger.info( "{pid}|{name}: jobstatus = DONE. Waiting for _report_bacct...".format(pid=tmp_pid, name=tmp_jobname) )
 					t1 = time.time()
@@ -219,29 +224,38 @@ class LaunchBsub(object):
 					logger.info( "_report_bacct runtime: %s s (%s min)" % ( elapsed_time, elapsed_time/float(60) ) )
 					incomplete.remove(tmp_pid)
 					finished.append(report_line)
+					done.append(report_line)
+
 
 			#consider sleeping for some time
 			time.sleep(sleep_time)
 		# All jobs are NOW somehow finished
 		elapsed_time = time.time() - start_time
 		logger.info( "Checking status: #{:d} | Run time = {:.5g} s ({:.3g} min)".format( counter, elapsed_time, elapsed_time/float(60) ) )
-		logger.info( "Checking status: #{:d} | Finished={:d}, Incomplete={:d}, Total={:d} [Fails={:d}]".format( counter, len(finished), len(incomplete), len(pids), len(failed) ) )
-		logger.critical("########### FINISHED JOBS ##############")
+		logger.info( "LAST Checking status DONE: #{:d} | Run time = {:.5g} s ({:.3g} min)".format( counter, elapsed_time, elapsed_time/float(60) ) )
+		logger.info( "LAST Checking status DONE: #{:d} | Finished={:d}, Incomplete={:d}, Total={:d} [Fails={:d}]".format( counter, len(finished), len(incomplete), len(pids), len(failed) ) )
+		logger.info( "########### ALL JOBS - %d ##############" % len(finished) )
 		for job in finished:
-			logger.critical(job)
-		logger.critical("########### FAILED JOBS ##############")
-		for job in failed:
-			logger.critical(job)
-
+			logger.info(job)
+		logger.info( "########### SUCESSFUL DONE JOBS - %d ##############" % len(done) )
+		if done:
+			for job in done: logger.critical(job)
+		else:
+			logger.critical("No jobs to list")
+		logger.critical( "########### FAILED JOBS - %d ##############" % len(failed) )
+		if failed:
+			for job in failed: logger.critical(job)
+		else:
+			logger.critical("No jobs to list")
 
 
 	@staticmethod
 	def report_status_multiprocess(pids, logger): #LB_List_Of_Instances
-		sleep_time = 5 # seconds
+		sleep_time = 20 # seconds
 		incomplete = copy.deepcopy(pids)
-		finished = []
-		failed = []
-		done = []
+		finished = [] # all jobs that are not runninng or pending - jobs that are either "exit" or "done"
+		failed = [] # exit status
+		done = [] # done status
 		#**TODO: make sure that pids and incomplete is UNIQUE
 		#TODO: make sure that len(finished) NEVER becomes larger than len(pids)
 		counter = 0
@@ -307,17 +321,21 @@ class LaunchBsub(object):
 			time.sleep(sleep_time)
 		# All jobs are NOW somehow finished
 		elapsed_time = time.time() - start_time
-		logger.info( "Checking status: #{:d} | Run time = {:.5g} s ({:.3g} min)".format( counter, elapsed_time, elapsed_time/float(60) ) )
-		logger.info( "Checking status: #{:d} | Finished={:d}, Incomplete={:d}, Total={:d} [Fails={:d}]".format( counter, len(finished), len(incomplete), len(pids), len(failed) ) )
-		logger.critical("########### ALL JOBS ##############")
+		logger.info( "LAST Checking status DONE: #{:d} | Run time = {:.5g} s ({:.3g} min)".format( counter, elapsed_time, elapsed_time/float(60) ) )
+		logger.info( "LAST Checking status DONE: #{:d} | Finished={:d}, Incomplete={:d}, Total={:d} [Fails={:d}]".format( counter, len(finished), len(incomplete), len(pids), len(failed) ) )
+		logger.info( "########### ALL JOBS - %d ##############" % len(finished) )
 		for job in finished:
-			logger.critical(job)
-		logger.critical("########### DONE JOBS ##############")
-		for job in done:
-			logger.critical(job)
-		logger.critical("########### FAILED JOBS ##############")
-		for job in failed:
-			logger.critical(job)
+			logger.info(job)
+		logger.info( "########### SUCESSFUL DONE JOBS - %d ##############" % len(done) )
+		if done:
+			for job in done: logger.critical(job)
+		else:
+			logger.critical("No jobs to list")
+		logger.critical( "########### FAILED JOBS - %d ##############" % len(failed) )
+		if failed:
+			for job in failed: logger.critical(job)
+		else:
+			logger.critical("No jobs to list")
 
 
 #6840302 6840303 6840304 6840306 6840307 6840309 6840310 6840312 6840313 6840315
@@ -390,8 +408,8 @@ class LaunchSubprocess(object):
 		self.path_stdout = HelperUtils.check_if_writable(path_stdout)
 		if logger: #TODO: check that logger is of class Logger?
 			self.logger = logger
-		else: # create new logger
-			self.logger = Logger(self.__class__.__name__, path_stdout).get() #*** find out why .get() is necessary
+		else: # create new logger, with name e.g. LaunchSubprocess_NoLoggerParsed_2014-05-15_23.08.59.log
+			self.logger = Logger(self.__class__.__name__+"_NoLoggerParsed", path_stdout).get() #*** find out why .get() is necessary
 		
 		self.jobname = jobname
 		self.cmd = cmd

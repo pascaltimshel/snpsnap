@@ -480,6 +480,7 @@ def ParseArguments():
 	arg_parser_match.add_argument("--max_freq_deviation", type=int,help="Maximal deviation of SNP MAF bin [MAF +/- deviation]", default=5) # 5
 	arg_parser_match.add_argument("--max_distance_deviation", type=int, help="Maximal PERCENTAGE POINT deviation of distance to nearest gene [distance +/- %%deviation])", default=5) # 20000
 	#TODO: CHECK THAT max_distance_deviation > 1 %
+	#TODO: WHY IS max_genes_count_deviation type float!!!!????
 	arg_parser_match.add_argument("--max_genes_count_deviation", type=float, help="Maximal PERCENTAGE POINT deviation of genes in locus [gene_density +/- %%deviation]", default=5) # 0.2
 	arg_parser_match.add_argument("--set_file", help="Bool (switch, takes no value after argument); if set then write out set files to rand_set..gz. Default is false", action='store_true')
 
