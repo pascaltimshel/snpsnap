@@ -239,14 +239,14 @@ class LaunchBsub(object):
 			logger.info(job)
 		logger.info( "########### SUCESSFUL DONE JOBS - %d ##############" % len(done) )
 		if done:
-			for job in done: logger.critical(job)
+			for job in done: logger.info(job)
 		else:
-			logger.critical("No jobs to list")
-		logger.critical( "########### FAILED JOBS - %d ##############" % len(failed) )
+			logger.info("No jobs to list")
+		logger.info( "########### FAILED JOBS - %d ##############" % len(failed) )
 		if failed:
 			for job in failed: logger.critical(job)
 		else:
-			logger.critical("No jobs to list")
+			logger.info("No jobs to list")
 
 
 	@staticmethod

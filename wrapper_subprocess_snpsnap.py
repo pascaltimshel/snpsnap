@@ -40,7 +40,7 @@ def submit():
 		user_snps_file = filename # full path
 		output_dir = path_output_sub+"/"+pheno
 		HelperUtils.mkdirs(output_dir)
-		command_shell = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type ld --distance_cutoff 0.5 match --N_sample_sets {N} --max_freq_deviation {freq} --max_distance_deviation {dist} --max_genes_count_deviation {gene_count}".format(program=script2call, snplist=filename, outputdir=output_dir, N=10000, freq=10, dist=25, gene_count=25)
+		command_shell = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type ld --distance_cutoff 0.5 match --N_sample_sets {N} --max_freq_deviation {freq} --max_distance_deviation {dist} --max_genes_count_deviation {gene_count}".format(program=script2call, snplist=filename, outputdir=output_dir, N=N_sample_sets, freq=freq, dist=dist, gene_count=gene_count)
 		#command_seq = "--user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type ld --distance_cutoff 0.5 match --N_sample_sets {N} --max_freq_deviation {freq} --max_distance_deviation {dist} --max_genes_count_deviation {gene_count}".format(snplist=filename, outputdir=output_dir, N=1000, freq=5, dist=20, gene_count=20)
 		#print command_shell
 		processes.append( LaunchSubprocess(cmd=command_shell, path_stdout=path_stdout, logger=logger, jobname=pheno) ) #
@@ -76,6 +76,12 @@ logger = Logger(current_script_name, path_stdout).get()
 logger.setLevel(logging.INFO)
 
 
+## arguments
+N_sample_sets=5000
+freq=5
+dist=20
+gene_count=20
+
 processes = submit()
 
 # run_Pipe() method calls
@@ -85,8 +91,8 @@ for p in processes:
 
 pattern = re.compile(r"Found (\d+) out of (\d+) SNPs in data base", flags=re.IGNORECASE)
 #Found 25 out of 25 SNPs in data base
-
-with open(path_output_main+'/subprocess_gwastable.tab', 'w') as f_gwastable: 
+gwas_filename = path_output_main+'/subprocess_gwastable.{N}.{freq}.{dist}.{gene_count}.tab'.format(N=N_sample_sets, freq=freq, dist=dist, gene_count=gene_count)
+with open(gwas_filename, 'w') as f_gwastable: 
 	with open(path_output_main+'/subprocess_snps_found_in_db.tab', 'w') as f_not_found: 
 		for p in processes:
 			lines = p.process_communicate_and_read_pipe_lines()
@@ -98,7 +104,7 @@ with open(path_output_main+'/subprocess_gwastable.tab', 'w') as f_gwastable:
 					row = "{jobname}\t{found}\t{input}".format(jobname=p.jobname, found=found, input=n_input_snps)
 					logger.info(row)
 					f_not_found.write(row+"\n")
-				if "# rating_few_matches" in line:
+				if "# rating_insufficient" in line:
 					row = "{}\t{}".format(p.jobname, lines[i+1]) # next line
 					logger.info(row)
 					f_gwastable.write(row+"\n")
