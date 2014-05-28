@@ -75,9 +75,9 @@ logger = Logger(current_script_name, path_stdout).get()
 #logger.setLevel(logging.WARNING)
 logger.setLevel(logging.INFO)
 
-
+## NEXT: run 10000.5.20.20
 ## arguments
-N_sample_sets=5000
+N_sample_sets=10000
 freq=5
 dist=20
 gene_count=20
