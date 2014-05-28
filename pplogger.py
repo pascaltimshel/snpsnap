@@ -21,9 +21,15 @@ class Logger(object):
 			file_name = os.path.join(logdir, file_log)
 			fh = logging.FileHandler(file_name)
 
+			if format == 0:
+				fh_formatter = logging.Formatter('%(message)s')
+				ch_formatter = logging.Formatter('%(message)s')
 			if format == 1:
 				fh_formatter = logging.Formatter('%(asctime)s %(filename)-18s %(levelname)-8s %(message)s')
 				ch_formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+				# console gives
+				# 2014-05-16 09:17:14,092 pplaunch.py        INFO     _report_bacct runtime: 58.0431189537 s (0.967385315895 min)
+				# 2014-05-16 09:17:14,092 pplaunch.py        INFO     6865113|Primary_biliary_cirrhosis: jobstatus = DONE. Waiting for
 			elif format == 2:
 				fh_formatter = logging.Formatter('%(asctime)s %(filename)-18s %(levelname)-8s %(message)s')
 				ch_formatter = logging.Formatter('%(levelname)-8s %(message)s')

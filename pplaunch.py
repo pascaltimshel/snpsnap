@@ -11,6 +11,7 @@ import re
 
 import subprocess
 import logging
+import multiprocessing
 
 from pplogger import Logger
 from pphelper import HelperUtils
@@ -20,24 +21,51 @@ import copy
 import pdb
 
 
+def report_bacct(pid, jobname):
+	keep = ''
+	call = "bacct -l %s" % pid
+	try:
+		out = subprocess.check_output(call, shell=True)
+	except subprocess.CalledProcessError as e:
+		emsg = e
+		print "%s" %e
+	else:
+		lines = out.splitlines()
+		for (i, line) in enumerate(lines):
+			line = line.strip()
+			if 'Accounting information about this job:' in line:
+				header = lines[i+1].split()
+				values = lines[i+2].split()
+				combined = map("=".join, zip(header, values)) #List_C = ['{} {}'.format(x,y) for x,y in zip(List_A,List_B)]
+				keep = "|".join(combined)
+				break
+	keep = "{pid}|{name}|{status_line}".format(pid=pid, name=jobname, status_line=keep)
+	return keep
+
+
+
+
 class LaunchBsub(object):
 	LB_job_counter = 0
 	LB_job_fails = 0
-	def __init__(self, cmd, queue_name, walltime, mem, jobname='NoJobName', projectname='NoProjectName', path_stdout=os.getcwd(), file_output= __name__+'.tmp.out', no_output=False, email=False, logger=False): #file_output=os.path.join(os.getcwd(), __name__+'.tmp.log'
+	def __init__(self, cmd, queue_name, walltime, mem, jobname='NoJobName', projectname='NoProjectName', path_stdout=os.getcwd(), file_output=None, no_output=False, email=False, logger=False): #file_output=os.path.join(os.getcwd(), __name__+'.tmp.log'
 		LaunchBsub.LB_job_counter += 1 # Counter the number of jobs
+		self.job_number = LaunchBsub.LB_job_counter
+		
 		self.path_stdout = HelperUtils.check_if_writable(path_stdout)
 		if logger: #TODO: check that logger is of class Logger?
 			self.logger = logger
-		else: # create new logger
-			self.logger = Logger(self.__class__.__name__, path_stdout).get() #*** find out why .get() is necessary
+		else: # create new logger, with name e.g. LauchBsub_NoLoggerParsed_2014-05-15_23.08.59.log
+			self.logger = Logger(self.__class__.__name__+"_NoLoggerParsed", path_stdout).get() #*** find out why .get() is necessary
 		
 		#OBS: updating variable
 		if no_output:
 			self.file_output = '/dev/null'
+		elif file_output is None:
+			self.file_output = "bsub_outfile_ID{job_number}.{ext}".format(job_number=job_number, ext='out')
 		else:
 			self.file_output = os.path.join(self.path_stdout, file_output)
 
-		self.job_number = LaunchBsub.LB_job_counter
 		self.jobname = jobname
 		self.projectname = projectname
 		self.status = ""
@@ -50,6 +78,7 @@ class LaunchBsub(object):
 		#TODO self.p_cpu ## n (e.g. 2 or 1-4)
 		#TODO self.p_n_span
 		#TODO -N --> If you use both -o and -N, the output is stored in the output file and the job report is sent by mail.
+		#TODO: overwrite output files with -oo ?
 
 		self.cmd = cmd
 		if email:
@@ -116,6 +145,7 @@ class LaunchBsub(object):
 		#     QJ_err_log.write( 'JOB FAIL #%d   Last error message is\n' % LaunchBsub.LB_job_fails )
 		#     QJ_err_log.write( '%s \n\n' % emsg )
 
+
 	@staticmethod
 	def _report_bacct(pid, jobname, logger):
 		keep = ''
@@ -152,6 +182,7 @@ class LaunchBsub(object):
 		incomplete = copy.deepcopy(pids)
 		finished = []
 		failed = []
+		done = []
 		#**TODO: make sure that pids and incomplete is UNIQUE
 		#TODO: make sure that len(finished) NEVER becomes larger than len(pids)
 		counter = 0
@@ -177,28 +208,137 @@ class LaunchBsub(object):
 				(tmp_pid, tmp_status, tmp_jobname) = (cols[0], cols[2], cols[6])
 				#[RUN,EXIT,DONE,PENDING?]
 				if tmp_status == 'EXIT':
-					#logger.info( "{pid}|{name}: jobstatus = EXIT".format(pid=tmp_pid, name=tmp_jobname) )
+					logger.info( "{pid}|{name}: jobstatus = EXIT. Waiting for _report_bacct...".format(pid=tmp_pid, name=tmp_jobname) )
+					t1 = time.time()
 					report_line = LaunchBsub._report_bacct(tmp_pid, tmp_jobname, logger)
+					elapsed_time = time.time() - t1
+					logger.info( "_report_bacct runtime: %s s (%s min)" % ( elapsed_time, elapsed_time/float(60) ) )
 					incomplete.remove(tmp_pid)
+					finished.append(report_line)
 					failed.append(report_line)
-					finished.append(report_line)
 				elif tmp_status == 'DONE':
-					#logger.info( "{pid}|{name}: jobstatus = DONE".format(pid=tmp_pid, name=tmp_jobname, logger) )
+					logger.info( "{pid}|{name}: jobstatus = DONE. Waiting for _report_bacct...".format(pid=tmp_pid, name=tmp_jobname) )
+					t1 = time.time()
 					report_line = LaunchBsub._report_bacct(tmp_pid, tmp_jobname, logger)
+					elapsed_time = time.time() - t1
+					logger.info( "_report_bacct runtime: %s s (%s min)" % ( elapsed_time, elapsed_time/float(60) ) )
 					incomplete.remove(tmp_pid)
 					finished.append(report_line)
+					done.append(report_line)
+
 
 			#consider sleeping for some time
 			time.sleep(sleep_time)
 		# All jobs are NOW somehow finished
-		logger.critical("########### FINISHED JOBS ##############")
+		elapsed_time = time.time() - start_time
+		logger.info( "Checking status: #{:d} | Run time = {:.5g} s ({:.3g} min)".format( counter, elapsed_time, elapsed_time/float(60) ) )
+		logger.info( "LAST Checking status DONE: #{:d} | Run time = {:.5g} s ({:.3g} min)".format( counter, elapsed_time, elapsed_time/float(60) ) )
+		logger.info( "LAST Checking status DONE: #{:d} | Finished={:d}, Incomplete={:d}, Total={:d} [Fails={:d}]".format( counter, len(finished), len(incomplete), len(pids), len(failed) ) )
+		logger.info( "########### ALL JOBS - %d ##############" % len(finished) )
 		for job in finished:
-			logger.critical(job)
-		logger.critical("########### FAILED JOBS ##############")
-		for job in failed:
-			logger.critical(job)
+			logger.info(job)
+		logger.info( "########### SUCESSFUL DONE JOBS - %d ##############" % len(done) )
+		if done:
+			for job in done: logger.info(job)
+		else:
+			logger.info("No jobs to list")
+		logger.info( "########### FAILED JOBS - %d ##############" % len(failed) )
+		if failed:
+			for job in failed: logger.critical(job)
+		else:
+			logger.info("No jobs to list")
 
 
+	@staticmethod
+	def report_status_multiprocess(pids, logger): #LB_List_Of_Instances
+		sleep_time = 20 # seconds
+		incomplete = copy.deepcopy(pids)
+		finished = [] # all jobs that are not runninng or pending - jobs that are either "exit" or "done"
+		failed = [] # exit status
+		done = [] # done status
+		#**TODO: make sure that pids and incomplete is UNIQUE
+		#TODO: make sure that len(finished) NEVER becomes larger than len(pids)
+		counter = 0
+		start_time = time.time()
+		while len(finished) < len(pids):
+			counter += 1
+			elapsed_time = time.time() - start_time
+			logger.info( "Checking status: #{:d} | Run time = {:.5g} s ({:.3g} min)".format( counter, elapsed_time, elapsed_time/float(60) ) )
+			logger.info( "Checking status: #{:d} | Finished={:d}, Incomplete={:d}, Total={:d} [Fails={:d}]".format( counter, len(finished), len(incomplete), len(pids), len(failed) ) )
+			lines = ['']
+			call = "bjobs -aw {jobs}".format( jobs=" ".join(incomplete) ) #consider bjobs -aw
+			try:
+				out = subprocess.check_output(call, shell=True)
+			except subprocess.CalledProcessError as e:
+				emsg = e
+				logger.error( "call: %s\nerror in report_status: %s" % (call, emsg) )
+			else:
+				lines = out.splitlines()[1:] #skipping header
+				#logger.info( "called: %s" % call )
+				#logger.info( "got out:\n%s" % out )
+			pids2check = []
+			for line in lines:
+				cols = line.strip().split()
+				(tmp_pid, tmp_status, tmp_jobname) = (cols[0], cols[2], cols[6])
+				#[RUN,EXIT,DONE,PENDING?]
+				#batch_size = 10
+				if tmp_status == 'EXIT':
+					logger.info( "{pid}|{name}: jobstatus = EXIT".format(pid=tmp_pid, name=tmp_jobname) )
+					#report_line = LaunchBsub._report_bacct(tmp_pid, tmp_jobname, logger)
+					pids2check.append( (tmp_pid, tmp_jobname, logger) ) # append 3 element tuple
+					incomplete.remove(tmp_pid)
+					report_line = '{pid}|{name}'.format(pid=tmp_pid, name=tmp_jobname)
+					failed.append(report_line)
+					#finished.append(report_line)
+				elif tmp_status == 'DONE':
+					logger.info( "{pid}|{name}: jobstatus = DONE".format(pid=tmp_pid, name=tmp_jobname) )
+					#report_line = LaunchBsub._report_bacct(tmp_pid, tmp_jobname, logger)
+					pids2check.append( (tmp_pid, tmp_jobname, logger) ) # append 3 element tuple
+					incomplete.remove(tmp_pid)
+					report_line = '{pid}|{name}'.format(pid=tmp_pid, name=tmp_jobname)
+					done.append(report_line)
+					#finished.append(report_line)
+			logger.info( "Got %d pids2check." % len(pids2check) )
+			if pids2check:
+				n_processes = len(pids2check)
+				t1 = time.time()
+				pool = multiprocessing.Pool(n_processes)
+				elapsed_time = time.time() - t1
+				logger.info( "Making multiprocessing pool. Time to load pool: %s s (%s min)" % ( elapsed_time, elapsed_time/float(60) ) )
+				t1 = time.time()
+				for i in range(n_processes):
+					#apply_async(func[, args[, kwds[, callback]]])
+					(tmp_pid, tmp_jobname, logger) = pids2check[i]
+					#pdb.set_trace()
+					#logger.info( "i is %d" % ( i ) )
+					pool.apply_async(report_bacct, args=(tmp_pid, tmp_jobname), callback=finished.append)
+				pool.close()
+				pool.join()
+				elapsed_time = time.time() - t1
+				logger.info( "Time to run join() pool: %s s (%s min)" % ( elapsed_time, elapsed_time/float(60) ) )
+
+			#consider sleeping for some time
+			time.sleep(sleep_time)
+		# All jobs are NOW somehow finished
+		elapsed_time = time.time() - start_time
+		logger.info( "LAST Checking status DONE: #{:d} | Run time = {:.5g} s ({:.3g} min)".format( counter, elapsed_time, elapsed_time/float(60) ) )
+		logger.info( "LAST Checking status DONE: #{:d} | Finished={:d}, Incomplete={:d}, Total={:d} [Fails={:d}]".format( counter, len(finished), len(incomplete), len(pids), len(failed) ) )
+		logger.info( "########### ALL JOBS - %d ##############" % len(finished) )
+		for job in finished:
+			logger.info(job)
+		logger.info( "########### SUCESSFUL DONE JOBS - %d ##############" % len(done) )
+		if done:
+			for job in done: logger.critical(job)
+		else:
+			logger.critical("No jobs to list")
+		logger.critical( "########### FAILED JOBS - %d ##############" % len(failed) )
+		if failed:
+			for job in failed: logger.critical(job)
+		else:
+			logger.critical("No jobs to list")
+
+
+#6840302 6840303 6840304 6840306 6840307 6840309 6840310 6840312 6840313 6840315
 
 	def check_status(self):
 		""" Function to check status of jobs """
@@ -268,8 +408,8 @@ class LaunchSubprocess(object):
 		self.path_stdout = HelperUtils.check_if_writable(path_stdout)
 		if logger: #TODO: check that logger is of class Logger?
 			self.logger = logger
-		else: # create new logger
-			self.logger = Logger(self.__class__.__name__, path_stdout).get() #*** find out why .get() is necessary
+		else: # create new logger, with name e.g. LaunchSubprocess_NoLoggerParsed_2014-05-15_23.08.59.log
+			self.logger = Logger(self.__class__.__name__+"_NoLoggerParsed", path_stdout).get() #*** find out why .get() is necessary
 		
 		self.jobname = jobname
 		self.cmd = cmd

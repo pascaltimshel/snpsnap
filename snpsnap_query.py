@@ -237,61 +237,70 @@ def few_matches_score(x, lim, scale):
 def few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps):
 	user_snps_few_matches_file = path_output+"/snps_few_matches.tab"
 	user_snps_few_matches_report = path_output+"/snps_report.txt"
-	#score_N = ''
-	#score_median = ''
+	#score_insufficient = ''
+	#score_match_size = ''
 
-	pct_N_few_matches = ( len(df_snps_few_matches)/float(N_snps) )*100
+	insufficient_matches_pct = ( len(df_snps_few_matches)/float(N_snps) )*100
 
 	if len(df_snps_few_matches) == 0: # NO few_matches found
 		median_n_matches = N_sample_sets
 	else:
 		median_n_matches = df_snps_few_matches.ix[:,'n_matches'].median()
 
-	pct_median_few_matches = ( median_n_matches/float(N_sample_sets) )*100
+	match_size_pct = ( median_n_matches/float(N_sample_sets) )*100
 	
-	scale_N = ['very good', 'good', 'ok', 'poor', 'very poor']
-	scale_median = ['very poor', 'poor', 'ok', 'good', 'very good']
+	scale_insufficient = ['very good', 'good', 'ok', 'poor', 'very poor']
+	scale_match_size = ['very poor', 'poor', 'ok', 'good', 'very good']
 	# About the use of this few_matches_score:
 	# 1) check that the criteria for scale and lim lengths is ok
 	# 2) function does ONLY support 5 scores ATM
 	# 3) IMPORTANT: limits may have to be reversed for it to work. See the function code..
-	score_N = few_matches_score(pct_N_few_matches, [0,1,5,10,25,100], scale_N) #low_is_good
-	score_median = few_matches_score(pct_median_few_matches, [100,75,50,30,15,0][::-1], scale_median) #low_is_bad
+	score_insufficient = few_matches_score(insufficient_matches_pct, [0,1,5,10,25,100], scale_insufficient) #low_is_good
+	score_match_size = few_matches_score(match_size_pct, [100,75,50,30,15,0][::-1], scale_match_size) #low_is_bad
 
 	#TODO: print scale_order (pass as argument to function)
-	# print_str_score_N = "Rating 'number of few matches' = '{rating:s}' ({pct:.4g}%, {count:d} few_matches out of {total:d} valid input SNPs)".format(rating=score_N, 
-	# 																											pct=pct_N_few_matches, 
+	# print_str_score_insufficient = "Rating 'number of few matches' = '{rating:s}' ({pct:.4g}%, {count:d} few_matches out of {total:d} valid input SNPs)".format(rating=score_insufficient, 
+	# 																											pct=insufficient_matches_pct, 
 	# 																											count=len(df_snps_few_matches),
 	# 																											total=N_snps)
-	# print_str_score_median = "Rating 'over sampling' = '{rating:s}' ({pct:.4g}%, median SNPs to sample from in few_matches is {median:.6g} compared to {total:d} N_sample_sets)".format(rating=score_median, 
-	# 																											pct=pct_median_few_matches, 
+	# print_str_score_match_size = "Rating 'over sampling' = '{rating:s}' ({pct:.4g}%, median SNPs to sample from in few_matches is {median:.6g} compared to {total:d} N_sample_sets)".format(rating=score_match_size, 
+	# 																											pct=match_size_pct, 
 	# 																											median=median_n_matches,
 	# 																											total=N_sample_sets)
 	
 
-	tmp1 = "# Rating 'number of few matches' = '{rating:s}' with scale [{scale:s}]".format(rating=score_N, scale=(', '.join("'" + item + "'" for item in scale_N)) )
-	tmp2 = "# Percent 'few matches' = {pct:.4g}% (low is good; {count:d} 'few matches' out of {total:d} valid input SNPs)".format(pct=pct_N_few_matches, count=len(df_snps_few_matches), total=N_snps)
-	write_str_score_N = '\n'.join([tmp1, tmp2])
+	#tmp1 = "# Rating 'number of few matches' = '{rating:s}' with scale [{scale:s}]".format(rating=score_insufficient, scale=(', '.join("'" + item + "'" for item in scale_insufficient)) )
+	tmp1 = "# Rating 'insufficient SNP matches' = '{rating:s}' with scale [{scale:s}]".format(rating=score_insufficient, scale=(', '.join("'" + item + "'" for item in scale_insufficient)) )
+	tmp2 = "# Percent 'insufficient SNP matches' = {pct:.4g}% (low is good; {count:d} 'insufficient SNP matches' out of {total:d} valid input SNPs)".format(pct=insufficient_matches_pct, count=len(df_snps_few_matches), total=N_snps)
+	write_str_score_insufficient = '\n'.join([tmp1, tmp2])
 
-	tmp1 = "# Rating 'over sampling' = '{rating:s}' with scale [{scale:s}]".format(rating=score_median, scale=(', '.join("'" + item + "'" for item in scale_median)) )
-	tmp2 = "# Relative sample size = {pct:.4g}% (high is good; median SNPs to sample from in 'few matches' is {median:.6g} compared to {total:d} N_sample_sets)".format(pct=pct_median_few_matches, median=median_n_matches, total=N_sample_sets)
-	write_str_score_median = '\n'.join([tmp1, tmp2])
+	#tmp1 = "# Rating 'over sampling' = '{rating:s}' with scale [{scale:s}]".format(rating=score_match_size, scale=(', '.join("'" + item + "'" for item in scale_match_size)) )
+	#Rating 'relative sample size'
+	# 'effective set/sample size'
+	# insufficient match size
+	# effective matches
+	# bootstrapping
+	# resample
+	# match size
+	tmp1 = "# Rating 'match size' = '{rating:s}' for SNPs in 'insufficient SNP matches' with scale [{scale:s}]".format(rating=score_match_size, scale=(', '.join("'" + item + "'" for item in scale_match_size)) )
+	tmp2 = "# Relative 'match size' = {pct:.4g}% (high is good; median number of SNPs to sample from in 'insufficient SNP matches' is {median:.6g} compared to {total:d} requested sample sets)".format(pct=match_size_pct, median=median_n_matches, total=N_sample_sets)
+	write_str_score_match_size = '\n'.join([tmp1, tmp2])
 
-	tmp1 = "# {0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}".format("rating_few_matches", "pct_few_matches", "N_few_matches", "N_input_snps", 
-															"rating_over_sampling", "pct_over_sampling", "median_sample_size", "N_sample_sets")
+	tmp1 = "# {0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}".format("rating_insufficient", "pct_insufficient", "N_insufficient", "N_input_snps", 
+															"rating_size", "pct_size", "median_size", "N_sample_sets")
 	#tmp1 = "# rating_few_matches\tpct_few_matches\tN_few_matches\tN_input_snps\trating_over_sampling\tpct_over_sampling\tmedian_sample_size\tN_sample_sets"
-	tmp2 = "{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}".format(score_N, pct_N_few_matches, len(df_snps_few_matches), N_snps,
-															score_median, pct_median_few_matches, median_n_matches, N_sample_sets)
+	tmp2 = "{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}".format(score_insufficient, insufficient_matches_pct, len(df_snps_few_matches), N_snps,
+															score_match_size, match_size_pct, median_n_matches, N_sample_sets)
 	write_str_score_table = '\n'.join([tmp1, tmp2])
 	print "################# Score ###############"
-	print write_str_score_N
-	print write_str_score_median
+	print write_str_score_insufficient
+	print write_str_score_match_size
 	print write_str_score_table
 	print "######################################"
 
 	with open(user_snps_few_matches_report, 'w') as f:
-		f.write(write_str_score_N+'\n')
-		f.write(write_str_score_median+'\n')
+		f.write(write_str_score_insufficient+'\n')
+		f.write(write_str_score_match_size+'\n')
 		f.write(write_str_score_table+'\n')
 
 
@@ -480,6 +489,7 @@ def ParseArguments():
 	arg_parser_match.add_argument("--max_freq_deviation", type=int,help="Maximal deviation of SNP MAF bin [MAF +/- deviation]", default=5) # 5
 	arg_parser_match.add_argument("--max_distance_deviation", type=int, help="Maximal PERCENTAGE POINT deviation of distance to nearest gene [distance +/- %%deviation])", default=5) # 20000
 	#TODO: CHECK THAT max_distance_deviation > 1 %
+	#TODO: WHY IS max_genes_count_deviation type float!!!!????
 	arg_parser_match.add_argument("--max_genes_count_deviation", type=float, help="Maximal PERCENTAGE POINT deviation of genes in locus [gene_density +/- %%deviation]", default=5) # 0.2
 	arg_parser_match.add_argument("--set_file", help="Bool (switch, takes no value after argument); if set then write out set files to rand_set..gz. Default is false", action='store_true')
 
