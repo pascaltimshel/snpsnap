@@ -1,0 +1,64 @@
+Adiponectin_levels	poor	16.6666666667	4	24	ok	31.4	314.0	1000
+Age-related_macular_degeneration	poor	17.1428571429	6	35	good	72.35	723.5	1000
+Alzheimers_disease	good	4.7619047619	1	21	poor	19.7	197.0	1000
+Asthma	poor	13.6363636364	3	22	poor	16.3	163.0	1000
+Blood_pressure	ok	8.82352941176	3	34	very poor	6.6	66.0	1000
+Body_mass_index	ok	6.75675675676	5	74	poor	22.1	221.0	1000
+Bone_mineral_density	ok	8.69565217391	6	69	ok	30.25	302.5	1000
+Bone_mineral_density_spine	good	5.0	1	20	very good	92.5	925.0	1000
+Breast_cancer	ok	5.19480519481	4	77	ok	47.55	475.5	1000
+C-reactive_protein	ok	7.5	3	40	good	70.2	702.0	1000
+Celiac_disease	good	3.84615384615	1	26	good	58.2	582.0	1000
+Cholesterol,_total	poor	13.3333333333	8	60	ok	43.1	431.0	1000
+Chronic_kidney_disease	poor	12.0	3	25	poor	20.3	203.0	1000
+Chronic_lymphocytic_leukemia	very good	0.0	0	27	very good	100.0	1000	1000
+Colorectal_cancer	very good	0.0	0	23	very good	100.0	1000	1000
+Corneal_structure	good	3.7037037037	1	27	very poor	2.5	25.0	1000
+Coronary_heart_disease	poor	12.0689655172	7	58	ok	43.1	431.0	1000
+Crohns_disease	poor	10.6382978723	15	141	poor	25.4	254.0	1000
+Diastolic_blood_pressure	poor	24.0	6	25	ok	49.55	495.5	1000
+End-stage_coagulation	very good	0.0	0	23	very good	100.0	1000	1000
+F-cell_distribution	very good	0.0	0	21	very good	100.0	1000	1000
+Fasting_glucose-related_traits_interaction_with_BMI	poor	22.7272727273	5	22	poor	28.2	282.0	1000
+Graves_disease	poor	18.1818181818	2	11	poor	29.15	291.5	1000
+HDL_cholesterol	poor	12.0879120879	11	91	ok	36.7	367.0	1000
+Heart_rate	poor	13.0434782609	3	23	poor	26.0	260.0	1000
+Height	ok	9.53846153846	31	325	ok	46.6	466.0	1000
+Hematological_and_biochemical_traits	very good	0.0	0	18	very good	100.0	1000	1000
+Hypertension	good	5.0	1	20	good	63.0	630.0	1000
+Inflammatory_bowel_disease	poor	14.5299145299	17	117	ok	31.1	311.0	1000
+LDL_cholesterol	poor	12.1212121212	8	66	ok	47.25	472.5	1000
+Lipid_metabolism_phenotypes	ok	5.12820512821	2	39	good	63.1	631.0	1000
+Liver_enzyme_levels_gamma-glutamyl_transferase	good	3.84615384615	1	26	poor	25.5	255.0	1000
+Mean_corpuscular_hemoglobin	ok	7.40740740741	2	27	ok	38.7	387.0	1000
+Mean_corpuscular_volume	good	2.94117647059	1	34	ok	49.2	492.0	1000
+Mean_platelet_volume	poor	17.0212765957	8	47	poor	25.6	256.0	1000
+Menarche_age_at_onset	good	2.77777777778	1	36	very poor	1.3	13.0	1000
+Menopause_age_at_onset	ok	5.26315789474	1	19	very poor	4.2	42.0	1000
+Metabolic_syndrome	poor	11.1111111111	3	27	good	67.0	670.0	1000
+Metabolic_traits	poor	20.9302325581	9	43	ok	35.4	354.0	1000
+Metabolite_levels	poor	16.4556962025	13	79	ok	49.7	497.0	1000
+Multiple_sclerosis	poor	14.0625	9	64	good	67.8	678.0	1000
+Myopia_pathological	very good	0.0	0	39	very good	100.0	1000	1000
+Obesity	ok	6.89655172414	4	58	ok	30.65	306.5	1000
+Parkinsons_disease	poor	17.3913043478	4	23	ok	45.45	454.5	1000
+Phospholipid_levels_plasma	poor	11.1111111111	5	45	ok	31.6	316.0	1000
+Platelet_counts	poor	11.4754098361	7	61	ok	30.2	302.0	1000
+Primary_biliary_cirrhosis	poor	13.0434782609	3	23	very good	87.2	872.0	1000
+Prostate_cancer	good	2.63157894737	2	76	poor	15.9	159.0	1000
+Psoriasis	poor	25.0	6	24	ok	47.0	470.0	1000
+Pulmonary_function	ok	8.33333333333	2	24	ok	37.4	374.0	1000
+QT_interval	poor	17.2413793103	5	29	poor	26.0	260.0	1000
+Red_blood_cell_traits	ok	9.61538461538	5	52	good	62.7	627.0	1000
+Refractive_error	good	3.7037037037	1	27	good	62.7	627.0	1000
+Rheumatoid_arthritis	ok	5.55555555556	2	36	good	62.1	621.0	1000
+Schizophrenia	very poor	26.3157894737	5	19	ok	42.1	421.0	1000
+Systemic_lupus_erythematosus	poor	11.1111111111	5	45	very poor	8.0	80.0	1000
+Systolic_blood_pressure	poor	21.7391304348	5	23	good	53.7	537.0	1000
+Triglycerides	poor	15.4929577465	11	71	ok	49.7	497.0	1000
+Type_1_diabetes	poor	16.3265306122	8	49	poor	16.55	165.5	1000
+Type_2_diabetes	ok	7.69230769231	6	78	good	58.95	589.5	1000
+Ulcerative_colitis	poor	13.5135135135	10	74	poor	24.2	242.0	1000
+Urate_levels	ok	8.69565217391	4	46	ok	40.3	403.0	1000
+Ventricular_conduction	good	4.34782608696	1	23	poor	26.0	260.0	1000
+Vitiligo	poor	20.0	5	25	poor	17.7	177.0	1000
