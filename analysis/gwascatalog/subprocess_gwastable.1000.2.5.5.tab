@@ -1,0 +1,64 @@
+Adiponectin_levels	poor	20.8333333333	5	24	very poor	11.5	115.0	1000
+Age-related_macular_degeneration	very poor	54.2857142857	19	35	poor	29.9	299.0	1000
+Alzheimers_disease	poor	14.2857142857	3	21	ok	37.1	371.0	1000
+Asthma	very poor	40.9090909091	9	22	poor	29.5	295.0	1000
+Blood_pressure	poor	23.5294117647	8	34	very poor	10.9	109.0	1000
+Body_mass_index	poor	18.9189189189	14	74	ok	43.9	439.0	1000
+Bone_mineral_density	poor	18.8405797101	13	69	poor	20.5	205.0	1000
+Bone_mineral_density_spine	poor	15.0	3	20	good	68.1	681.0	1000
+Breast_cancer	poor	22.0779220779	17	77	ok	36.8	368.0	1000
+C-reactive_protein	very poor	30.0	12	40	ok	39.5	395.0	1000
+Celiac_disease	very poor	38.4615384615	10	26	good	53.45	534.5	1000
+Cholesterol,_total	very poor	38.3333333333	23	60	poor	25.5	255.0	1000
+Chronic_kidney_disease	very poor	40.0	10	25	poor	24.25	242.5	1000
+Chronic_lymphocytic_leukemia	poor	22.2222222222	6	27	very good	75.25	752.5	1000
+Colorectal_cancer	poor	17.3913043478	4	23	good	55.15	551.5	1000
+Corneal_structure	poor	18.5185185185	5	27	ok	46.2	462.0	1000
+Coronary_heart_disease	poor	18.9655172414	11	58	very poor	9.5	95.0	1000
+Crohns_disease	very poor	32.6241134752	46	141	ok	36.75	367.5	1000
+Diastolic_blood_pressure	very poor	36.0	9	25	very poor	10.7	107.0	1000
+End-stage_coagulation	poor	21.7391304348	5	23	good	73.1	731.0	1000
+F-cell_distribution	very poor	28.5714285714	6	21	good	61.85	618.5	1000
+Fasting_glucose-related_traits_interaction_with_BMI	very poor	31.8181818182	7	22	very poor	7.5	75.0	1000
+Graves_disease	very poor	27.2727272727	3	11	very poor	6.7	67.0	1000
+HDL_cholesterol	very poor	27.4725274725	25	91	ok	37.5	375.0	1000
+Heart_rate	very poor	30.4347826087	7	23	ok	49.3	493.0	1000
+Height	poor	24.9230769231	81	325	poor	24.7	247.0	1000
+Hematological_and_biochemical_traits	poor	16.6666666667	3	18	poor	27.6	276.0	1000
+Hypertension	poor	15.0	3	20	good	58.3	583.0	1000
+Inflammatory_bowel_disease	very poor	36.7521367521	43	117	ok	31.6	316.0	1000
+LDL_cholesterol	very poor	36.3636363636	24	66	ok	30.6	306.0	1000
+Lipid_metabolism_phenotypes	poor	17.9487179487	7	39	good	52.1	521.0	1000
+Liver_enzyme_levels_gamma-glutamyl_transferase	very poor	38.4615384615	10	26	good	57.95	579.5	1000
+Mean_corpuscular_hemoglobin	very poor	44.4444444444	12	27	poor	28.75	287.5	1000
+Mean_corpuscular_volume	very poor	38.2352941176	13	34	ok	45.1	451.0	1000
+Mean_platelet_volume	very poor	36.170212766	17	47	poor	22.0	220.0	1000
+Menarche_age_at_onset	poor	22.2222222222	8	36	ok	46.8	468.0	1000
+Menopause_age_at_onset	poor	15.7894736842	3	19	good	70.6	706.0	1000
+Metabolic_syndrome	very poor	29.6296296296	8	27	poor	29.15	291.5	1000
+Metabolic_traits	very poor	41.8604651163	18	43	poor	16.35	163.5	1000
+Metabolite_levels	very poor	34.1772151899	27	79	poor	22.1	221.0	1000
+Multiple_sclerosis	very poor	28.125	18	64	poor	24.3	243.0	1000
+Myopia_pathological	ok	5.12820512821	2	39	good	54.05	540.5	1000
+Obesity	very poor	27.5862068966	16	58	ok	43.25	432.5	1000
+Parkinsons_disease	very poor	26.0869565217	6	23	very poor	8.2	82.0	1000
+Phospholipid_levels_plasma	very poor	35.5555555556	16	45	poor	29.5	295.0	1000
+Platelet_counts	very poor	31.1475409836	19	61	poor	24.5	245.0	1000
+Primary_biliary_cirrhosis	very poor	34.7826086957	8	23	ok	40.7	407.0	1000
+Prostate_cancer	poor	17.1052631579	13	76	ok	40.3	403.0	1000
+Psoriasis	very poor	54.1666666667	13	24	very poor	12.3	123.0	1000
+Pulmonary_function	poor	20.8333333333	5	24	ok	47.5	475.0	1000
+QT_interval	very poor	34.4827586207	10	29	ok	36.9	369.0	1000
+Red_blood_cell_traits	very poor	34.6153846154	18	52	ok	39.55	395.5	1000
+Refractive_error	ok	7.40740740741	2	27	ok	32.75	327.5	1000
+Rheumatoid_arthritis	very poor	27.7777777778	10	36	ok	42.1	421.0	1000
+Schizophrenia	very poor	57.8947368421	11	19	poor	16.4	164.0	1000
+Systemic_lupus_erythematosus	very poor	35.5555555556	16	45	poor	25.7	257.0	1000
+Systolic_blood_pressure	very poor	30.4347826087	7	23	very poor	8.8	88.0	1000
+Triglycerides	very poor	43.661971831	31	71	poor	23.2	232.0	1000
+Type_1_diabetes	very poor	38.7755102041	19	49	poor	22.3	223.0	1000
+Type_2_diabetes	poor	23.0769230769	18	78	ok	48.9	489.0	1000
+Ulcerative_colitis	very poor	33.7837837838	25	74	ok	33.5	335.0	1000
+Urate_levels	very poor	36.9565217391	17	46	ok	35.3	353.0	1000
+Ventricular_conduction	poor	17.3913043478	4	23	poor	22.0	220.0	1000
+Vitiligo	very poor	40.0	10	25	poor	19.75	197.5	1000

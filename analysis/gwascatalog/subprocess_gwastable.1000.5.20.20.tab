@@ -1,0 +1,64 @@
+Adiponectin_levels	ok	8.33333333333	2	24	good	65.3	653.0	1000
+Age-related_macular_degeneration	good	2.85714285714	1	35	good	65.9	659.0	1000
+Alzheimers_disease	good	4.7619047619	1	21	ok	38.0	380.0	1000
+Asthma	ok	9.09090909091	2	22	poor	28.3	283.0	1000
+Blood_pressure	ok	5.88235294118	2	34	poor	25.3	253.0	1000
+Body_mass_index	good	4.05405405405	3	74	very good	92.1	921.0	1000
+Bone_mineral_density	good	2.89855072464	2	69	ok	47.35	473.5	1000
+Bone_mineral_density_spine	very good	0.0	0	20	very good	100.0	1000	1000
+Breast_cancer	good	2.5974025974	2	77	very good	85.95	859.5	1000
+C-reactive_protein	very good	0.0	0	40	very good	100.0	1000	1000
+Celiac_disease	very good	0.0	0	26	very good	100.0	1000	1000
+Cholesterol,_total	ok	8.33333333333	5	60	good	75.0	750.0	1000
+Chronic_kidney_disease	ok	8.0	2	25	good	61.2	612.0	1000
+Chronic_lymphocytic_leukemia	very good	0.0	0	27	very good	100.0	1000	1000
+Colorectal_cancer	very good	0.0	0	23	very good	100.0	1000	1000
+Corneal_structure	good	3.7037037037	1	27	very poor	11.4	114.0	1000
+Coronary_heart_disease	good	3.44827586207	2	58	ok	47.4	474.0	1000
+Crohns_disease	good	4.96453900709	7	141	ok	35.8	358.0	1000
+Diastolic_blood_pressure	ok	8.0	2	25	ok	34.25	342.5	1000
+End-stage_coagulation	very good	0.0	0	23	very good	100.0	1000	1000
+F-cell_distribution	very good	0.0	0	21	very good	100.0	1000	1000
+Fasting_glucose-related_traits_interaction_with_BMI	poor	13.6363636364	3	22	good	59.5	595.0	1000
+Graves_disease	ok	9.09090909091	1	11	very poor	13.1	131.0	1000
+HDL_cholesterol	good	4.3956043956	4	91	good	61.55	615.5	1000
+Heart_rate	good	4.34782608696	1	23	very good	76.2	762.0	1000
+Height	good	3.69230769231	12	325	ok	43.8	438.0	1000
+Hematological_and_biochemical_traits	very good	0.0	0	18	very good	100.0	1000	1000
+Hypertension	very good	0.0	0	20	very good	100.0	1000	1000
+Inflammatory_bowel_disease	ok	5.12820512821	6	117	ok	42.5	425.0	1000
+LDL_cholesterol	ok	6.06060606061	4	66	good	65.05	650.5	1000
+Lipid_metabolism_phenotypes	very good	0.0	0	39	very good	100.0	1000	1000
+Liver_enzyme_levels_gamma-glutamyl_transferase	good	3.84615384615	1	26	very good	96.2	962.0	1000
+Mean_corpuscular_hemoglobin	very good	0.0	0	27	very good	100.0	1000	1000
+Mean_corpuscular_volume	very good	0.0	0	34	very good	100.0	1000	1000
+Mean_platelet_volume	ok	8.51063829787	4	47	good	70.55	705.5	1000
+Menarche_age_at_onset	good	2.77777777778	1	36	very poor	6.2	62.0	1000
+Menopause_age_at_onset	ok	5.26315789474	1	19	poor	15.5	155.0	1000
+Metabolic_syndrome	good	3.7037037037	1	27	very poor	2.1	21.0	1000
+Metabolic_traits	ok	9.3023255814	4	43	ok	46.7	467.0	1000
+Metabolite_levels	ok	7.59493670886	6	79	ok	42.25	422.5	1000
+Multiple_sclerosis	good	3.125	2	64	good	73.95	739.5	1000
+Myopia_pathological	very good	0.0	0	39	very good	100.0	1000	1000
+Obesity	good	1.72413793103	1	58	good	66.7	667.0	1000
+Parkinsons_disease	good	4.34782608696	1	23	very poor	8.4	84.0	1000
+Phospholipid_levels_plasma	good	4.44444444444	2	45	poor	28.7	287.0	1000
+Platelet_counts	ok	6.55737704918	4	61	ok	44.8	448.0	1000
+Primary_biliary_cirrhosis	very good	0.0	0	23	very good	100.0	1000	1000
+Prostate_cancer	good	2.63157894737	2	76	ok	31.35	313.5	1000
+Psoriasis	ok	8.33333333333	2	24	good	61.2	612.0	1000
+Pulmonary_function	good	4.16666666667	1	24	very poor	11.4	114.0	1000
+QT_interval	ok	6.89655172414	2	29	ok	46.35	463.5	1000
+Red_blood_cell_traits	good	3.84615384615	2	52	good	52.95	529.5	1000
+Refractive_error	very good	0.0	0	27	very good	100.0	1000	1000
+Rheumatoid_arthritis	very good	0.0	0	36	very good	100.0	1000	1000
+Schizophrenia	ok	5.26315789474	1	19	good	53.1	531.0	1000
+Systemic_lupus_erythematosus	ok	6.66666666667	3	45	very poor	10.9	109.0	1000
+Systolic_blood_pressure	good	4.34782608696	1	23	ok	34.9	349.0	1000
+Triglycerides	good	4.22535211268	3	71	good	64.6	646.0	1000
+Type_1_diabetes	poor	12.2448979592	6	49	ok	43.8	438.0	1000
+Type_2_diabetes	good	1.28205128205	1	78	ok	42.9	429.0	1000
+Ulcerative_colitis	ok	8.10810810811	6	74	ok	38.9	389.0	1000
+Urate_levels	good	2.17391304348	1	46	ok	33.6	336.0	1000
+Ventricular_conduction	very good	0.0	0	23	very good	100.0	1000	1000
+Vitiligo	poor	12.0	3	25	good	61.5	615.0	1000
