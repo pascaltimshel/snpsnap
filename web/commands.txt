@@ -1,0 +1,11 @@
+
+###################################### Broad ######################################
+
+httpd -V
+	 ---> HTTPD_ROOT="/etc/httpd"
+	 ---> SERVER_CONFIG_FILE="conf/httpd.conf"
+
+locate httpd.conf
+	/etc/httpd/conf/httpd.conf
+
+find / -name 'httpd.conf' -print

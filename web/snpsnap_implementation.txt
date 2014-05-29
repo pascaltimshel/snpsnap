@@ -1,5 +1,75 @@
+@@@@@@@@@@@@@@@@@@ Questions @@@@@@@@@@@@@@@@@@
 
-- progress bar
+- Can I overwrite Bootstrap CSS code with my own code?
+
+- Are html tag case sensitive?
+
+
+@@@@@@@@@@@@@@@@@@ TODO - conceptual @@@@@@@@@@@@@@@@@@
+
+- find out how to host/server the file
+	- download file/bundle w/wo promt
+	- display file/bundle
+
+@@@@@@@@@@@@@@@@@@ TODO - practical @@@@@@@@@@@@@@@@@@
+
+- find Bootstrap CSS templates and copy
+
+- check out sites that will help you develop website layout:
+	- JSfiddle.net
+		http://jsfiddle.net/8fv6e/3/
+
+
+@@@@@@@@@@@@@@@@@@ Error checks @@@@@@@@@@@@@@@@@@
+
+- check validity of email adress
+	- http://www.htmlcodetutorial.com/forms/_INPUT_onChange.html		
+
+@@@@@@@@@@@@@@@@@@ Easy and nice @@@@@@@@@@@@@@@@@@
+
+- textarea with scroll bar
+	- http://stackoverflow.com/questions/8580991/enable-vertical-scrolling-on-textarea
+	<textarea rows="15" cols="50" id="aboutDescription"
+    style="max-height:100px;min-height:100px; resize: none"></textarea>
+- clear fields: <input type="reset" value="Clear fields">
+
+enctype="multipart/form-data"
+
+@@@@@@@@@@@@@@@@@@ Pretty things @@@@@@@@@@@@@@@@@@
+- progress bar - animated
 	- how to make a dynamic progress bar
+- CBS style: launchcheck
+	- view-source:http://www.cbs.dtu.dk/cgi-bin/webface2.fcgi?jobid=5386643300007059D2B08D89&wait=20
+	- http://www.cbs.dtu.dk/js/webface.js
 
 
+
+http://www.cbs.dtu.dk/services/VirtualRibosome/
+
+      <tr>
+        <td valign="top">
+          <h4>Paste in DNA sequences in FASTA, GenBank or TAB format</h4>
+          <textarea name="dnatext" rows="6" cols="80"></textarea>
+          <h4>Upload DNA sequences in FASTA, GenBank or TAB format</h4>
+          <input name="dnafile" size="20" type="file"><br>
+        </td>
+      </tr>
+
+	<tr>
+	  <td valign="top">
+      View <a href="instructions.php#examples" target="_blank">example DNA files</a>
+	  </td>
+	</tr>
+
+      <tr>
+        <td valign="top" colspan="3">
+	</td>
+      </tr>
+      <tr>
+        <td valign="top" colspan="2">
+	  <input type="submit" value="Submit query">
+	  <input type="reset" value="Clear fields">
+	</td>
+        <td align="right">
+	</td>
+      </tr>
