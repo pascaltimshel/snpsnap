@@ -9,3 +9,120 @@ locate httpd.conf
 	/etc/httpd/conf/httpd.conf
 
 find / -name 'httpd.conf' -print
+
+
+###################################### Ubuntu ######################################
+
+sudo service apache2 restart
+httpd does not exist on Ubuntu. Use apache2ctl (controler)
+
+# apache2ctl and apachectl are the same
+	pascal@pascal-VirtualBox:~/git/snpsnap$ sudo apache2ctl -v
+	Server version: Apache/2.2.22 (Ubuntu)
+	Server built:   Apr 17 2014 21:49:30
+
+httpd is the same as apache2. but it depends on the OS you use.for example in RHEL 6.2 it is httpd but apache2 in ubuntu 12.04.
+
+@@@@@@@@@@@@@@@@@@ Things2findOut @@@@@@@@@@@@@@@@@@
+
+- *** how to make apache stop 'hosting' files
+	- e.g. when I enter localhost/test it displays files like an ftp
+
+- force download of files
+	- e.g http://localhost/test/text.txt
+	- FilesMatch
+
+- git version control of application (snpsnap_query)
+	- symlink to /var/www/snpsnap
+	- 
+
+## filepermissions
+- where to output and host results files?
+	- root access vs git?
+---> cgi files just need "chmod a+x" to allow apache (www or nobody) to run them
+
+- password and access of result files
+
+@@@@@@@@@@@@@@@@@ Nice2know @@@@@@
+
+
+@@@@@@@@@@@@@@@@@@ Logging @@@@@@@@@@@@@@@@@@
+
+
+tail -f /var/log/apache2/error.log
+	---> look at error log
+
+@@@@@@@@@@@@@@@@@@ Check if apache is running @@@@@@@@@@@@@@@@@@
+
+service httpd status
+
+ps ax | grep httpd | grep -v grep
+
+
+@@@@@@@@@@@@@@@@@@ used commands - ubuntu @@@@@@@@@@@@@@@@@@
+
+cd /etc/apache2/sites-available
+sudo cp default site_snpsnap
+(potentially 
+	sudo chown pascal site_snpsnap
+)
+sudo subl site_snpsnap &
+	--> edit the file
+		DocumentRoot /home/pascal/git/snpsnap/web
+		....
+		
+		<Directory /home/pascal/git/snpsnap/web/>
+		..
+		AllowOverride All
+(look in /sites-enabled
+	000-default -> ../sites-available/default
+)
+sudo a2ensite site_snpsnap
+sudo service apache2 reload
+	---> localhost still displays 'default' site
+
+apache2ctl -S
+pascal@pascal-VirtualBox:/etc/apache2/sites-available$ sudo apache2ctl -S
+apache2: Could not reliably determine the server's fully qualified domain name, using 127.0.1.1 for ServerName
+VirtualHost configuration:
+wildcard NameVirtualHosts and _default_ servers:
+*:80                   is a NameVirtualHost
+         default server 127.0.1.1 (/etc/apache2/sites-enabled/000-default:1)
+         port 80 namevhost 127.0.1.1 (/etc/apache2/sites-enabled/000-default:1)
+         port 80 namevhost 127.0.1.1 (/etc/apache2/sites-enabled/site_snpsnap:1)
+
+#################### getting multiple local hosts to work ##################
+## add this to site_snpsnap
+    ServerName snpsnap.com
+    ServerAlias www.snpsnap.com
+
+    --> notice that these names does not matter much. 
+    They are only for naming INSIDE apache
+
+### add this line to /etc/hosts
+	127.0.0.1 snpsnap.com
+
+## make sure that both sites are enabled. type command:
+	sudo a2ensite default site_snpsnap
+	sudo service apache2 restart
+## we are now able to acces both sites/configurations using
+localhost
+	--> defualt site
+snpsnap.com
+	--> snpsnap site
+	*** www.snpsnap.com does not work since the host file
+
+pascal@pascal-VirtualBox:/etc/apache2/sites-available$ sudo apache2ctl -S
+apache2: Could not reliably determine the server's fully qualified domain name, using 127.0.1.1 for ServerName
+VirtualHost configuration:
+wildcard NameVirtualHosts and _default_ servers:
+*:80                   is a NameVirtualHost
+         default server 127.0.1.1 (/etc/apache2/sites-enabled/000-default:1)
+         port 80 namevhost 127.0.1.1 (/etc/apache2/sites-enabled/000-default:1)
+         port 80 namevhost snpsnap.com (/etc/apache2/sites-enabled/site_snpsnap:2)
+Syntax OK
+###############################################
+
+
+
+

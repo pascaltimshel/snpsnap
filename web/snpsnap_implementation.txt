@@ -7,6 +7,9 @@
 
 @@@@@@@@@@@@@@@@@@ TODO - conceptual @@@@@@@@@@@@@@@@@@
 
+- set file permissions for .htaccess?
+	--> other users at Broad should not be able to modify the server configuration.
+
 - find out how to host/server the file
 	- download file/bundle w/wo promt
 	- display file/bundle
@@ -43,7 +46,6 @@ enctype="multipart/form-data"
 	- http://www.cbs.dtu.dk/js/webface.js
 
 
-
 http://www.cbs.dtu.dk/services/VirtualRibosome/
 
       <tr>
@@ -73,3 +75,13 @@ http://www.cbs.dtu.dk/services/VirtualRibosome/
         <td align="right">
 	</td>
       </tr>
+
+
+##### not found page - http://www.cbs.dtu.dk/cgi-bin/webface2.fcgi?jobid=538 
+
+<html><head><title>538 expired</title></head>
+<body>
+<H1>Your job has expired</H1>
+<P>We only hold results for a limited time after submission.</P>
+</body>
+</html>
