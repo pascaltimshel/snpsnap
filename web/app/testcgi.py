@@ -1,7 +1,8 @@
 #!/usr/bin/python
 print "Content-Type: text/html"     # HTML is following
 print                               # blank line, end of headers
-print "<TITLE>CGI script output</TITLE>"
-print "<H1>This is my first CGI script</H1>"
+print "<title>CGI script output</title>"
+print "<h1>This is my first CGI script</h1>"
 print "Hello, world!"
+print "<h4>By Pascal Timshel</h4>"
 

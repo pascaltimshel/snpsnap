@@ -1,4 +1,84 @@
-<html><body><h1>It works!</h1>
-<p>This is the default web page for this server.</p>
-<p>The web server software is running but no content has been added, yet.</p>
-</body></html>
+<html>
+<head>
+<title>SNPSNAP</title>
+<style>
+h2 {font-weight:bold; color:blue;}
+p.info {margin-top: 0em; margin-bottom: 0em;}
+p.remark {font-style:italic; color:gray; margin-top: 0em; margin-bottom: 0em;}
+</style>
+</head>
+<body>
+<h1 style="text-align:center;">Welcome to SNPSNAP - matching your SNPs</h1>
+
+This site is developed for Google Chrome browser. Please use it for optimal compatibility.
+
+<div style="position:relative;">
+	<form action="/app/webface.py" method="POST" target="_blank" enctype="multipart/form-data">
+		<!-- ############# FILE UPLOAD ############## -->
+		<div style="border:2px solid;padding:10px 10px;">
+			<h2>File upload</h2>
+			<textarea name="snplist_text" cols="40" rows="5", placeholder="Paste SNP list here..."></textarea>
+			<br/>
+			Upload SNPlist: <input type="file" name="snplist_fileupload">
+		</div>
+		<br/>
+		<!-- ############# CRITERIA ############## -->
+		<div style="border:2px solid;padding:10px 10px;">
+			<h2>Criteria</h2>
+			Distance type:
+			<input type="radio" id="ld_distance_type" name="distance_type" value="ld" required="required" checked="checked">
+			<label for="ld_distance_type">LD</label>
+			<input type="radio" id="kb_distance_type" name="distance_type" value="kb" required="required">
+			<label for="kb_distance_type">KB</label>
+			<br/>
+			Distance cutoff: <select name="distance_cutoff" id="distance_cutoff">
+				<option value="0.1" selected>ld0.1</option>
+				<option value="0.5" selected>ld0.5</option>
+				<option value="0.9" selected>ld0.9</option>
+				<option value="100" selected>kb100</option>
+				<option value="500" selected>kb500</option>
+				<option value="1000" selected>kb1000</option>
+			</select>
+			<!-- <label for="distance_cutoff">Distance cutoff</label> -->
+			<p style="font-weight:bold; margin-bottom:0">Maximum deviations for matching SNPs</p>
+			MAF: <input type="text" name="max_freq_deviation" value="5" size=5><br/>
+			Gene count in loci: <input type="text" name="max_genes_count_deviation" value="20">%<br/>
+			Distance to nearest gene: <input type="text" name="max_distance_deviation" value="20">%
+			<br/>
+		</div>
+		<br/>
+		<!-- ############# OPTIONS ############## -->
+		<div style="border:2px solid;padding:10px 10px;">
+			<h2>Options</h2>
+			Number of matching SNP sets: <input type="text" name="N_sample_sets" value="1000">
+			<br/>
+			<input type="checkbox" name="annotate" id="annotate" value="true">
+			<label for="annotate">Annotate input SNPs</label>
+			<p class="remark">This MAY take longer time...</p>
+			<br/>
+			<input type="checkbox" name="set_file" id="set_file" value="true">
+			<label for="set_file">Create set file</label>
+			<p class="info">Enable this to create an annotated SNP set file for matched SNPs.</p>
+			<p class="remark">This will take significantly longer time and potentially produce a large output file</p>
+			<br/>
+
+			<!-- <label for="distance_cutoff">Distance cutoff</label> -->
+		</div>
+		<br/>
+		<!-- ############# SESSION ############## -->
+		<div style="border:2px solid;padding:10px 10px;">
+			<h2>Session information</h2>
+			Please fill in information for you to later identify your job<br/>
+			Job name: <input type="text" name="job_name"><br/>
+			Email: <input type="text" name="email" value="pascal.timshel@gmail.com">
+			<br/>
+		</div>
+		<input type="submit" value="Submit" />
+	</form>
+</div>
+<!--
+Comment
+-->
+
+</body>
+</html>
