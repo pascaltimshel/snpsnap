@@ -1,1 +1,0 @@
-../../snpsnap_query.py

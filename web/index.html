@@ -17,7 +17,15 @@ This site is developed for Google Chrome browser. Please use it for optimal comp
 		<!-- ############# FILE UPLOAD ############## -->
 		<div style="border:2px solid;padding:10px 10px;">
 			<h2>File upload</h2>
-			<textarea name="snplist_text" cols="40" rows="5", placeholder="Paste SNP list here..."></textarea>
+			<textarea name="snplist_text" cols="40" rows="5", placeholder="Paste SNP list here...">
+14:69873335
+9:5453460
+7:88660988
+1:201688955
+1:181844943
+18:67015865
+6:32592119
+			</textarea>
 			<br/>
 			Upload SNPlist: <input type="file" name="snplist_fileupload">
 		</div>
@@ -32,12 +40,12 @@ This site is developed for Google Chrome browser. Please use it for optimal comp
 			<label for="kb_distance_type">KB</label>
 			<br/>
 			Distance cutoff: <select name="distance_cutoff" id="distance_cutoff">
-				<option value="0.1" selected>ld0.1</option>
-				<option value="0.5" selected>ld0.5</option>
-				<option value="0.9" selected>ld0.9</option>
-				<option value="100" selected>kb100</option>
-				<option value="500" selected>kb500</option>
-				<option value="1000" selected>kb1000</option>
+				<option value="0.1">ld0.1</option>
+				<option value="0.5" selected="selected">ld0.5</option>
+				<option value="0.9">ld0.9</option>
+				<option value="100">kb100</option>
+				<option value="500">kb500</option>
+				<option value="1000">kb1000</option>
 			</select>
 			<!-- <label for="distance_cutoff">Distance cutoff</label> -->
 			<p style="font-weight:bold; margin-bottom:0">Maximum deviations for matching SNPs</p>

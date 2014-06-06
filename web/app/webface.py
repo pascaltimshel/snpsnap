@@ -1,15 +1,4 @@
-#!/usr/bin/python
-
-#!/opt/rh/python27/root/usr/bin/python2.7
-#!/opt/rh/python27/root/usr/bin/python
-
-#!/usr/bin/python
-
-#!/usr/bin/env python2.7
-#!/usr/bin/env python
-
-
-
+#!/bin/env python
 
 # Import modules for CGI handling 
 import cgi, cgitb
@@ -21,7 +10,12 @@ import random
 
 import subprocess
 
-#import pandas
+### import pandas
+
+# Create instance of FieldStorage 
+form = cgi.FieldStorage() 
+#form = cgi.FieldStorage( keep_blank_values = 1 ) # DOES NOT WORK! Why
+#form = cgi.FieldStorage(keep_blank_values=True) # DOES NOT WORK! Why?
 
 
 session_id = hashlib.md5(repr(time.time())).hexdigest()
@@ -38,10 +32,6 @@ script2call = "/cvar/jhlab/snpsnap/snpsnap/snpsnap_query.py"
 
 cgitb.enable()
 
-# Create instance of FieldStorage 
-form = cgi.FieldStorage() 
-#form = cgi.FieldStorage( keep_blank_values = 1 ) # DOES NOT WORK! Why
-#form = cgi.FieldStorage(keep_blank_values=True) # DOES NOT WORK! Why?
 
 # First try to read content of file upload. Hereafter read the content of textinput
 def get_snplist():
@@ -74,6 +64,7 @@ distance_type = form.getvalue('distance_type', '')
 max_distance_deviation = form.getvalue('max_distance_deviation', '')
 max_freq_deviation = form.getvalue('max_freq_deviation', '')
 max_genes_count_deviation = form.getvalue('max_genes_count_deviation', '')
+N_sample_sets = form.getvalue('N_sample_sets', '')
 
 email = form.getvalue('email', '')
 job_name = form.getvalue('job_name', '')
@@ -81,24 +72,9 @@ job_name = form.getvalue('job_name', '')
 annotate = form.getvalue('annotate', '')
 set_file = form.getvalue('set_file', '')
 
-#self.fh_output = open(self.file_output, 'w')
-#self.process=subprocess.Popen(self.cmd, stdout=self.fh_output, stderr=subprocess.STDOUT, shell=True)
 
-commands_called = []
-
-if annotate:
-	command_shell = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type {distance_type} --distance_cutoff {distance_cutoff} annotate".format(program=script2call, snplist=file_snplist, outputdir=path_session_output, distance_type=distance_type, distance_cutoff=distance_cutoff)
-	commands_called.append(command_shell)
-	subprocess.Popen(command_shell, shell=True)
-
-#command_shell = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type {distance_type} --distance_cutoff {distance_cutoff} match --N_sample_sets {N} --max_freq_deviation {freq} --max_distance_deviation {dist} --max_genes_count_deviation {gene_count}".format(program=script2call, snplist=filename, outputdir=output_dir, N=N_sample_sets, freq=freq, dist=dist, gene_count=gene_count)
-
-
-#command_shell = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type ld --distance_cutoff 0.5 match --N_sample_sets {N} --max_freq_deviation {freq} --max_distance_deviation {dist} --max_genes_count_deviation {gene_count}".format(program=script2call, snplist=filename, outputdir=output_dir, N=N_sample_sets, freq=freq, dist=dist, gene_count=gene_count)
-	
-
-print "Content-Type: text/html"     # HTML is following
-print                               # blank line, end of headers
+print "Content-Type: text/html"
+print
 print "<html>"
 print "<head>"
 print "<title>SNPSNAP - query result</title>"
@@ -134,19 +110,64 @@ print "<p> An email will be sent to *%s* when your job is completed. (Most jobs 
 
 print "<p class='todo'>Here goes the ***PROGRESS BAR***</p>"
 
+
+commands_called = []
+processes = []
+
+if annotate:
+	command_shell = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type {distance_type} --distance_cutoff {distance_cutoff} annotate".format(program=script2call, snplist=file_snplist, outputdir=path_session_output, distance_type=distance_type, distance_cutoff=distance_cutoff)
+	commands_called.append(command_shell)
+	with open(os.devnull, "w") as fnull: # same as open('/dev/null', 'w')
+		p = subprocess.Popen(command_shell, stdout = fnull, stderr = subprocess.STDOUT, shell=True)
+		processes.append(p)
+	#subprocess.Popen(command_shell, shell=True)
+
+
+
+if set_file:
+	command_shell = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type {distance_type} --distance_cutoff {distance_cutoff} match --N_sample_sets {N_sample_sets} --max_freq_deviation {max_freq_deviation} --max_distance_deviation {max_distance_deviation} --max_genes_count_deviation {max_genes_count_deviation} --set_file".format(program=script2call, snplist=file_snplist, outputdir=path_session_output, distance_type=distance_type, distance_cutoff=distance_cutoff, \
+																																																																											N_sample_sets=N_sample_sets, max_freq_deviation=max_freq_deviation, max_distance_deviation=max_distance_deviation, max_genes_count_deviation=max_genes_count_deviation)
+	commands_called.append(command_shell)
+	with open(os.devnull, "w") as fnull: # same as open('/dev/null', 'w')
+		p = subprocess.Popen(command_shell, stdout = fnull, stderr = subprocess.STDOUT, shell=True)
+		processes.append(p)
+else:
+	command_shell = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type {distance_type} --distance_cutoff {distance_cutoff} match --N_sample_sets {N_sample_sets} --max_freq_deviation {max_freq_deviation} --max_distance_deviation {max_distance_deviation} --max_genes_count_deviation {max_genes_count_deviation}".format(program=script2call, snplist=file_snplist, outputdir=path_session_output, distance_type=distance_type, distance_cutoff=distance_cutoff, \
+																																																																											N_sample_sets=N_sample_sets, max_freq_deviation=max_freq_deviation, max_distance_deviation=max_distance_deviation, max_genes_count_deviation=max_genes_count_deviation)
+	commands_called.append(command_shell)
+	with open(os.devnull, "w") as fnull: # same as open('/dev/null', 'w')
+		p = subprocess.Popen(command_shell, stdout = fnull, stderr = subprocess.STDOUT, shell=True)
+		processes.append(p)
+
 for c in commands_called:
 	print "<p>%s</p>" % c
+
+print "<p>Here is the list of process IDs:</p>"
+for p in processes:
+	print "%s</b>" % p.pid
+
+# print "<p>Now waiting for processes</p>"
+# for p in processes:
+# 	print "Waiting process: %s</b>" % p.pid
+# 	p.wait()
+# 	print "Process finished. Return code: %s" % p.returncode
+
 
 print "</body>"
 print "</html>"
 
 
+
+
+
+
+
+
+
+
+
+
 #print "<p> </p>"
-
-
-
-
-
 
 
 # def get_snplist():
