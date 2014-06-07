@@ -19,6 +19,9 @@ import time
 import memory_profiler
 #import profilehooks
 
+import logging
+from pplogger import Logger
+
 import pdb
 
 ## Example calls:
@@ -59,8 +62,8 @@ def locate_db_file(path, prefix):
 	#file_meta = "{path}/{type}_meta.{ext}".format(path=path, type=prefix, ext='h5')
 	#if not ( os.path.exists(file_db) and os.path.exists(file_meta) ): # both file must exists
 	if not os.path.exists(file_db): # TODO- FIX THIS LATER
-		print "Could not find collection file: %s." % file_db
-		print "Exiting..." 
+		logger.error( "Could not find collection file: %s." % file_db )
+		logger.error( "Exiting..."  )
 		sys.exit(1)
 	#return (file_db, file_meta)
 	return file_db
@@ -68,8 +71,8 @@ def locate_db_file(path, prefix):
 def locate_collection_file(path, prefix):
 	file_collection = "{path}/{type}_collection.{ext}".format(path=path, type=prefix, ext='tab.gz')
 	if not os.path.exists(file_collection): # TODO- FIX THIS LATER
-		print "Could not find collection file: %s." % file_collection
-		print "Exiting..." 
+		logger.error( "Could not find collection file: %s." % file_collection )
+		logger.error( "Exiting..."  )
 		sys.exit(1)
 	return file_collection
 
@@ -88,22 +91,22 @@ def read_user_snps(user_snps_file):
 	for line in lines:
 		words = line.strip()
 		if not words: # string is empty
-			print "Found empty line in user_snps_file %s" % user_snps_file
+			logger.warning( "Found empty line in user_snps_file %s" % user_snps_file )
 			continue
 		if not words in user_snps:
 			#user_snps[words] = 1
 			user_snps.append(words)
 		else:
-			print "*** Warning: user input file contains duplicates"
+			logger.warning( "user input file contains duplicates" )
 			if not words in duplicates: # first time we notice a duplicate ==> two entries seen
 				duplicates[words] = 2
 			else:
 				duplicates[words] += 1
 	if duplicates: # dict is non-empty
-		print "*** List of duplicate SNPs"
+		logger.info( "*** List of duplicate SNPs" )
 		for (k,v) in duplicates.items():
-			print "%s\t%s" % (k,v)
-	print "Read %d unique user SNPs" % len(user_snps)
+			logger.info( "%s\t%s" % (k,v) )
+	logger.info( "Read %d unique user SNPs" % len(user_snps) )
 	return user_snps
 
 
@@ -124,7 +127,7 @@ def read_user_snps(user_snps_file):
 # 	return user_snps_df
 
 def lookup_user_snps_iter(file_db, user_snps):
-	print "START: lookup_user_snps_iter"
+	logger.info( "START: lookup_user_snps_iter" )
 	start_time = time.time()
 	store = pd.HDFStore(file_db, 'r')
 	list_of_df = []
@@ -139,7 +142,7 @@ def lookup_user_snps_iter(file_db, user_snps):
 	store.close()
 	user_snps_df = pd.concat(list_of_df)
 	elapsed_time = time.time() - start_time
-	print "END: lookup_user_snps_iter in %s s (%s min)" % (elapsed_time, elapsed_time/60)
+	logger.info( "END: lookup_user_snps_iter in %s s (%s min)" % (elapsed_time, elapsed_time/60) )
 	
 	return user_snps_df
 
@@ -147,7 +150,7 @@ def lookup_user_snps_iter(file_db, user_snps):
 def write_snps_not_in_db(path_output, user_snps, df):
 	user_snps_not_found = path_output+"/snps_not_found.tab"
 
-	print "START: doing write_snps_not_in_db"
+	logger.info( "START: doing write_snps_not_in_db" )
 	start_time = time.time()
 	snps_not_in_db = []
 	for snp in user_snps:
@@ -155,14 +158,12 @@ def write_snps_not_in_db(path_output, user_snps, df):
 		if not (df.index == snp).any():
 			snps_not_in_db.append(snp)
 	if snps_not_in_db: # if non-empty
-		print "*** Warning: %d SNPs not found in data base:" % len(snps_not_in_db)
-		print "\n".join(snps_not_in_db)
-
+		logger.warning( "{} SNPs not found in data base:\n{}".format( len(snps_not_in_db), "\n".join(snps_not_in_db)) )
 		# WRITING SNPs not found to FILE
 		with open(user_snps_not_found, 'w') as f:
 			for snp in snps_not_in_db:
 				f.write(snp+"\n")
-	print "Found %d out of %d SNPs in data base" % (len(df.index), len(user_snps))
+	logger.info( "Found %d out of %d SNPs in data base" % (len(df.index), len(user_snps)) )
 	# print "*** Warning: Number of unique snpIDs (index) found: %d" % len(np.unique(df.index.values))
 	# bool_duplicates = pd.Series(df.index).duplicated().values # returns true for duplicates
 	# df_duplicate = df.ix[bool_duplicates]
@@ -171,7 +172,7 @@ def write_snps_not_in_db(path_output, user_snps, df):
 	# print "Pandas data frame with index of duplicate:"
 	# print df.ix[idx_duplicate]
 	elapsed_time = time.time() - start_time
-	print "END: write_snps_not_in_db in %s s (%s min)" % (elapsed_time, elapsed_time/60)
+	logger.info( "END: write_snps_not_in_db in %s s (%s min)" % (elapsed_time, elapsed_time/60) )
 
 def write_user_snps_stats(path_output, df):
 	user_snps_stats_file = path_output+"/snps_stats.tab"
@@ -190,13 +191,13 @@ def read_collection(file_collection):
 	#6=loci_downstream #NEW
 	#7 ID_nearest_gene 
 	#8 ID_in_matched_locus
-	print "START: reading CSV file PRIM..."
+	logger.info( "START: reading CSV file PRIM..." )
 	start_time = time.time()
 	f_tab = gzip.open(file_collection, 'rb')
 	df_collection = pd.read_csv(f_tab, index_col=0, header=0, delim_whitespace=True) # index is snpID
 	f_tab.close()
 	elapsed_time = time.time() - start_time
-	print "END: read CSV file PRIM into DataFrame in %s s (%s min)" % (elapsed_time, elapsed_time/60)
+	logger.info( "END: read CSV file PRIM into DataFrame in %s s (%s min)" % (elapsed_time, elapsed_time/60) )
 	return df_collection
 
 def write_user_snps_annotation(path_output, df, df_collection):
@@ -292,11 +293,11 @@ def few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps):
 	tmp2 = "{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}".format(score_insufficient, insufficient_matches_pct, len(df_snps_few_matches), N_snps,
 															score_match_size, match_size_pct, median_n_matches, N_sample_sets)
 	write_str_score_table = '\n'.join([tmp1, tmp2])
-	print "################# Score ###############"
-	print write_str_score_insufficient
-	print write_str_score_match_size
-	print write_str_score_table
-	print "######################################"
+	logger.info( "################# Score ###############" )
+	logger.info( write_str_score_insufficient )
+	logger.info( write_str_score_match_size )
+	logger.info( write_str_score_table )
+	logger.info( "######################################" )
 
 	with open(user_snps_few_matches_report, 'w') as f:
 		f.write(write_str_score_insufficient+'\n')
@@ -338,7 +339,7 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, max_freq_deviati
 		# OBS: delta_gene_count and delta_dist are in the range of [-1;1]
 		delta_gene_count = np.linspace(0,max_genes_count_deviation, n_attempts)/float(100)
 		if max_distance_deviation < 1:
-		    print "Warning: max_distance_deviation set to %s. Lowest possible max_distance_deviation is 1." % max_distance_deviation
+		    logger.error( "max_distance_deviation set to %s. Lowest possible max_distance_deviation is 1." % max_distance_deviation )
 		    max_distance_deviation = 1
 		delta_dist = np.linspace(1,max_distance_deviation, n_attempts)/float(100) # OBS distance deviation starts at 1 %
 
@@ -368,8 +369,12 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, max_freq_deviati
 		    	match_ID_old = np.array([]) # empty array. This line ensures that len(match_ID_old) is always valid
 		        break
 
-		print "SNP #%d/%d: ID {%s}: found %d hits" % (i+1, N_snps, query_snpID, len(match_ID))
-		
+		logger.info( "SNP #%d/%d: ID {%s}: found %d hits" % (i+1, N_snps, query_snpID, len(match_ID)) )
+		###################################### STATUSBAR ######################################
+		if status_obj is not None:
+			status_obj.update(match=(i+1)/float(N_snps) , annotate=status_obj.annotate, set_file=status_obj.set_file)
+		#######################################################################################
+
 		# Unfortunately, we cannot create the 'df_snps_few_matches' DataFrame before we know the columns in df
 		if df_snps_few_matches is None: # if true, create DataFrame with correct ordering of columns
 			pd.set_option('mode.chained_assignment',None) # OBS: avoids SettingWithCopy exception when doing: row_query['n_matches'] = len(match_ID)
@@ -377,7 +382,7 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, max_freq_deviati
 			df_snps_few_matches= pd.DataFrame(columns=cols) #df.columns is a Index object
 
 		if len(match_ID) < N_sample_sets:
-			print "*** Found SNP with too few matches; n_matches=%s. Using sampling with replacement to get enough samples ***" % len(match_ID)
+			logger.warning( "*** Found SNP with too few matches; n_matches=%s. Using sampling with replacement to get enough samples ***" % len(match_ID) )
 			# if df_snps_few_matches is None: # if true, create DataFrame with correct ordering of columns
 			# 	pd.set_option('mode.chained_assignment',None) # OBS: avoids SettingWithCopy exception when doing: row_query['n_matches'] = len(match_ID)
 			# 	cols = np.append(df.columns.values, 'n_matches')
@@ -425,15 +430,15 @@ def write_set_file(path_output, df_collection):
 	df_matrix = pd.read_csv(matrix_file, index_col=0, header=None, skiprows=1, delim_whitespace=True) # index is PARRENT snpID.
 
 	if os.path.exists(user_snps_set_file):
-		print "user_snps_set_file exists. removing file before annotating..."
+		logger.warning( "user_snps_set_file exists. removing file before annotating..." )
 		os.remove(user_snps_set_file)
 
 	f_set = open(user_snps_set_file, 'a')
 	idx_input_snps = range(len(df_matrix)) # REMEMBER: both python and pandas are zero-based
-	print "START: creating set_file"
+	logger.info( "START: creating set_file" )
 	start_time = time.time()
 	for i in idx_input_snps: # len(df_matrix) is equal to the number of user_snps found in db.
-		print "SNP #%s/#%s: creating and writing to CSV set_file" % (i+1, len(idx_input_snps))
+		logger.info( "SNP #%s/#%s: creating and writing to CSV set_file" % (i+1, len(idx_input_snps)) )
 		parrent_snp = df_matrix.index[i] # type --> string
 		match_snps = df_matrix.ix[i] # series
 		set_idx = df_matrix.columns.values 	# copying COLUMN NAMES to np.array, better than: set_idx = range(1,len(df_matrix.columns)+1)
@@ -454,7 +459,7 @@ def write_set_file(path_output, df_collection):
 			df_final.to_csv(f_set, sep='\t', index=True, header=False) # filehandle in appending mode is given
 	
 	elapsed_time = time.time() - start_time
-	print "END: creating set_file %s s (%s min)" % (elapsed_time, elapsed_time/60)
+	logger.info( "END: creating set_file %s s (%s min)" % (elapsed_time, elapsed_time/60) )
 
 
 
@@ -482,6 +487,11 @@ def ParseArguments():
 	arg_parser.add_argument("--output_dir", type=ArgparseAdditionalUtils.check_if_writable, help="Directory in which output files, i.e. random SNPs will be written", required=True)
 	arg_parser.add_argument("--distance_type", help="ld or kb", required=True)
 	arg_parser.add_argument("--distance_cutoff", help="r2, or kb distance", required=True)
+	# NEW: options
+	#arg_parser.add_argument("--status_file", help="Bool (switch, takes no value after argument); if set then logging is ENABLED.", action='store_true')
+	arg_parser.add_argument("--status_file", help="If set, a json file will be written. Value should be the a filepath.")
+	arg_parser.add_argument("--NoLogger", help="Bool (switch, takes no value after argument); if set then logging is DISAPLED. Logfile will be placed in outputdir.", action='store_true')
+
 
 	### MATCH arguments
 	arg_parser_match.add_argument("--N_sample_sets", type=int, help="Number of matched SNPs to retrieve", required=True) # 1000 - "Permutations?" TODO: change name to --n_random_snp_sets or --N
@@ -495,21 +505,38 @@ def ParseArguments():
 
 	args = arg_parser.parse_args()
 
-	# PRINT RUNNING DESCRIPTION 
-	now = datetime.datetime.now()
-	print '# ' + ' '.join(sys.argv)
-	print '# ' + now.strftime("%a %b %d %Y %H:%M")
-	print '# CWD: ' + os.getcwd()
-	print '# COMMAND LINE PARAMETERS SET TO:'
-	for arg in dir(args):
-		if arg[:1]!='_':
-			print '# \t' + "{:<30}".format(arg) +\
-				  "{:<30}".format(getattr(args, arg))
-
 	return args
 
+
+def setup_logger(args):
+	""" Function to setup logger """
+	logger = None
+	if args.NoLogger:
+		logger = logging.getLogger()
+		noop = logging.NullHandler()
+		logger.addHandler(noop)
+	else:	
+		current_script_name = os.path.basename(__file__).replace('.py','')
+		logger = Logger(name=current_script_name, logdir=args.output_dir, format=1).get() # gives logname --> snapsnap_query.py
+		#logger = Logger(name=__name__, logdir=args.output_dir, format=1).get() # gives logname --> __name__ == main
+		logger.setLevel(logging.DEBUG) # consider setting 
+	return logger
+
+
+def LogArguments(args):
+	# PRINT RUNNING DESCRIPTION 
+	now = datetime.datetime.now()
+	logger.critical( '# ' + ' '.join(sys.argv) )
+	logger.critical( '# ' + now.strftime("%a %b %d %Y %H:%M") )
+	logger.critical( '# CWD: ' + os.getcwd() )
+	logger.critical( '# COMMAND LINE PARAMETERS SET TO:' )
+	for arg in dir(args):
+		if arg[:1]!='_':
+			logger.critical( '# \t' + "{:<30}".format(arg) + "{:<30}".format(getattr(args, arg)) )
+
+
 def run_match(path_data, path_output, prefix, user_snps_file, N_sample_sets, max_freq_deviation, max_distance_deviation, max_genes_count_deviation, set_file):
-	print "running match"
+	logger.info( "running match" )
 	file_db = locate_db_file(path_data, prefix) # Locate DB files. TODO: make function more robust
 	file_collection = locate_collection_file(path_data, prefix) # Locate DB files. TODO: make function more robust
 	user_snps = read_user_snps(user_snps_file) # Read input SNPs. Return list
@@ -525,7 +552,7 @@ def run_match(path_data, path_output, prefix, user_snps_file, N_sample_sets, max
 		write_set_file(path_output, df_collection)
 
 def run_annotate(path_data, path_output, prefix, user_snps_file):
-	print "running annotate"
+	logger.info( "running annotate" )
 	file_db = locate_db_file(path_data, prefix) # Locate DB files. TODO: make function more robust
 	file_collection = locate_collection_file(path_data, prefix) # Locate DB files. TODO: make function more robust
 	user_snps = read_user_snps(user_snps_file) # Read input SNPs. Return list
@@ -535,9 +562,40 @@ def run_annotate(path_data, path_output, prefix, user_snps_file):
 	df_collection = read_collection(file_collection)
 	write_user_snps_annotation(path_output, user_snps_df, df_collection)
 
+# import collections
+# def makehash():
+#     return collections.defaultdict(makehash)
+import json
+class Progress():
+	def __init__(self, status_file): #'tmp_data.json'
+		#self.fh = open('data.txt', 'w')
+		self.file = status_file
+		self.match = 0
+		self.annotate = 0
+		self.set_file = 0
+		self.status = [{'match':self.match, 'annotate':self.annotate, 'set_file':self.set_file}]
+		#self.status = [{'match':20, 'annotate':20, 'set_file':20}]
+
+	def update(self, match=0, annotate=0, set_file=0):
+		(self.match, self.annotate, set_file) = (match, annotate, set_file)
+		self.status.append({'match':self.match, 'annotate':self.annotate, 'set_file':self.set_file})
+		with open(self.file, 'w') as f:
+			#json.dump(self.status, f)
+			json.dump(self.status, f, indent=3)
+
 
 def main():	
 	args = ParseArguments()
+	global logger
+	logger = setup_logger(args)
+	LogArguments(args)
+
+	### Progress class
+	global status_obj
+	if args.status_file:
+		status_obj = Progress(args.status_file) #'/cvar/jhlab/snpsnap/web_tmp'
+	else:
+		status_obj = None
 
 	### CONSTANTS ###
 	#path_data = os.path.abspath("/Users/pascaltimshel/snpsnap/data/step3") ## OSX - HARD CODED PATH!!
@@ -560,11 +618,11 @@ def main():
 	elif args.subcommand == "annotate":
 		run_annotate(path_data, path_output, prefix, user_snps_file)
 	else:
-		print "ERROR: command line arguments not passed correctly. Fix source code!"
-		print "Exiting..."
+		logger.error( "ERROR: command line arguments not passed correctly. Fix source code!" )
+		logger.error( "Exiting..." )
 		sys.exit(1)
 	elapsed_time = time.time() - start_time
-	print "TOTAL RUNTIME: %s s (%s min)" % (elapsed_time, elapsed_time/60)
+	logger.info( "TOTAL RUNTIME: %s s (%s min)" % (elapsed_time, elapsed_time/60) )
 
 
 
