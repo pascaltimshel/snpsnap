@@ -568,8 +568,8 @@ def run_annotate(path_data, path_output, prefix, user_snps_file):
 import json
 class Progress():
 	def __init__(self, status_file): #'tmp_data.json'
-		#self.fh = open('data.txt', 'w')
-		self.file = status_file
+		self.fh = open(status_file, 'a')
+		#self.file = status_file
 		self.match = 0
 		self.annotate = 0
 		self.set_file = 0
@@ -579,9 +579,14 @@ class Progress():
 	def update(self, match=0, annotate=0, set_file=0):
 		(self.match, self.annotate, set_file) = (match, annotate, set_file)
 		self.status.append({'match':self.match, 'annotate':self.annotate, 'set_file':self.set_file})
-		with open(self.file, 'w') as f:
-			#json.dump(self.status, f)
-			json.dump(self.status, f, indent=3)
+		# with open(self.file, 'a') as f:
+		# 	#json.dump(self.status, f)
+		# 	json.dump(self.status, f, indent=3)
+
+
+	def finish(self):
+		""" Closing status_file file handle """
+		sefl.fh.close()
 
 
 def main():	

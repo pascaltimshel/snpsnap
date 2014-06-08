@@ -8,7 +8,8 @@ import time # potential
 import hashlib
 import random
 
-import subprocess
+
+import launchApp
 
 
 # Create instance of FieldStorage 
@@ -17,7 +18,7 @@ form = cgi.FieldStorage()
 #form = cgi.FieldStorage(keep_blank_values=True) # DOES NOT WORK! Why?
 
 
-session_id = hashlib.md5(repr(time.time())).hexdigest()
+#session_id = hashlib.md5(repr(time.time())).hexdigest()
 session_id = hashlib.md5(str(random.random())).hexdigest()
 path_session_output = '/cvar/jhlab/snpsnap/web_results'+'/'+session_id
 path_tmp_output = '/cvar/jhlab/snpsnap/web_tmp'
@@ -27,7 +28,7 @@ os.mkdir(path_session_output)
 #file_snplist = "{}/{}_{}".format(path_tmp_output, session_id, 'user_snplist') # version2
 file_snplist = path_tmp_output+'/'+session_id+'_user_snplist' # version3
 file_status = path_tmp_output+'/'+session_id+'_status.json'
-script2call = "/cvar/jhlab/snpsnap/snpsnap/snpsnap_query.py"
+
 
 cgitb.enable()
 
@@ -67,16 +68,28 @@ N_sample_sets = form.getvalue('N_sample_sets', '')
 
 email_address = form.getvalue('email_address', '')
 job_name = form.getvalue('job_name', '')
-
+if len(job_name) >= 50: # only allow up to 50 character long job_name
+	job_name = job_name[:50]
 
 annotate = form.getvalue('annotate', '')
 set_file = form.getvalue('set_file', '')
 
+cmd_annotate = '' # OBS: important that default value evaluates to false in Bool context
+cmd_match = ''
+script2call = "/cvar/jhlab/snpsnap/snpsnap/snpsnap_query.py"
+if annotate:
+	cmd_annotate = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type {distance_type} --distance_cutoff {distance_cutoff} annotate".format(program=script2call, snplist=file_snplist, outputdir=path_session_output, distance_type=distance_type, distance_cutoff=distance_cutoff)
+
+if set_file:
+	cmd_match = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type {distance_type} --distance_cutoff {distance_cutoff} match --N_sample_sets {N_sample_sets} --max_freq_deviation {max_freq_deviation} --max_distance_deviation {max_distance_deviation} --max_genes_count_deviation {max_genes_count_deviation} --set_file".format(program=script2call, snplist=file_snplist, outputdir=path_session_output, distance_type=distance_type, distance_cutoff=distance_cutoff, \
+																																																																												N_sample_sets=N_sample_sets, max_freq_deviation=max_freq_deviation, max_distance_deviation=max_distance_deviation, max_genes_count_deviation=max_genes_count_deviation)
+else: 
+	cmd_match = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type {distance_type} --distance_cutoff {distance_cutoff} --status_file {file_status} match --N_sample_sets {N_sample_sets} --max_freq_deviation {max_freq_deviation} --max_distance_deviation {max_distance_deviation} --max_genes_count_deviation {max_genes_count_deviation}".format(program=script2call, snplist=file_snplist, outputdir=path_session_output, distance_type=distance_type, distance_cutoff=distance_cutoff, file_status=file_status, \
+																																																																													N_sample_sets=N_sample_sets, max_freq_deviation=max_freq_deviation, max_distance_deviation=max_distance_deviation, max_genes_count_deviation=max_genes_count_deviation)
 
 
-#def print_java_script():
-
-
+app = launchApp.Processor(session_id, email_address, job_name, cmd_annotate, cmd_match)
+app.start() #Start the process activity in a SEPERATE process.
 
 print "Content-Type: text/html"
 print
@@ -106,67 +119,6 @@ print "<input type='hidden' id='session_id' value='%s'>" % session_id
 print_args() # just for debuggin
 
 print snplist_upload_status # just for debug
-
-	
-
-print "<p> Textarea is :</p>"
-print """
-<div style="color:blue;">
-	%s
-</div>
-""" % cgi.escape('MISTAKE')
-
-import platform
-import sys # only need for print(sys.version)
-print "<p>Python version: %s</p>" % platform.python_version()
-print "<p>Python full string: %s</p>" % sys.version
-
-print "<p class='todo'>Here goes the ***PROGRESS BAR***</p>"
-
-
-commands_called = []
-processes = []
-
-if annotate:
-	command_shell = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type {distance_type} --distance_cutoff {distance_cutoff} annotate".format(program=script2call, snplist=file_snplist, outputdir=path_session_output, distance_type=distance_type, distance_cutoff=distance_cutoff)
-	commands_called.append(command_shell)
-	with open(os.devnull, "w") as fnull: # same as open('/dev/null', 'w')
-		p = subprocess.Popen(command_shell, stdout = fnull, stderr = subprocess.STDOUT, shell=True)
-		processes.append(p)
-	#subprocess.Popen(command_shell, shell=True)
-
-
-
-if set_file:
-	command_shell = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type {distance_type} --distance_cutoff {distance_cutoff} match --N_sample_sets {N_sample_sets} --max_freq_deviation {max_freq_deviation} --max_distance_deviation {max_distance_deviation} --max_genes_count_deviation {max_genes_count_deviation} --set_file".format(program=script2call, snplist=file_snplist, outputdir=path_session_output, distance_type=distance_type, distance_cutoff=distance_cutoff, \
-																																																																											N_sample_sets=N_sample_sets, max_freq_deviation=max_freq_deviation, max_distance_deviation=max_distance_deviation, max_genes_count_deviation=max_genes_count_deviation)
-	commands_called.append(command_shell)
-	with open(os.devnull, "w") as fnull: # same as open('/dev/null', 'w')
-		p = subprocess.Popen(command_shell, stdout = fnull, stderr = subprocess.STDOUT, shell=True)
-		processes.append(p)
-else:
-	command_shell = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type {distance_type} --distance_cutoff {distance_cutoff} --status_file {file_status} match --N_sample_sets {N_sample_sets} --max_freq_deviation {max_freq_deviation} --max_distance_deviation {max_distance_deviation} --max_genes_count_deviation {max_genes_count_deviation}".format(program=script2call, snplist=file_snplist, outputdir=path_session_output, distance_type=distance_type, distance_cutoff=distance_cutoff, file_status=file_status, \
-																																																																											N_sample_sets=N_sample_sets, max_freq_deviation=max_freq_deviation, max_distance_deviation=max_distance_deviation, max_genes_count_deviation=max_genes_count_deviation)
-	commands_called.append(command_shell)
-	with open(os.devnull, "w") as fnull: # same as open('/dev/null', 'w')
-		p = subprocess.Popen(command_shell, stdout = fnull, stderr = subprocess.STDOUT, shell=True)
-		processes.append(p)
-
-
-for c in commands_called:
-	print "<p>%s</p>" % c
-
-print "<p>Here is the list of process IDs:</p>"
-for p in processes:
-	print "%s</b>" % p.pid
-
-#### Outcommented: we do not want to wait...
-## print "<p>Now waiting for processes</p>"
-## for p in processes:
-## 	print "Waiting process: %s</b>" % p.pid
-## 	p.wait()
-## 	print "Process finished. Return code: %s" % p.returncode
-
 
 print "</br>"
 #print "<div id='myprogress'><progress value='22' max='100'></progress></div>"

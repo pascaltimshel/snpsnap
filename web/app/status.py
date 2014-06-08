@@ -34,7 +34,7 @@ with open('/cvar/jhlab/snpsnap/snpsnap/web/call_stat.txt', 'a') as f:
 print "Content-Type: text/plain"
 # print "Length:", len(body)
 print ""
-print 5
+print status2parse
 #print status_obj # prints whole json object
 
 
