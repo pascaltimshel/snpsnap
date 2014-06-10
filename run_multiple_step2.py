@@ -16,7 +16,7 @@ import time
 import datetime
 
 #lds2run=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-lds2run=[0.5]
+#lds2run=[0.5]
 
 start_time = time.time()
 
