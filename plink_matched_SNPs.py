@@ -251,7 +251,7 @@ if args.distance_type == "kb":
 
 
 ### Make sure that the genotype prefix is correct ###
-if True:
+if False:
 	ans = ""
 	print "*** SAFETY CHECK! ***"
 	print "You specifed --output_dir_path to be: %s" % output_dir_path
@@ -274,8 +274,8 @@ print("Running with %s option, using cutoff %s"%(args.distance_type,args.distanc
 #prepare queue parameters and commands
 #
 ##TODO@@ Adjust queue parameters??
-queue_name = "cbs" # default
-#queue_name = "idle" 
+#queue_name = "cbs" # default
+queue_name = "idle" 
 walltime="604800" # 60*60*24*7=7 days
 mem_per_job="15gb" #=>> PBS: job killed: mem job total 4323312 kb exceeded limit 3145728 kb
 #walltime="86400" # 60*60*24=1 day
