@@ -34,6 +34,7 @@ for p_ld in lds2run:
 	f = open(log_file, 'a')
 	processes[str(p_ld)]['fh'] = f
 	f.write( '####################################### %s #######################################\n' % batch_time )
+	sys.stdout.flush()
 	p=subprocess.Popen(cmd, stdout=f, stderr=subprocess.STDOUT, shell=True)
 	processes[str(p_ld)]['p'] = p
 	processes[str(p_ld)]['pid'] = p.pid
