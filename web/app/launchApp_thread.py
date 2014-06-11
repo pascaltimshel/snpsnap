@@ -5,6 +5,9 @@ import time # potential
 
 import subprocess
 
+#import multiprocessing
+import threading
+
 import collections
 
 import smtplib
@@ -12,8 +15,11 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-class Processor(object):
+#class Processor(multiprocessing.Process):
+class Processor(threading.Thread):
 	def __init__(self, session_id, email_address, job_name, cmd_annotate, cmd_set_file):
+		#multiprocessing.Process.__init__(self)
+		threading.Thread.__init__(self)
 		#self.script2call = "/cvar/jhlab/snpsnap/snpsnap/snpsnap_query.py"
 		self.session_id = session_id
 		self.cmd_annotate=cmd_annotate # bool value
@@ -24,62 +30,6 @@ class Processor(object):
 		self.processes = collections.defaultdict(dict) # two-level dict
 		#self.commands_called = []
 		#self.returncodes = 
-
-	def daemonize(self):
-		"""do the UNIX double-fork magic, see Stevens' "Advanced
-		Programming in the UNIX Environment" for details (ISBN 0201563177)"""
-		try:
-			pid = os.fork()
-			if pid > 0:
-					# exit first parent
-					#sys.exit(0)
-					#os._exit(0)
-					return
-		except OSError, e:
-			#sys.stderr.write("fork #1 failed: %d (%s)\n" % (e.errno, e.strerror))
-			raise
-			#sys.exit(1)
-
-		# decouple from parent environment
-		os.chdir("/")
-		os.setsid()
-		os.umask(0)
-
-		# do second fork
-		try:
-			pid = os.fork()
-			if pid > 0:
-				# exit from second parent
-				#sys.exit(0)
-				os._exit(0)
-		except OSError, e:
-			#sys.stderr.write("fork #2 failed: %d (%s)\n" % (e.errno, e.strerror))
-			raise
-			#sys.exit(1)
-
-		self.run()
-		os._exit(0)
-
-	def fork_me(self):
-		pid = os.fork()
-		if pid == 0:
-			# we are the child
-			#print 'Hello from child. My PID: %s' % os.getpid() 
-			#app.run() #Start the process activity in a SEPERATE process.
-			self.run() #Start the process activity in a SEPERATE process.
-			#print 'I am done with app.run(). Exiting now My PID: %s' % os.getpid()
-			os._exit(0) #Exit the process with status n, without calling cleanup handlers, flushing stdio buffers, etc.
-		else:
-			return # return to main CGI script
-			# we are the parent. pid is not 0
-			#print 'Hello from parent. My PID: %s | Child PID: %s' % (os.getpid(), pid)
-
-
-
-	# def start(self):
-	# 	""" Start daemon """
-	# 	self.daemonize()
-	# 	self.run()
 
 	def send_email(self):
 		""" Function to send out email """
@@ -192,33 +142,6 @@ class Processor(object):
 		## Now all is done: send out email
 		self.send_email()
 
-
-def ParseArguments():
-	arg_parser = argparse.ArgumentParser()
-
-	#session_id, email_address, job_name, cmd_annotate, cmd_match
-
-	# arg_parser.add_argument("--session_id", required=True)
-	# arg_parser.add_argument("--email_address", required=True)
-	# arg_parser.add_argument("--job_name", required=True)
-	# arg_parser.add_argument("--cmd_annotate", required=True)
-	# arg_parser.add_argument("--cmd_match", required=True)
-
-	arg_parser.add_argument("--session_id", default='')
-	arg_parser.add_argument("--email_address", default='')
-	arg_parser.add_argument("--job_name", default='')
-	arg_parser.add_argument("--cmd_annotate", default='')
-	arg_parser.add_argument("--cmd_match", default='')
-
-	args = arg_parser.parse_args()
-	return args
-
-if __name__ == '__main__':
-	# We are now run from a terminal (e.g. a subprocess.Popen), i.e. imported
-	import argparse
-	args = ParseArguments()
-	app = Processor(args.session_id, args.email_address, args.job_name, args.cmd_annotate, args.cmd_match)
-	app.run()
 
 
 

@@ -5,6 +5,9 @@ import time # potential
 
 import subprocess
 
+#import multiprocessing
+import threading
+
 import collections
 
 import smtplib
@@ -12,8 +15,20 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
+
+
+import sys
+cmd_match = "python /cvar/jhlab/snpsnap/snpsnap/snpsnap_query.py --user_snps_file /cvar/jhlab/snpsnap/web_tmp/bf1d367b7bac7d6ff60fb2cfc728b090_user_snplist --output_dir /cvar/jhlab/snpsnap/web_results/bf1d367b7bac7d6ff60fb2cfc728b090 --distance_type ld --distance_cutoff 0.5 --status_file /cvar/jhlab/snpsnap/web_tmp/bf1d367b7bac7d6ff60fb2cfc728b090_status.json match --N_sample_sets 1000 --max_freq_deviation 5 --max_distance_deviation 20 --max_genes_count_deviation 20"
+cmd_annotate = ''
+email_address = 'pascal.timshel@gmail.com'
+session_id = 'bf1d367b7bac7d6ff60fb2cfc728b090'
+job_name = 'test_job_multi'
+
+
 class Processor(object):
 	def __init__(self, session_id, email_address, job_name, cmd_annotate, cmd_set_file):
+		#multiprocessing.Process.__init__(self)
+		#threading.Thread.__init__(self)
 		#self.script2call = "/cvar/jhlab/snpsnap/snpsnap/snpsnap_query.py"
 		self.session_id = session_id
 		self.cmd_annotate=cmd_annotate # bool value
@@ -24,62 +39,7 @@ class Processor(object):
 		self.processes = collections.defaultdict(dict) # two-level dict
 		#self.commands_called = []
 		#self.returncodes = 
-
-	def daemonize(self):
-		"""do the UNIX double-fork magic, see Stevens' "Advanced
-		Programming in the UNIX Environment" for details (ISBN 0201563177)"""
-		try:
-			pid = os.fork()
-			if pid > 0:
-					# exit first parent
-					#sys.exit(0)
-					#os._exit(0)
-					return
-		except OSError, e:
-			#sys.stderr.write("fork #1 failed: %d (%s)\n" % (e.errno, e.strerror))
-			raise
-			#sys.exit(1)
-
-		# decouple from parent environment
-		os.chdir("/")
-		os.setsid()
-		os.umask(0)
-
-		# do second fork
-		try:
-			pid = os.fork()
-			if pid > 0:
-				# exit from second parent
-				#sys.exit(0)
-				os._exit(0)
-		except OSError, e:
-			#sys.stderr.write("fork #2 failed: %d (%s)\n" % (e.errno, e.strerror))
-			raise
-			#sys.exit(1)
-
-		self.run()
-		os._exit(0)
-
-	def fork_me(self):
-		pid = os.fork()
-		if pid == 0:
-			# we are the child
-			#print 'Hello from child. My PID: %s' % os.getpid() 
-			#app.run() #Start the process activity in a SEPERATE process.
-			self.run() #Start the process activity in a SEPERATE process.
-			#print 'I am done with app.run(). Exiting now My PID: %s' % os.getpid()
-			os._exit(0) #Exit the process with status n, without calling cleanup handlers, flushing stdio buffers, etc.
-		else:
-			return # return to main CGI script
-			# we are the parent. pid is not 0
-			#print 'Hello from parent. My PID: %s | Child PID: %s' % (os.getpid(), pid)
-
-
-
-	# def start(self):
-	# 	""" Start daemon """
-	# 	self.daemonize()
-	# 	self.run()
+		print "PROCESSOR: class instance created"
 
 	def send_email(self):
 		""" Function to send out email """
@@ -107,12 +67,12 @@ class Processor(object):
 		<html>
 		  <head></head>
 		  <body>
-		    <p>Hi!<br/>
-		       Your job has completed. See below for further description of the completion<br/>
-		       Here is the <a href="{link}">link</a> to the result files.
-		    </p>
-		    <p>Here is some information for your reference:</p>
-		    <p>{status}</p>
+			<p>Hi!<br/>
+			   Your job has completed. See below for further description of the completion<br/>
+			   Here is the <a href="{link}">link</a> to the result files.
+			</p>
+			<p>Here is some information for your reference:</p>
+			<p>{status}</p>
 		  </body>
 		</html>
 		""".format(link=link_result, status=status_report)
@@ -145,6 +105,8 @@ class Processor(object):
 		## Debugging must be done by me be replicating the example. 
 		## (consider sending the formular in the email)
 
+		print "PROCESSOR: inside run()"
+
 		if self.cmd_annotate:
 			command_shell = self.cmd_annotate # HACK
 			#command_shell = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type {distance_type} --distance_cutoff {distance_cutoff} annotate".format(program=script2call, snplist=file_snplist, outputdir=path_session_output, distance_type=distance_type, distance_cutoff=distance_cutoff)
@@ -154,6 +116,8 @@ class Processor(object):
 				p = subprocess.Popen(command_shell, stdout = fnull, stderr = subprocess.STDOUT, shell=True)
 				#self.processes.append(p)
 				self.processes['annotate']['process_obj'] = p
+		
+		print "PROCESSOR: after annotate"
 
 
 		if self.cmd_set_file:
@@ -164,6 +128,8 @@ class Processor(object):
 				p = subprocess.Popen(command_shell, stdout = fnull, stderr = subprocess.STDOUT, shell=True)
 				#self.processes.append(p)
 				self.processes['match']['process_obj'] = p
+
+		print "PROCESSOR: after set_file"
 
 		# else:
 		# 	command_shell = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type {distance_type} --distance_cutoff {distance_cutoff} --status_file {file_status} match --N_sample_sets {N_sample_sets} --max_freq_deviation {max_freq_deviation} --max_distance_deviation {max_distance_deviation} --max_genes_count_deviation {max_genes_count_deviation}".format(program=script2call, snplist=file_snplist, outputdir=path_session_output, distance_type=distance_type, distance_cutoff=distance_cutoff, file_status=file_status, \
@@ -179,46 +145,46 @@ class Processor(object):
 		# for p in self.processes:
 		# 	p.wait() # this will also enable us to get the return code of the process
 
+		print "PROCESSOR: before wait"
+
 		### Now save PID (for potential later use) and WAIT for all processes to finish
 		for call_type in self.processes:
 			p = self.processes[call_type]['process_obj']
 			self.processes[call_type]['pid'] = p.pid
 			p.wait() # this will also enable us to get the return code of the process
 
+		print "PROCESSOR: after wait"
+
+
 		for call_type in self.processes:
 			p = self.processes[call_type]['process_obj']
 			self.processes[call_type]['returncode'] = p.returncode # not nessesary to save value in dict...
+		
+		print "PROCESSOR: after returncode"
+
 
 		## Now all is done: send out email
 		self.send_email()
 
-
-def ParseArguments():
-	arg_parser = argparse.ArgumentParser()
-
-	#session_id, email_address, job_name, cmd_annotate, cmd_match
-
-	# arg_parser.add_argument("--session_id", required=True)
-	# arg_parser.add_argument("--email_address", required=True)
-	# arg_parser.add_argument("--job_name", required=True)
-	# arg_parser.add_argument("--cmd_annotate", required=True)
-	# arg_parser.add_argument("--cmd_match", required=True)
-
-	arg_parser.add_argument("--session_id", default='')
-	arg_parser.add_argument("--email_address", default='')
-	arg_parser.add_argument("--job_name", default='')
-	arg_parser.add_argument("--cmd_annotate", default='')
-	arg_parser.add_argument("--cmd_match", default='')
-
-	args = arg_parser.parse_args()
-	return args
-
-if __name__ == '__main__':
-	# We are now run from a terminal (e.g. a subprocess.Popen), i.e. imported
-	import argparse
-	args = ParseArguments()
-	app = Processor(args.session_id, args.email_address, args.job_name, args.cmd_annotate, args.cmd_match)
-	app.run()
+		print "PROCESSOR: after sending mail"
 
 
+print 'Hello from MAIN. My PID: %s' % os.getpid()
+app = Processor(session_id, email_address, job_name, cmd_annotate, cmd_match)
+
+
+pid = os.fork()
+if pid:
+	# we are the parent
+	print 'Hello from parent. My PID: %s | Child PID: %s' % (os.getpid(), pid)
+else:
+	# we are the child
+	print 'Hello from child. My PID: %s' % os.getpid() 
+	app.run() #Start the process activity in a SEPERATE process.
+	print 'I am done with app.run(). Exiting now My PID: %s' % os.getpid() 
+
+	#sys.exit(0)
+	os._exit(0) #Exit the process with status n, without calling cleanup handlers, flushing stdio buffers, etc.
+
+#sys.exit(0)
 

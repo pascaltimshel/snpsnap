@@ -27,7 +27,7 @@ os.mkdir(path_session_output)
 #file_snplist = os.path.join(path_tmp_output, "{}_{}".format(session_id, 'user_snplist') ) # version1
 #file_snplist = "{}/{}_{}".format(path_tmp_output, session_id, 'user_snplist') # version2
 file_snplist = path_tmp_output+'/'+session_id+'_user_snplist' # version3
-file_status = path_tmp_output+'/'+session_id+'_status.json'
+file_status = path_tmp_output+'/'+session_id+'_status'
 
 
 cgitb.enable()
@@ -88,8 +88,42 @@ else:
 																																																																													N_sample_sets=N_sample_sets, max_freq_deviation=max_freq_deviation, max_distance_deviation=max_distance_deviation, max_genes_count_deviation=max_genes_count_deviation)
 
 
-app = launchApp.Processor(session_id, email_address, job_name, cmd_annotate, cmd_match)
-app.start() #Start the process activity in a SEPERATE process.
+###################### FORKING ##################################
+### This is a mess. Tried out the deamon process. It did not work...
+#app = launchApp.Processor(session_id, email_address, job_name, cmd_annotate, cmd_match)
+#app.start() #Start the process activity in a SEPERATE process.
+#app.daemonize()
+
+### Use this - the simplest solution. However, the browser stil waits for the process... (!)
+#app = launchApp.Processor(session_id, email_address, job_name, cmd_annotate, cmd_match)
+#app.fork_me()
+
+
+############### SUBPROCESS TRAIL 1 ####################
+# import subprocess
+# import sys
+# with open(os.devnull, "w") as fnull: # same as open('/dev/null', 'w')
+# 	script2call = "/cvar/jhlab/snpsnap/snpsnap/web/app/launchApp.py"
+# 	cmd_launch = "python {} --session_id {} --email_address {} --job_name {} --cmd_annotate {} cmd_match {}".format(script2call, session_id, email_address, job_name, cmd_annotate, cmd_match)
+# 	sys.stderr.write("called command: %s\n" % cmd_launch)
+# 	subprocess.Popen(cmd_launch, stdout = fnull, stderr = subprocess.STDOUT, shell=True)
+
+############### SUBPROCESS  ####################
+import subprocess
+import sys
+with open(os.devnull, "w") as fnull: # same as open('/dev/null', 'w')
+	script2call = "/cvar/jhlab/snpsnap/snpsnap/web/app/launchApp.py"
+	cmd_launch = [script2call,
+				'--session_id', session_id,
+				'--email_address', email_address,
+				'--job_name', job_name,
+				'--cmd_annotate', cmd_annotate,
+				'--cmd_match', cmd_match
+				]
+	sys.stderr.write("called command: %s\n" % cmd_launch)
+	subprocess.Popen(cmd_launch, stdout = fnull, stderr = subprocess.STDOUT)
+
+
 
 print "Content-Type: text/html"
 print
@@ -114,6 +148,8 @@ print "<h6>By Pascal Timshel</h6>"
 
 ################ PARSING SESSION ID ##################
 print "<input type='hidden' id='session_id' value='%s'>" % session_id
+print "<input type='hidden' id='annotate' value='%s'>" % annotate
+print "<input type='hidden' id='set_file' value='%s'>" % set_file
 ##########################
 
 print_args() # just for debuggin
@@ -140,4 +176,38 @@ print "</html>"
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+# try:
+# 	pid = os.fork()
+# 	if pid > 0:
+# 			# exit first parent
+# 			sys.exit(0)
+# except OSError, e:
+# 	#sys.stderr.write("fork #1 failed: %d (%s)\n" % (e.errno, e.strerror))
+# 	sys.exit(1)
+
+# # decouple from parent environment
+# os.chdir("/")
+# os.setsid()
+# os.umask(0)
+
+# # do second fork
+# try:
+# 	pid = os.fork()
+# 	if pid > 0:
+# 		# exit from second parent
+# 		sys.exit(0)
+# except OSError, e:
+# 	#sys.stderr.write("fork #2 failed: %d (%s)\n" % (e.errno, e.strerror))
+# 	sys.exit(1)
 
