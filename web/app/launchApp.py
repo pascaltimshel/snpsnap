@@ -12,6 +12,16 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
+
+#### LEFTOVERS: attempt to make threading/multiprocessing
+#import multiprocessing
+#import threading
+# #class Processor(multiprocessing.Process):
+# class Processor(threading.Thread):
+# 	def __init__(self, session_id, email_address, job_name, cmd_annotate, cmd_set_file):
+# 		#multiprocessing.Process.__init__(self)
+# 		threading.Thread.__init__(self)
+
 class Processor(object):
 	def __init__(self, session_id, email_address, job_name, cmd_annotate, cmd_set_file):
 		#self.script2call = "/cvar/jhlab/snpsnap/snpsnap/snpsnap_query.py"

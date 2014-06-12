@@ -383,7 +383,7 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, max_freq_deviati
 		# if status_obj is not None:
 		# 	status_obj.update(match=(i+1)/float(N_snps) , annotate=status_obj.annotate, set_file=status_obj.set_file)
 		# #######################################################################################
-		status_obj.update_pct('match', (i+1)/float(N_snps))
+		status_obj.update_pct('match', (i+1)/float(N_snps)*100)
 
 
 		# Unfortunately, we cannot create the 'df_snps_few_matches' DataFrame before we know the columns in df
@@ -424,8 +424,6 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, max_freq_deviati
 	#CALL REPORT FUNCTION
 	few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps)
 
-	### STATUS
-	status_obj.update_status('match', 'complete')
 
 	### Calculate score and write few_matches (if any)
 	#if df_snps_few_matches is not None: 
@@ -453,7 +451,7 @@ def write_set_file(path_output, df_collection):
 	start_time = time.time()
 	for i in idx_input_snps: # len(df_matrix) is equal to the number of user_snps found in db.
 		### STATUS
-		status_obj.update_pct( 'set_file', (i+1)/float(len(idx_input_snps)) ) # float() is needed to avoid interger division
+		status_obj.update_pct( 'set_file', (i+1)/float(len(idx_input_snps))*100 ) # float() is needed to avoid interger division
 
 		logger.info( "SNP #%s/#%s: creating and writing to CSV set_file" % (i+1, len(idx_input_snps)) )
 		parrent_snp = df_matrix.index[i] # type --> string
@@ -527,6 +525,8 @@ def ParseArguments():
 	return args
 
 
+
+
 def setup_logger(args):
 	""" Function to setup logger """
 	logger = None
@@ -534,11 +534,19 @@ def setup_logger(args):
 		logger = logging.getLogger()
 		noop = logging.NullHandler()
 		logger.addHandler(noop)
-	else:	
+	else:
 		current_script_name = os.path.basename(__file__).replace('.py','')
 		logger = Logger(name=current_script_name, logdir=args.output_dir, format=1).get() # gives logname --> snapsnap_query.py
 		#logger = Logger(name=__name__, logdir=args.output_dir, format=1).get() # gives logname --> __name__ == main
 		logger.setLevel(logging.DEBUG) # consider setting 
+
+		## This works. Exceptions are written to the log AND printed to sys.stderr
+		## An alternative solution is to make one big "try except" block in main:
+			# 
+		def handleException(excType, excValue, traceback, logger=logger):
+			logger.error("Logging an uncaught exception", exc_info=(excType, excValue, traceback))
+		sys.excepthook = handleException
+
 	return logger
 
 
@@ -565,9 +573,13 @@ def run_match(path_data, path_output, prefix, user_snps_file, N_sample_sets, max
 	write_user_snps_stats(path_output, user_snps_df) # write stats file (no meta annotation)
 	query_similar_snps(file_db, path_output, user_snps_df, N_sample_sets, max_freq_deviation, max_distance_deviation, max_genes_count_deviation)
 
-	### TODO: complete write function!
+	### STATUS
+	status_obj.update_status('match', 'complete')
+
+	## TODO: use Threading for the read_collection() call
 	if set_file: # if argument is true, then run set files
 		status_obj.update_status('set_file', 'running')
+		status_obj.update_pct('set_file', float(20) )
 		df_collection = read_collection(file_collection)
 		write_set_file(path_output, df_collection)
 		status_obj.update_status('set_file', 'complete')
@@ -581,29 +593,26 @@ def run_annotate(path_data, path_output, prefix, user_snps_file):
 	write_snps_not_in_db(path_output, user_snps, user_snps_df) # Report number of matches to DB (print STDOUT and file)
 	
 	status_obj.update_status('annotate', 'running')
+	status_obj.update_pct('annotate', float(20) )
 	df_collection = read_collection(file_collection)
-	status_obj.update_pct('annotate', 50)
 	write_user_snps_annotation(path_output, user_snps_df, df_collection)
-	status_obj.update_pct('annotate', 100)
+	status_obj.update_pct('annotate', float(100) )
 	status_obj.update_status('annotate', 'complete')
 
 
-# import collections
-# def makehash():
-#     return collections.defaultdict(makehash)
 import json
 class Progress():
 	def __init__(self, status_file, args, enabled): #'tmp_data.json'
 		self.enabled = enabled
 		if not self.enabled: return
 
-		if args.subcommand == "annotate":
+		if args.subcommand == "match":
+			self.fname = "{name_parsed}_{subcommand}.{ext}".format(name_parsed=status_file, subcommand='match', ext='json')
+			# e.g. /e43f990bbb981b008b9d84b22c2770f8_status_match.json
+			#self.fh = open(fname, 'w')
+		elif args.subcommand == "annotate":
 			self.fname = "{name_parsed}_{subcommand}.{ext}".format(name_parsed=status_file, subcommand='annotate', ext='json')
 			# e.g. /e43f990bbb981b008b9d84b22c2770f8_status_annotate.json
-			#self.fh = open(fname, 'w')
-		elif args.subcommand == "match":
-			fname = "{name_parsed}_{subcommand}.{ext}".format(name_parsed=status_file, subcommand='match', ext='json')
-			# e.g. /e43f990bbb981b008b9d84b22c2770f8_status_match.json
 			#self.fh = open(fname, 'w')
 		else:
 			emsg = "Could not find matching subcommand. You may have changed the name of the subcommands"
@@ -625,29 +634,29 @@ class Progress():
 		#self.status = [{'match':self.match, 'annotate':self.annotate, 'set_file':self.set_file}]
 		#self.status = [{'match':20, 'annotate':20, 'set_file':20}]
 
-		def update_pct(self, selector, pct):
-			if not self.enabled: return
-			self.status_now[selector]['pct_complete'] = pct
-			self.status_list.append(self.status_now) # not needed
-			self._write_status()
+	def update_pct(self, selector, pct):
+		if not self.enabled: return
+		self.status_now[selector]['pct_complete'] = pct
+		self.status_list.append(self.status_now) # not needed
+		self._write_status()
 
-		def update_status(self, selector, status_txt):
-			# Statements that should be used are: 
-			# "not_running" (default)
-			# (initializing?)
-			# running
-			# complete
-			if not self.enabled: return
-			self.status_now[selector]['status'] = status_txt
-			self.status_list.append(self.status_now) # not needed
-			self._write_status()
+	def update_status(self, selector, status_txt):
+		# Statements that should be used are: 
+		# "not_running" (default)
+		# (initializing?)
+		# running
+		# complete
+		if not self.enabled: return
+		self.status_now[selector]['status'] = status_txt
+		self.status_list.append(self.status_now) # not needed
+		self._write_status()
 
-		## Private function
-		def _write_status(self):
-			with open(self.fname, 'w') as f:
-				json.dump(self.status_now, f)
-				#json.dump(self.status_now, f, indent=3)
-		 		#json.dump(self.status, f)
+	## Private function
+	def _write_status(self):
+		with open(self.fname, 'w') as f:
+			json.dump(self.status_now, f)
+			#json.dump(self.status_now, f, indent=3)
+	 		#json.dump(self.status, f)
 
 	# def update(self, match=0, annotate=0, set_file=0):
 	# 	(self.match, self.annotate, set_file) = (match, annotate, set_file)
@@ -705,11 +714,6 @@ def main():
 		set_file = args.set_file
 		run_match(path_data, path_output, prefix, user_snps_file, N_sample_sets, max_freq_deviation, max_distance_deviation, max_genes_count_deviation, set_file)
 	elif args.subcommand == "annotate":
-		###################################### STATUSBAR ######################################
-		status_obj.update_status('annotate', 'initialyzing')
-		#status_obj.update_pct('annotate', 20)
-		#######################################################################################
-
 		run_annotate(path_data, path_output, prefix, user_snps_file)
 	else:
 		logger.error( "ERROR: command line arguments not passed correctly. Fix source code!" )
@@ -720,9 +724,7 @@ def main():
 
 
 
-
 if __name__ == '__main__':
 	main()
-
 
 
