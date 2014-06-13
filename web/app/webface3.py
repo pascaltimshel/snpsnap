@@ -27,7 +27,7 @@ os.mkdir(path_session_output)
 #file_snplist = os.path.join(path_tmp_output, "{}_{}".format(session_id, 'user_snplist') ) # version1
 #file_snplist = "{}/{}_{}".format(path_tmp_output, session_id, 'user_snplist') # version2
 file_snplist = path_tmp_output+'/'+session_id+'_user_snplist' # version3
-file_status = path_tmp_output+'/'+session_id+'_status.json'
+file_status = path_tmp_output+'/'+session_id+'_status'
 
 
 cgitb.enable()
@@ -78,18 +78,54 @@ cmd_annotate = '' # OBS: important that default value evaluates to false in Bool
 cmd_match = ''
 script2call = "/cvar/jhlab/snpsnap/snpsnap/snpsnap_query.py"
 if annotate:
-	cmd_annotate = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type {distance_type} --distance_cutoff {distance_cutoff} annotate".format(program=script2call, snplist=file_snplist, outputdir=path_session_output, distance_type=distance_type, distance_cutoff=distance_cutoff)
+	cmd_annotate = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type {distance_type} --distance_cutoff {distance_cutoff} --status_file {file_status} annotate".format(program=script2call, snplist=file_snplist, outputdir=path_session_output, distance_type=distance_type, distance_cutoff=distance_cutoff, file_status=file_status)
 
 if set_file:
-	cmd_match = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type {distance_type} --distance_cutoff {distance_cutoff} match --N_sample_sets {N_sample_sets} --max_freq_deviation {max_freq_deviation} --max_distance_deviation {max_distance_deviation} --max_genes_count_deviation {max_genes_count_deviation} --set_file".format(program=script2call, snplist=file_snplist, outputdir=path_session_output, distance_type=distance_type, distance_cutoff=distance_cutoff, \
+	cmd_match = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type {distance_type} --distance_cutoff {distance_cutoff} --status_file {file_status} match --N_sample_sets {N_sample_sets} --max_freq_deviation {max_freq_deviation} --max_distance_deviation {max_distance_deviation} --max_genes_count_deviation {max_genes_count_deviation} --set_file".format(program=script2call, snplist=file_snplist, outputdir=path_session_output, distance_type=distance_type, distance_cutoff=distance_cutoff, file_status=file_status,\
 																																																																												N_sample_sets=N_sample_sets, max_freq_deviation=max_freq_deviation, max_distance_deviation=max_distance_deviation, max_genes_count_deviation=max_genes_count_deviation)
 else: 
 	cmd_match = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type {distance_type} --distance_cutoff {distance_cutoff} --status_file {file_status} match --N_sample_sets {N_sample_sets} --max_freq_deviation {max_freq_deviation} --max_distance_deviation {max_distance_deviation} --max_genes_count_deviation {max_genes_count_deviation}".format(program=script2call, snplist=file_snplist, outputdir=path_session_output, distance_type=distance_type, distance_cutoff=distance_cutoff, file_status=file_status, \
 																																																																													N_sample_sets=N_sample_sets, max_freq_deviation=max_freq_deviation, max_distance_deviation=max_distance_deviation, max_genes_count_deviation=max_genes_count_deviation)
 
 
-app = launchApp.Processor(session_id, email_address, job_name, cmd_annotate, cmd_match)
-app.start() #Start the process activity in a SEPERATE process.
+###################### FORKING ##################################
+### This is a mess. Tried out the deamon process. It did not work...
+#app = launchApp.Processor(session_id, email_address, job_name, cmd_annotate, cmd_match)
+#app.start() #Start the process activity in a SEPERATE process.
+#app.daemonize()
+
+### Use this - the simplest solution. However, the browser stil waits for the process... (!)
+#app = launchApp.Processor(session_id, email_address, job_name, cmd_annotate, cmd_match)
+#app.fork_me()
+
+
+############### SUBPROCESS TRAIL 1 ####################
+# import subprocess
+# import sys
+# with open(os.devnull, "w") as fnull: # same as open('/dev/null', 'w')
+# 	script2call = "/cvar/jhlab/snpsnap/snpsnap/web/app/launchApp.py"
+# 	cmd_launch = "python {} --session_id {} --email_address {} --job_name {} --cmd_annotate {} cmd_match {}".format(script2call, session_id, email_address, job_name, cmd_annotate, cmd_match)
+# 	sys.stderr.write("called command: %s\n" % cmd_launch)
+# 	subprocess.Popen(cmd_launch, stdout = fnull, stderr = subprocess.STDOUT, shell=True)
+
+############### SUBPROCESS  ####################
+import subprocess
+import sys
+with open(os.devnull, "w") as fnull: # same as open('/dev/null', 'w')
+	script2call = "/cvar/jhlab/snpsnap/snpsnap/web/app/launchApp.py"
+	cmd_launch = [script2call,
+				'--session_id', session_id,
+				'--email_address', email_address,
+				'--job_name', job_name,
+				'--cmd_annotate', cmd_annotate,
+				'--cmd_match', cmd_match
+				]
+	sys.stderr.write("called command: %s\n" % cmd_launch)
+	p = subprocess.Popen(cmd_launch, stdout = fnull, stderr = subprocess.STDOUT)
+	sys.stderr.write("process PID is %s\n" % p.pid)
+
+
+
 
 print "Content-Type: text/html"
 print
@@ -103,7 +139,7 @@ print "</style>"
 ## IMPORTANT: http://stackoverflow.com/questions/9540957/jquery-ajax-loop-to-refresh-jqueryui-progressbar
 #print "<script src='http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js'></script>"
 print "<script type='text/javascript' src='http://code.jquery.com/jquery-latest.min.js'></script>"
-print "<script src='/js/get_status.js'></script>"
+print "<script src='/js/get_status_json.js'></script>"
 
 #print "<script>$(function() { alert('hello') });</script>"
 print "</head>"
@@ -114,19 +150,50 @@ print "<h6>By Pascal Timshel</h6>"
 
 ################ PARSING SESSION ID ##################
 print "<input type='hidden' id='session_id' value='%s'>" % session_id
+print "<input type='hidden' id='annotate' value='%s'>" % annotate
+print "<input type='hidden' id='set_file' value='%s'>" % set_file
 ##########################
 
 print_args() # just for debuggin
 
 print snplist_upload_status # just for debug
 
-print "</br>"
+
 #print "<div id='myprogress'><progress value='22' max='100'></progress></div>"
-print """
-<h2>Here is the progress for match</h2>
-<progress id='match_progress' value='0' max='100'></progress>
-<div id='match_percentage'></div>"""
+
+# print "<h2>Here is the progress for match</h2>"
+# print "<progress id='progress_bar_match' value='0' max='100'></progress>"
+# print "<div id='status_pct_match'></div>"
+# print "</br>"
 print "</br>"
+
+print "<h2>Here is the progress for match</h2>"
+print "<div id='progress_bar_match'>"
+print "<progress value='0' max='100'></progress>"
+print "<div id='status_pct_match'></div>"
+print "</div>"
+print "</br>"
+
+print "<h2>Here is the progress for set_file</h2>"
+print "<div id='progress_bar_set_file' style='display:none;'>"
+print "<progress value='0' max='100'></progress>"
+print "<div id='status_pct_set_file'></div>"
+print "</div>"
+print "</br>"
+
+print "<h2>Here is the progress for annotate</h2>"
+print "<div id='progress_bar_annotate' style='display:none;'>"
+print "<progress value='0' max='100'></progress>"
+print "<div id='status_pct_annotate'></div>"
+print "</div>"
+print "</br>"
+
+#### RESULT LINKS
+print "<div id='link_results' style='display:none;'>"
+print "<h2>Your job is done! Files are available at: </h2>"
+link_results = '/results/{sid}'.format(sid=session_id)
+print "<a href='{link}' style='color:green;'>download result files</a>".format(link=link_results)
+print "</div>"
 
 print "<p>Your session ID is: %s</p>" % session_id
 print "<p> An email will be sent to *%s* when your job is completed. (Most jobs finish within 5 minutes)</p>" % email_address
@@ -140,4 +207,38 @@ print "</html>"
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+# try:
+# 	pid = os.fork()
+# 	if pid > 0:
+# 			# exit first parent
+# 			sys.exit(0)
+# except OSError, e:
+# 	#sys.stderr.write("fork #1 failed: %d (%s)\n" % (e.errno, e.strerror))
+# 	sys.exit(1)
+
+# # decouple from parent environment
+# os.chdir("/")
+# os.setsid()
+# os.umask(0)
+
+# # do second fork
+# try:
+# 	pid = os.fork()
+# 	if pid > 0:
+# 		# exit from second parent
+# 		sys.exit(0)
+# except OSError, e:
+# 	#sys.stderr.write("fork #2 failed: %d (%s)\n" % (e.errno, e.strerror))
+# 	sys.exit(1)
 

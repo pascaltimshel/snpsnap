@@ -1,6 +1,6 @@
-#!/usr/bin/python
-
 #!/bin/env python
+
+#!/usr/bin/python
 
 #source /opt/rh/python27/enable
 	# --> use this in your terminal
@@ -30,6 +30,8 @@ import hashlib
 import random
 
 import subprocess
+
+import celery
 
 #########*********************
 #import pandas # TEST ME!!!!
