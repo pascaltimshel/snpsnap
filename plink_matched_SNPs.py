@@ -107,6 +107,9 @@ def write_batches():
 				outfile.write("%s\n"%(rsID_matched))
 			outfile.close()
 			batches.append(batch_id)
+			# break ############### TEMPORARY 06/13/2014 ############################
+			############### NOTE: the outer loop should also be 'break'
+	# break ############### TEMPORARY 06/13/2014 ############################
 	return batches
 
 def get_plink_command(batch_id):
@@ -200,10 +203,11 @@ def submit(batch_ids):
 		run = run_ldfile(batch_id, snp_list)
 		if run:
 			jobs.append( QueueJob(command, log_dir_path, queue_name, walltime, mem_per_job , flags, "plink_matched_SNPs_"+batch_id, script_name=current_script_name) )
+		#break ############### TEMPORARY 06/13/2014 ############################
 	for job in jobs:
 	    time.sleep(2)
 	    job.run()
-
+	    #break ############### TEMPORARY 06/13/2014 ############################
 
 #
 # Fixed variables
@@ -277,7 +281,8 @@ print("Running with %s option, using cutoff %s"%(args.distance_type,args.distanc
 #queue_name = "cbs" # default
 queue_name = "idle" 
 walltime="604800" # 60*60*24*7=7 days
-mem_per_job="15gb" #=>> PBS: job killed: mem job total 4323312 kb exceeded limit 3145728 kb
+#mem_per_job="15gb" #=>> PBS: job killed: mem job total 4323312 kb exceeded limit 3145728 kb
+mem_per_job="8gb"
 #walltime="86400" # 60*60*24=1 day
 #mem_per_job="1gb"
 flags = "sharedmem"
