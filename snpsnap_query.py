@@ -4,7 +4,6 @@ import os
 import sys
 import collections
 import argparse
-from queue import QueueJob,ArgparseAdditionalUtils
 
 import glob
 
@@ -14,13 +13,19 @@ import gzip
 
 import datetime
 import time
+
+#from queue import QueueJob,ShellUtils,ArgparseAdditionalUtils
+
+#import memory_profiler # USE THIS FOR MEMORY PROFILING
+#import profilehooks #  USE THIS FOR TIMING PROFILING
 #import timeit
 #import cProfile #or profile
-import memory_profiler
-#import profilehooks
+
 
 import logging
 from pplogger import Logger
+
+import json
 
 import pdb
 
@@ -241,46 +246,51 @@ def few_matches_score(x, lim, scale):
 	return score
 
 def few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps):
+	########## Write few_matches ##############
 	user_snps_few_matches_file = path_output+"/snps_few_matches.tab"
-	user_snps_few_matches_report = path_output+"/snps_report.txt"
-	#score_insufficient = ''
-	#score_match_size = ''
-
+	df_snps_few_matches.to_csv(user_snps_few_matches_file, sep='\t', index=True, header=True, index_label='snpID', mode='w') 
+	############################################
+	
+	#user_snps_few_matches_report = path_output+"/snps_report.txt" # 06/12/2014: NO LONGER NEEDED. We do not write out file
+	
 	insufficient_matches_pct = ( len(df_snps_few_matches)/float(N_snps) )*100
 
 	if len(df_snps_few_matches) == 0: # NO few_matches found
-		median_n_matches = N_sample_sets
+		match_size_median = N_sample_sets
 	else:
-		median_n_matches = df_snps_few_matches.ix[:,'n_matches'].median()
+		match_size_median = df_snps_few_matches.ix[:,'n_matches'].median()
 
-	match_size_pct = ( median_n_matches/float(N_sample_sets) )*100
+	match_size_median_pct = ( match_size_median/float(N_sample_sets) )*100
 	
-	scale_insufficient = ['very good', 'good', 'ok', 'poor', 'very poor']
-	scale_match_size = ['very poor', 'poor', 'ok', 'good', 'very good']
+	insufficient_scale = ['very good', 'good', 'ok', 'poor', 'very poor']
+	match_size_scale = ['very poor', 'poor', 'ok', 'good', 'very good']
+	# convert to strings
+	insufficient_scale_str = (', '.join("'" + item + "'" for item in insufficient_scale))
+	match_size_scale_str = (', '.join("'" + item + "'" for item in match_size_scale))
 	# About the use of this few_matches_score:
 	# 1) check that the criteria for scale and lim lengths is ok
 	# 2) function does ONLY support 5 scores ATM
 	# 3) IMPORTANT: limits may have to be reversed for it to work. See the function code..
-	score_insufficient = few_matches_score(insufficient_matches_pct, [0,1,5,10,25,100], scale_insufficient) #low_is_good
-	score_match_size = few_matches_score(match_size_pct, [100,75,50,30,15,0][::-1], scale_match_size) #low_is_bad
+	insufficient_rating = few_matches_score(insufficient_matches_pct, [0,1,5,10,25,100], insufficient_scale) #low_is_good
+	match_size_rating = few_matches_score(match_size_median_pct, [100,75,50,30,15,0][::-1], match_size_scale) #low_is_bad
 
 	#TODO: print scale_order (pass as argument to function)
-	# print_str_score_insufficient = "Rating 'number of few matches' = '{rating:s}' ({pct:.4g}%, {count:d} few_matches out of {total:d} valid input SNPs)".format(rating=score_insufficient, 
+	# print_str_insufficient_rating = "Rating 'number of few matches' = '{rating:s}' ({pct:.4g}%, {count:d} few_matches out of {total:d} valid input SNPs)".format(rating=insufficient_rating, 
 	# 																											pct=insufficient_matches_pct, 
 	# 																											count=len(df_snps_few_matches),
 	# 																											total=N_snps)
-	# print_str_score_match_size = "Rating 'over sampling' = '{rating:s}' ({pct:.4g}%, median SNPs to sample from in few_matches is {median:.6g} compared to {total:d} N_sample_sets)".format(rating=score_match_size, 
-	# 																											pct=match_size_pct, 
-	# 																											median=median_n_matches,
+	# print_str_score_match_size = "Rating 'over sampling' = '{rating:s}' ({pct:.4g}%, median SNPs to sample from in few_matches is {median:.6g} compared to {total:d} N_sample_sets)".format(rating=match_size_rating, 
+	# 																											pct=match_size_median_pct, 
+	# 																											median=match_size_median,
 	# 																											total=N_sample_sets)
 	
+	insufficient_N=len(df_snps_few_matches)
+	#tmp1 = "# Rating 'number of few matches' = '{rating:s}' with scale [{scale:s}]".format(rating=insufficient_rating, scale=(', '.join("'" + item + "'" for item in insufficient_scale)) )
+	tmp1 = "# Rating 'insufficient SNP matches' = '{rating:s}' with scale [{scale:s}]".format(rating=insufficient_rating, scale=insufficient_scale_str )
+	tmp2 = "# Percent 'insufficient SNP matches' = {pct:.4g}% (low is good; {count:d} 'insufficient SNP matches' out of {total:d} valid input SNPs)".format(pct=insufficient_matches_pct, count=insufficient_N, total=N_snps)
+	write_str_insufficient_rating = '\n'.join([tmp1, tmp2])
 
-	#tmp1 = "# Rating 'number of few matches' = '{rating:s}' with scale [{scale:s}]".format(rating=score_insufficient, scale=(', '.join("'" + item + "'" for item in scale_insufficient)) )
-	tmp1 = "# Rating 'insufficient SNP matches' = '{rating:s}' with scale [{scale:s}]".format(rating=score_insufficient, scale=(', '.join("'" + item + "'" for item in scale_insufficient)) )
-	tmp2 = "# Percent 'insufficient SNP matches' = {pct:.4g}% (low is good; {count:d} 'insufficient SNP matches' out of {total:d} valid input SNPs)".format(pct=insufficient_matches_pct, count=len(df_snps_few_matches), total=N_snps)
-	write_str_score_insufficient = '\n'.join([tmp1, tmp2])
-
-	#tmp1 = "# Rating 'over sampling' = '{rating:s}' with scale [{scale:s}]".format(rating=score_match_size, scale=(', '.join("'" + item + "'" for item in scale_match_size)) )
+	#tmp1 = "# Rating 'over sampling' = '{rating:s}' with scale [{scale:s}]".format(rating=match_size_rating, scale=(', '.join("'" + item + "'" for item in match_size_scale)) )
 	#Rating 'relative sample size'
 	# 'effective set/sample size'
 	# insufficient match size
@@ -288,30 +298,46 @@ def few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps):
 	# bootstrapping
 	# resample
 	# match size
-	tmp1 = "# Rating 'match size' = '{rating:s}' for SNPs in 'insufficient SNP matches' with scale [{scale:s}]".format(rating=score_match_size, scale=(', '.join("'" + item + "'" for item in scale_match_size)) )
-	tmp2 = "# Relative 'match size' = {pct:.4g}% (high is good; median number of SNPs to sample from in 'insufficient SNP matches' is {median:.6g} compared to {total:d} requested sample sets)".format(pct=match_size_pct, median=median_n_matches, total=N_sample_sets)
+	tmp1 = "# Rating 'match size' = '{rating:s}' for SNPs in 'insufficient SNP matches' with scale [{scale:s}]".format(rating=match_size_rating, scale=match_size_scale_str )
+	tmp2 = "# Relative 'match size' = {pct:.4g}% (high is good; median number of SNPs to sample from in 'insufficient SNP matches' is {median:.6g} compared to {total:d} requested sample sets)".format(pct=match_size_median_pct, median=match_size_median, total=N_sample_sets)
 	write_str_score_match_size = '\n'.join([tmp1, tmp2])
 
-	tmp1 = "# {0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}".format("rating_insufficient", "pct_insufficient", "N_insufficient", "N_input_snps", 
+	tmp1 = "# {0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}".format("insufficient_rating", "pct_insufficient", "insufficient_N", "N_snps", 
 															"rating_size", "pct_size", "median_size", "N_sample_sets")
-	#tmp1 = "# rating_few_matches\tpct_few_matches\tN_few_matches\tN_input_snps\trating_over_sampling\tpct_over_sampling\tmedian_sample_size\tN_sample_sets"
-	tmp2 = "{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}".format(score_insufficient, insufficient_matches_pct, len(df_snps_few_matches), N_snps,
-															score_match_size, match_size_pct, median_n_matches, N_sample_sets)
+	#tmp1 = "# rating_few_matches\tpct_few_matches\tN_few_matches\tN_snps\trating_over_sampling\tpct_over_sampling\tmedian_sample_size\tN_sample_sets"
+	tmp2 = "{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}".format(insufficient_rating, insufficient_matches_pct, insufficient_N, N_snps,
+															match_size_rating, match_size_median_pct, match_size_median, N_sample_sets)
 	write_str_score_table = '\n'.join([tmp1, tmp2])
 	logger.info( "################# Score ###############" )
-	logger.info( write_str_score_insufficient )
+	logger.info( write_str_insufficient_rating )
 	logger.info( write_str_score_match_size )
 	logger.info( write_str_score_table )
 	logger.info( "######################################" )
 
-	with open(user_snps_few_matches_report, 'w') as f:
-		f.write(write_str_score_insufficient+'\n')
-		f.write(write_str_score_match_size+'\n')
-		f.write(write_str_score_table+'\n')
+	#### UNCOMMENTED 06/12/2014 - Pascal. Reason: 
+	# with open(user_snps_few_matches_report, 'w') as f:
+	# 	f.write(write_str_insufficient_rating+'\n')
+	# 	f.write(write_str_score_match_size+'\n')
+	# 	f.write(write_str_score_table+'\n')
+	
+	####### Creating report dict of dicts #####
+	if report_obj.enabled:
+		insufficient_scale_str = (', '.join("'" + item + "'" for item in insufficient_scale))
+		match_size_scale_str = (', '.join("'" + item + "'" for item in match_size_scale))
+		report = {	"insufficient_rating":insufficient_rating,
+					"insufficient_matches_pct":insufficient_matches_pct, 
+					"insufficient_N":insufficient_N,
+					"N_snps":N_snps,
+					'insufficient_scale_str':insufficient_scale_str,
+					"match_size_rating":match_size_rating,
+					"match_size_median_pct":match_size_median_pct,
+					"match_size_median":match_size_median,
+					"N_sample_sets":N_sample_sets,
+					'match_size_scale_str':match_size_scale_str
+				}
+		report_obj.write_json_report(report)
+		## HERE YOU SHOULD MAKE A DICT OF DICTS
 
-
-	# Write few_matches
-	df_snps_few_matches.to_csv(user_snps_few_matches_file, sep='\t', index=True, header=True, index_label='snpID', mode='w') 
 
 	
 
@@ -501,12 +527,14 @@ def ParseArguments():
 
 
 	arg_parser.add_argument("--user_snps_file", help="Path to file with user-defined SNPs", required=True) # TODO: make the program read from STDIN via '-'
-	arg_parser.add_argument("--output_dir", type=ArgparseAdditionalUtils.check_if_writable, help="Directory in which output files, i.e. random SNPs will be written", required=True)
+	arg_parser.add_argument("--output_dir", help="Directory in which output files, i.e. random SNPs will be written", required=True)
+	#arg_parser.add_argument("--output_dir", type=ArgparseAdditionalUtils.check_if_writable, help="Directory in which output files, i.e. random SNPs will be written", required=True)
 	arg_parser.add_argument("--distance_type", help="ld or kb", required=True)
 	arg_parser.add_argument("--distance_cutoff", help="r2, or kb distance", required=True)
 	# NEW: options
 	#arg_parser.add_argument("--status_file", help="Bool (switch, takes no value after argument); if set then logging is ENABLED.", action='store_true')
-	arg_parser.add_argument("--status_file", help="If set, a json file will be written. Value should be the a filepath.")
+	#arg_parser.add_argument("--status_file", help="If set, a json file will be written. Value should be the a filepath.")
+	arg_parser.add_argument("--web", help="If set, the program will run in web mode. VALUE should be the a filepath to output (temporary) file - usually this will be the session_id. The web mode activates: 1) creating a status_obj and writing it to json file; 2) ENABLE writing a json report file;")
 	arg_parser.add_argument("--NoLogger", help="Bool (switch, takes no value after argument); if set then logging is DISAPLED. Logfile will be placed in outputdir.", action='store_true')
 
 
@@ -600,30 +628,25 @@ def run_annotate(path_data, path_output, prefix, user_snps_file):
 	status_obj.update_status('annotate', 'complete')
 
 
-import json
+
 class Progress():
-	def __init__(self, status_file, args, enabled): #'tmp_data.json'
+	def __init__(self, sid, args, enabled): #'tmp_data.json'
 		self.enabled = enabled
 		if not self.enabled: return
 
 		if args.subcommand == "match":
-			self.fname = "{name_parsed}_{subcommand}.{ext}".format(name_parsed=status_file, subcommand='match', ext='json')
+			self.fname = "{name_parsed}_{subcommand}.{ext}".format(name_parsed=sid, subcommand='status_match', ext='json')
 			# e.g. /e43f990bbb981b008b9d84b22c2770f8_status_match.json
 			#self.fh = open(fname, 'w')
 		elif args.subcommand == "annotate":
-			self.fname = "{name_parsed}_{subcommand}.{ext}".format(name_parsed=status_file, subcommand='annotate', ext='json')
+			self.fname = "{name_parsed}_{subcommand}.{ext}".format(name_parsed=sid, subcommand='status_annotate', ext='json')
 			# e.g. /e43f990bbb981b008b9d84b22c2770f8_status_annotate.json
 			#self.fh = open(fname, 'w')
 		else:
 			emsg = "Could not find matching subcommand. You may have changed the name of the subcommands"
 			logger.critical( emsg )
 			raise Exception( emsg )
-		#self.file = status_file
 		
-		#self.match = 0
-		#self.annotate = 0
-		#self.set_file = 0
-		#initialyzing
 		self.match = {'pct_complete':0, 'status':'not_running'}
 		self.set_file = {'pct_complete':0, 'status':'not_running'}
 		self.annotate = {'pct_complete':0, 'status':'not_running'}
@@ -631,8 +654,6 @@ class Progress():
 		self.status_now = {'match':self.match, 'set_file':self.set_file, 'annotate':self.annotate}
 		self.status_list = [self.status_now] # NOT NESSESARY
 
-		#self.status = [{'match':self.match, 'annotate':self.annotate, 'set_file':self.set_file}]
-		#self.status = [{'match':20, 'annotate':20, 'set_file':20}]
 
 	def update_pct(self, selector, pct):
 		if not self.enabled: return
@@ -658,18 +679,21 @@ class Progress():
 			#json.dump(self.status_now, f, indent=3)
 	 		#json.dump(self.status, f)
 
-	# def update(self, match=0, annotate=0, set_file=0):
-	# 	(self.match, self.annotate, set_file) = (match, annotate, set_file)
-	# 	current_status = {'match':self.match, 'annotate':self.annotate, 'set_file':self.set_file}
-	# 	self.status.append(current_status) # not needed
-	# 	# with open(self.file, 'a') as f:
-	# 	# 	#json.dump(self.status, f)
-	# 	json.dump(current_status, self.fh, indent=3)
-
-
 	def finish(self):
-		""" Closing status_file file handle """
+		""" Closing file handle """
 		sefl.fh.close()
+
+
+class Report():
+	def __init__(self, sid, args, enabled): #'tmp_data.json'
+		self.enabled = enabled
+		self.fname = "{name_parsed}_{subcommand}.{ext}".format(name_parsed=sid, subcommand='report', ext='json')
+		#self.report = collections.defaultdict(dict) # two-level dict
+
+	def write_json_report(self, report):
+		if not self.enabled: return
+		with open(self.fname, 'w') as f:
+			json.dump(report, f, indent=3)
 
 
 def main():	
@@ -681,11 +705,17 @@ def main():
 
 	### Progress class
 	global status_obj
-	if args.status_file:
-		status_obj = Progress(args.status_file, args, enabled=True) #'/cvar/jhlab/snpsnap/web_tmp'
+	global report_obj
+	# Example of the value of web (if set) - path incl. session_id: '/cvar/jhlab/snpsnap/web_tmp/2ede5955021a10cb0e1a13882be520eb'
+	if args.web:
+		sid = args.web
+		status_obj = Progress(sid, args, enabled=True) 
+		report_obj = Report(sid, args, enabled=True) 
 	else:
 		#status_obj = None
-		status_obj = Progress(args.status_file, args, enabled=False)
+		status_obj = Progress('dummy', args, enabled=False)
+		report_obj = Report('dummy', args, enabled=False) 
+
 
 	## TODO: remember to close the status_obj filehandle --> status.obj.finish()
 
