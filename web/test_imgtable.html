@@ -1,0 +1,94 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Note there is no responsive meta tag here -->
+
+    <!-- pascal -->
+    <!-- <link rel="shortcut icon" href="../../assets/ico/favicon.ico"> -->
+
+    <title>Section</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="non-responsive.css" rel="stylesheet">
+
+    <!-- Just for debugging purposes. Don't actually copy this line! -->
+    <!--[if lt IE 9]><script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
+
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+      <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+  </head>
+
+  <body>
+
+  <div style='width:100%;'>
+  <table class='table table-hover'>
+    <thead>
+      <tr>
+        <th><p class="text-danger text-left" style='font-size:150%;'>Evaluation type</p></th>
+        <th><p class="text-danger text-center" style='font-size:150%;'>Rating</p></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th>Insufficient Matches</th>
+        <td><img src='/img/rating/rating_poor.png' class="img-responsive" alt="Responsive image"></td>
+      </tr>
+      <tr>
+        <th>Match Size</th>
+        <td><p class="text-center"><img src='/img/rating/rating_very_good.png' class="img-responsive" alt="Responsive image"></p></td>
+      </tr>
+    </tbody>
+  </table>
+
+<p class='text-muted'>You may safely ignore the <i>Match Size</i> rating if the <i>Insufficient Matches</i> rating is better than <q>Ok</q>. 
+See the <a href='#'>docs</a> for more information.</p> 
+
+ </div>
+
+
+
+  <div class='row' id='row_progress_annotate'>
+    <div class='col-xs-4'>
+      <p class="text-danger text-left" style='font-size:150%;'><strong>Evaluation Type</strong></p>
+    </div>
+    <div class='col-xs-6'>
+      <p class="text-danger text-center" style='font-size:150%;'><strong>Rating</strong></p>
+    </div>
+  </div>
+  <div class='row' id='row_progress_annotate'>
+    <div class='col-xs-4'>
+      <p class="text-info text-left" style='font-size:100%;'><strong>Insufficient Matches</strong></p>
+    </div>
+    <div class='col-xs-6'>
+      <img src='/img/rating/rating_poor.png' class="img-responsive" alt="Responsive image">
+    </div>
+  </div>
+  <div class='row' id='row_progress_annotate'>
+    <div class='col-xs-4'>
+      <p class="text-info text-left" style='font-size:100%;'><strong>Match Size</strong></p>
+    </div>
+    <div class='col-xs-6'>
+      <img src='/img/rating/rating_very_good.png' class="img-responsive" alt="Responsive image">
+    </div>
+  </div>
+
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <script src="/static/js/bootstrap.min.js"></script>
+  </body>
+</html>

@@ -179,6 +179,13 @@ def write_snps_not_in_db(path_output, user_snps, df):
 	elapsed_time = time.time() - start_time
 	logger.info( "END: write_snps_not_in_db in %s s (%s min)" % (elapsed_time, elapsed_time/60) )
 
+	if report_obj.enabled:
+		report_news = 	{	"unique_user_snps":len(user_snps),
+							"snps_not_found_in_data_base":len(snps_not_in_db)
+							}
+		report_obj.report['input'].update(report_news)
+
+
 def write_user_snps_stats(path_output, df):
 	user_snps_stats_file = path_output+"/snps_stats.tab"
 	df.to_csv(user_snps_stats_file, sep='\t', header=True, index=True,  mode='w')
@@ -246,9 +253,10 @@ def few_matches_score(x, lim, scale):
 	return score
 
 def few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps):
-	########## Write few_matches ##############
-	user_snps_few_matches_file = path_output+"/snps_few_matches.tab"
-	df_snps_few_matches.to_csv(user_snps_few_matches_file, sep='\t', index=True, header=True, index_label='snpID', mode='w') 
+	########## Write few_matches - ONLY IF THERE ARE FEW MATCHES ##############
+	if len(df_snps_few_matches) != 0:
+		user_snps_few_matches_file = path_output+"/snps_few_matches.tab"
+		df_snps_few_matches.to_csv(user_snps_few_matches_file, sep='\t', index=True, header=True, index_label='snpID', mode='w') 
 	############################################
 	
 	#user_snps_few_matches_report = path_output+"/snps_report.txt" # 06/12/2014: NO LONGER NEEDED. We do not write out file
@@ -284,10 +292,10 @@ def few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps):
 	# 																											median=match_size_median,
 	# 																											total=N_sample_sets)
 	
-	insufficient_N=len(df_snps_few_matches)
+	insufficient_matches=len(df_snps_few_matches)
 	#tmp1 = "# Rating 'number of few matches' = '{rating:s}' with scale [{scale:s}]".format(rating=insufficient_rating, scale=(', '.join("'" + item + "'" for item in insufficient_scale)) )
 	tmp1 = "# Rating 'insufficient SNP matches' = '{rating:s}' with scale [{scale:s}]".format(rating=insufficient_rating, scale=insufficient_scale_str )
-	tmp2 = "# Percent 'insufficient SNP matches' = {pct:.4g}% (low is good; {count:d} 'insufficient SNP matches' out of {total:d} valid input SNPs)".format(pct=insufficient_matches_pct, count=insufficient_N, total=N_snps)
+	tmp2 = "# Percent 'insufficient SNP matches' = {pct:.4g}% (low is good; {count:d} 'insufficient SNP matches' out of {total:d} valid input SNPs)".format(pct=insufficient_matches_pct, count=insufficient_matches, total=N_snps)
 	write_str_insufficient_rating = '\n'.join([tmp1, tmp2])
 
 	#tmp1 = "# Rating 'over sampling' = '{rating:s}' with scale [{scale:s}]".format(rating=match_size_rating, scale=(', '.join("'" + item + "'" for item in match_size_scale)) )
@@ -302,10 +310,10 @@ def few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps):
 	tmp2 = "# Relative 'match size' = {pct:.4g}% (high is good; median number of SNPs to sample from in 'insufficient SNP matches' is {median:.6g} compared to {total:d} requested sample sets)".format(pct=match_size_median_pct, median=match_size_median, total=N_sample_sets)
 	write_str_score_match_size = '\n'.join([tmp1, tmp2])
 
-	tmp1 = "# {0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}".format("insufficient_rating", "pct_insufficient", "insufficient_N", "N_snps", 
+	tmp1 = "# {0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}".format("insufficient_rating", "pct_insufficient", "insufficient_matches", "N_snps", 
 															"rating_size", "pct_size", "median_size", "N_sample_sets")
 	#tmp1 = "# rating_few_matches\tpct_few_matches\tN_few_matches\tN_snps\trating_over_sampling\tpct_over_sampling\tmedian_sample_size\tN_sample_sets"
-	tmp2 = "{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}".format(insufficient_rating, insufficient_matches_pct, insufficient_N, N_snps,
+	tmp2 = "{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}".format(insufficient_rating, insufficient_matches_pct, insufficient_matches, N_snps,
 															match_size_rating, match_size_median_pct, match_size_median, N_sample_sets)
 	write_str_score_table = '\n'.join([tmp1, tmp2])
 	logger.info( "################# Score ###############" )
@@ -322,21 +330,20 @@ def few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps):
 	
 	####### Creating report dict of dicts #####
 	if report_obj.enabled:
-		insufficient_scale_str = (', '.join("'" + item + "'" for item in insufficient_scale))
-		match_size_scale_str = (', '.join("'" + item + "'" for item in match_size_scale))
-		report = {	"insufficient_rating":insufficient_rating,
-					"insufficient_matches_pct":insufficient_matches_pct, 
-					"insufficient_N":insufficient_N,
-					"N_snps":N_snps,
-					'insufficient_scale_str':insufficient_scale_str,
-					"match_size_rating":match_size_rating,
-					"match_size_median_pct":match_size_median_pct,
-					"match_size_median":match_size_median,
-					"N_sample_sets":N_sample_sets,
-					'match_size_scale_str':match_size_scale_str
-				}
-		report_obj.write_json_report(report)
-		## HERE YOU SHOULD MAKE A DICT OF DICTS
+		#insufficient_scale_str = (', '.join("'" + item + "'" for item in insufficient_scale))
+		#match_size_scale_str = (', '.join("'" + item + "'" for item in match_size_scale))
+		report_news = 		{	"insufficient_rating":insufficient_rating,
+								"insufficient_matches_pct":insufficient_matches_pct, 
+								"insufficient_matches":insufficient_matches,
+								"match_size_rating":match_size_rating,
+								"match_size_median_pct":match_size_median_pct,
+								"match_size_median":match_size_median
+							}
+		report_obj.report['report'].update(report_news)
+		
+					#'insufficient_scale_str':insufficient_scale_str,
+					#'match_size_scale_str':match_size_scale_str
+
 
 
 	
@@ -688,12 +695,21 @@ class Report():
 	def __init__(self, sid, args, enabled): #'tmp_data.json'
 		self.enabled = enabled
 		self.fname = "{name_parsed}_{subcommand}.{ext}".format(name_parsed=sid, subcommand='report', ext='json')
-		#self.report = collections.defaultdict(dict) # two-level dict
+		self.report = collections.defaultdict(dict) # two-level dict
+		#self.report = {} 
+		# VALID CATEGORIES: 
+		#loci_definition, 
+		#match_criteria, 
+		#options, 
+		#report, 
+		#mics, 
+		#input
 
-	def write_json_report(self, report):
+
+	def write_json_report(self):
 		if not self.enabled: return
 		with open(self.fname, 'w') as f:
-			json.dump(report, f, indent=3)
+			json.dump(self.report, f, indent=3)
 
 
 def main():	
@@ -728,6 +744,13 @@ def main():
 	user_snps_file = args.user_snps_file
 
 
+	report_news =	{'distance_type':args.distance_type,
+					'distance_cutoff':args.distance_cutoff
+					}
+	report_obj.report['loci_definition'].update(report_news)
+
+
+
 	start_time = time.time()
 	## Run appropriate subfunction
 	if args.subcommand == "match":
@@ -743,8 +766,24 @@ def main():
 		N_sample_sets = args.N_sample_sets
 		set_file = args.set_file
 		run_match(path_data, path_output, prefix, user_snps_file, N_sample_sets, max_freq_deviation, max_distance_deviation, max_genes_count_deviation, set_file)
+		if report_obj.enabled:
+			report_news =	{'max_freq_deviation':max_freq_deviation,
+							'max_distance_deviation':max_distance_deviation,
+							'max_genes_count_deviation':max_genes_count_deviation
+							}
+			report_obj.report['match_criteria'].update(report_news)
+			
+			report_news =	{'N_sample_sets':N_sample_sets,
+							'set_file':set_file
+							}
+			report_obj.report['options'].update(report_news)
+							
 	elif args.subcommand == "annotate":
 		run_annotate(path_data, path_output, prefix, user_snps_file)
+		## Remember: if annotate is called we should not create a report.
+		## This is due to the fact that annotate is never called "stand-alone" from the web serive
+		# if report_obj.enabled:
+		# 	report_obj.report = {"annotate":elapsed_time}
 	else:
 		logger.error( "ERROR: command line arguments not passed correctly. Fix source code!" )
 		logger.error( "Exiting..." )
@@ -752,6 +791,13 @@ def main():
 	elapsed_time = time.time() - start_time
 	logger.info( "TOTAL RUNTIME: %s s (%s min)" % (elapsed_time, elapsed_time/60) )
 
+	if report_obj.enabled:
+		run_time_min = "{:.2f}".format(elapsed_time)
+		report_news = {"total_runtime_in_seconds":run_time_min}
+		report_obj.report['misc'].update(report_news)
+		########### WRITING REPORT #########
+		report_obj.write_json_report()
+		####################################
 
 
 if __name__ == '__main__':

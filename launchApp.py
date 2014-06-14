@@ -15,6 +15,8 @@ from email.mime.text import MIMEText
 import argparse
 import json
 
+import 
+
 #### LEFTOVERS: attempt to make threading/multiprocessing
 #import multiprocessing
 #import threading
@@ -36,6 +38,8 @@ class Processor(object):
 		self.processes = collections.defaultdict(dict) # two-level dict
 		#self.commands_called = []
 		#self.returncodes = 
+		self.path_session_output = '/cvar/jhlab/snpsnap/web_results'+'/'+self.session_id
+		self.summary = {}
 
 	def daemonize(self):
 		"""do the UNIX double-fork magic, see Stevens' "Advanced
@@ -86,38 +90,80 @@ class Processor(object):
 			# we are the parent. pid is not 0
 			#print 'Hello from parent. My PID: %s | Child PID: %s' % (os.getpid(), pid)
 
+	def write_snpsnap_summary(self):
+		## This function writes out the snpsnap_summary file to "MAIN" OUTPUT DIR, that is the path that snpsnap_query.py also writes to.
+		
+		file_snpsnap_summary = "{base}/{filename}.{ext}".format(base=self.path_session_output, filename='snpsnap_summary', ext='txt')
+
+		report_news =	{'session_id':self.session_id,
+							'job_name':self.job_name,
+							'email_address':self.email_address
+							}
+		#self.report_obj['web'].update(report_news)
+		self.report_obj['web'] = report_news
 
 
-	def create_report(self):
+		f = open(file_snpsnap_summary, 'w')
+		for category, params in self.report_obj.items():
+			f.write( "#{}#".format(category.upper()) +"\n")
+			for param, value in params.items():
+				f.write( "{} : {}".format(param.upper(), value) +"\n")
+		f.close()
+
+
+	def read_report(self):
+		#TODO: these files should go into the config file
+
 		path_tmp_output = '/cvar/jhlab/snpsnap/web_tmp'
-		json_file = "{base}/{sid}_{type}.{ext}".format(base=path_tmp_output, sid=self.session_id, type='report', ext='json')
+		
+		#OBS: this is the existing 'report/summary' file
+		file_report = "{base}/{sid}_{type}.{ext}".format(base=path_tmp_output, sid=self.session_id, type='report', ext='json')
 
-		report_obj = None ## Needed for correct variable scope
-		with open(json_file, 'r') as json_data:
-			report_obj = json.load(json_data)
+		## TODO: make try: execpt: block
+		self.report_obj = None ## Needed for correct variable scope
+		with open(file_report, 'r') as json_data:
+			self.report_obj = json.load(json_data)
 
-		# "insufficient_rating":insufficient_rating,
-		# "insufficient_matches_pct":insufficient_matches_pct, 
-		# "insufficient_N":insufficient_N,
-		# "N_snps":N_snps,
-		# 'insufficient_scale_str':insufficient_scale_str,
-		# "match_size_rating":match_size_rating,
-		# "match_size_median_pct":match_size_median_pct,
-		# "match_size_median":match_size_median,
-		# "N_sample_sets":N_sample_sets,
-		# 'match_size_scale_str':match_size_scale_str
-
-		tmp1 = "Rating 'insufficient SNP matches' = '{rating:s}' with scale [{scale:s}]".format(rating=report_obj['insufficient_rating'], scale=report_obj['insufficient_scale_str'] )
-		tmp2 = "Percent 'insufficient SNP matches' = {pct:.4g}% (low is good; {count:d} 'insufficient SNP matches' out of {total:d} valid input SNPs)".format(pct=report_obj['insufficient_matches_pct'], count=report_obj['insufficient_N'], total=report_obj['N_snps'])
-		write_str_insufficient_rating = "<p>{}<br/>{}</p>".format(tmp1,tmp2)
+		###### SETTING instance variables for email to be generated
+		#self.insufficient_rating = report_obj['insufficient_rating']
+		#self.match_size_rating = report_obj['match_size_rating']
 
 
-		tmp1 = "Rating 'match size' = '{rating:s}' for SNPs in 'insufficient SNP matches' with scale [{scale:s}]".format(rating=report_obj['match_size_rating'], scale=report_obj['match_size_scale_str'] )
-		tmp2 = "Relative 'match size' = {pct:.4g}% (high is good; median number of SNPs to sample from in 'insufficient SNP matches' is {median:.6g} compared to {total:d} requested sample sets)".format(pct=report_obj['match_size_median_pct'], median=report_obj['match_size_median'], total=report_obj['N_sample_sets'])
-		write_str_score_match_size = "<p>{}<br/>{}</p>".format(tmp1,tmp2)
 
-		report_html = write_str_insufficient_rating + write_str_score_match_size
+	def generate_report_for_email(self):
+		### This function sets the report table for the email.
+
+		# tmp1 = "Rating 'insufficient SNP matches' = '{rating:s}' with scale [{scale:s}]".format(rating=report_obj['insufficient_rating'], scale=report_obj['insufficient_scale_str'] )
+		# tmp2 = "Percent 'insufficient SNP matches' = {pct:.4g}% (low is good; {count:d} 'insufficient SNP matches' out of {total:d} valid input SNPs)".format(pct=report_obj['insufficient_matches_pct'], count=report_obj['insufficient_N'], total=report_obj['N_snps'])
+		# write_str_insufficient_rating = "<p>{}<br/>{}</p>".format(tmp1,tmp2)
+
+
+		# tmp1 = "Rating 'match size' = '{rating:s}' for SNPs in 'insufficient SNP matches' with scale [{scale:s}]".format(rating=report_obj['match_size_rating'], scale=report_obj['match_size_scale_str'] )
+		# tmp2 = "Relative 'match size' = {pct:.4g}% (high is good; median number of SNPs to sample from in 'insufficient SNP matches' is {median:.6g} compared to {total:d} requested sample sets)".format(pct=report_obj['match_size_median_pct'], median=report_obj['match_size_median'], total=report_obj['N_sample_sets'])
+		# write_str_score_match_size = "<p>{}<br/>{}</p>".format(tmp1,tmp2)
+
+		# report_html = write_str_insufficient_rating + write_str_score_match_size
+
+		report_html = """
+		<table style='width:50'>
+		<tr>
+		  <th>Evaluation type</th>
+		  <th>Rating</th> 
+		</tr>
+		<tr>
+		  <td>Insufficient Matches</td>
+		  <td>{insufficient_rating}</td> 
+		</tr>
+		<tr>
+		  <td>Match Size</td>
+		  <td>{match_size_rating}</td> 
+		</tr>
+		</table>
+		""".format(insufficient_rating=self.report_obj['report']['insufficient_rating'], match_size_rating=self.report_obj['report']['match_size_rating'])
+
 		return report_html
+
+
 
 	def send_email(self):
 		""" Function to send out email """
@@ -150,16 +196,15 @@ class Processor(object):
 		<html>
 		  <head></head>
 		  <body>
-		    <p>
-		       Your job {job} has finished. <br/>
-		       The result files can be downloaded at: <br/>
-		       {link}
+		    <h2>Your job {job} has finished.</h2> <br/>
+		    The result files can be downloaded at: <br/> {link}
 		    </p>
-		    <p>Report:</p>
 		    <p>{report}</p>
+		    </br>
+		    <p>--SNPsnap Team</p>
 		  </body>
 		</html>
-		""".format(job=self.job_name, link=link_result, report=self.create_report())
+		""".format( job=self.job_name, link=link_result, report=self.generate_report_for_email() )
 
 		# Record the MIME types of both parts - text/plain and text/html.
 		part1 = MIMEText(text, 'plain')
@@ -180,6 +225,9 @@ class Processor(object):
 		text = msg.as_string()
 		server.sendmail(fromaddr, toaddr, text)
 		server.quit()
+
+	def zip_results():
+		self.path_session_output
 
 
 	def run(self):
@@ -233,8 +281,17 @@ class Processor(object):
 			p = self.processes[call_type]['process_obj']
 			self.processes[call_type]['returncode'] = p.returncode # not nessesary to save value in dict...
 
-		## Now all is done: send out email
+
+		### Now all is done: 
+		self.read_report() # this sets the nessesary instance variables (i.e. self.report_obj) for the email to be generated
+		self.write_snpsnap_summary()
+		## Zip result dir
+
+		## Send out email
 		self.send_email()
+
+
+
 
 
 def ParseArguments():
@@ -292,7 +349,7 @@ if __name__ == '__main__':
 	args = ParseArguments()
 
 	global logger
-	logger = setup_logger(outputdir='/cvar/jhlab/snpsnap/snpsnap/web/app', enabled=True, path_logging_module='/cvar/jhlab/snpsnap/snpsnap')
+	logger = setup_logger(outputdir='/cvar/jhlab/snpsnap/web_logs', enabled=True, path_logging_module='/cvar/jhlab/snpsnap/snpsnap')
 	app = Processor(args.session_id, args.email_address, args.job_name, args.cmd_annotate, args.cmd_match)
 	app.run()
 

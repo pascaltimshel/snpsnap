@@ -158,7 +158,9 @@ N_sample_sets = form.getvalue('N_sample_sets', '')
 
 email_address = form.getvalue('email_address', '')
 job_name = form.getvalue('job_name', '')
-if len(job_name) >= 50: # only allow up to 50 character long job_name
+if job_name == '': # setting 'default' job name
+	job_name = 'no_name'
+elif len(job_name) >= 50: # only allow up to 50 character long job_name
 	job_name = job_name[:50]
 
 annotate = form.getvalue('annotate', '')
@@ -247,8 +249,8 @@ print "</style>"
 print "<script type='text/javascript' src='http://code.jquery.com/jquery-latest.min.js'></script>"
 print "<link href='/static/css/bootstrap.min.css' rel='stylesheet'>"
 print "<script src='/static/js/bootstrap.min.js'></script>"
-print "<script src='/js/get_status_boot.js'></script>"
-#print "<script src='/js/get_report_boot.js'></script>"
+#print "<script src='/js/get_status_boot.js'></script>"
+print "<script src='/js/get_report_boot.js'></script>"
 
 #print "<script>$(function() { alert('hello') });</script>"
 print "</head>"
@@ -333,13 +335,13 @@ print """
 
 str_bar_match = """
 <div class='row' id='row_progress_match'>
-	<div class='col-md-1'>
+	<div class='col-xs-1'>
 		<p class="text-primary"><strong>Match</strong></p>
 	</div>
-	<div class='col-md-1'>
+	<div class='col-xs-1'>
 		<p class="text-info"></p>
 	</div>
-	<div class='col-md-10'>
+	<div class='col-xs-10'>
 		<div class='progress progress-striped active' id='progress_bar_match'>
 			<div class='progress-bar' style='width: 0%'></div>
 		</div>
@@ -349,13 +351,13 @@ str_bar_match = """
 
 str_bar_set_file = """
 <div class='row' id='row_progress_set_file'>
-	<div class='col-md-1'>
+	<div class='col-xs-1'>
 		<p class="text-primary"><strong>Set_file</strong></p>
 	</div>
-	<div class='col-md-1'>
+	<div class='col-xs-1'>
 		<p class="text-info"></p>
 	</div>
-	<div class='col-md-10'>
+	<div class='col-xs-10'>
 		<div class='progress progress-striped active' id='progress_bar_set_file'>
 			<div class='progress-bar' style='width: 0%'></div>
 		</div>
@@ -366,13 +368,13 @@ str_bar_set_file = """
 
 str_bar_annotate = """
 <div class='row' id='row_progress_annotate'>
-	<div class='col-md-1'>
+	<div class='col-xs-1'>
 		<p class="text-primary"><strong>Annotate</strong></p>
 	</div>
-	<div class='col-md-1'>
+	<div class='col-xs-1'>
 		<p class="text-info"></p>
 	</div>
-	<div class='col-md-10'>
+	<div class='col-xs-10'>
 		<div class='progress progress-striped active' id='progress_bar_annotate'>
 			<div class='progress-bar' style='width: 0%'></div>
 		</div>
@@ -412,7 +414,7 @@ print """
 	  </h4>
 	</div>
 	<div id="collapse_report" class="panel-collapse collapse in"> 
-	  <div class="panel-body">
+	  <div class="panel-body" id='snpsnap_report'>
 	  </div>
 	</div>
   </div>

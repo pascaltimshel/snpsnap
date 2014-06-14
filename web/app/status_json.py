@@ -30,49 +30,61 @@ file_status_annotate = "{base}/{sid}_{type}.{ext}".format(base=path_tmp_output, 
 
 # print_args()
 
+try:
+	status_obj = None ## Needed for correct variable scope
+	with open(file_status_match, 'r') as json_data:
+		status_obj = json.load(json_data)
 
-status_obj = None ## Needed for correct variable scope
-with open(file_status_match, 'r') as json_data:
-	status_obj = json.load(json_data)
-
-## ***OBS: HACK
-if not set_file:
-	status_obj['set_file'] = {'pct_complete':0, 'status':'complete'}
-	# This enables me to set the 'overall' completion status
-
-if annotate:
-	with open(file_status_annotate, 'r') as json_data:
-		tmp = json.load(json_data)
-		status_obj['annotate'] = tmp['annotate'] ## OBS: key must be in sync with snpsnap_query.py status keywords!
-else:
 	## ***OBS: HACK
-	status_obj['annotate'] = {'pct_complete':0, 'status':'complete'} ## OBS: dirty code. 
-	# This enables me to set the 'overall' completion status  
+	if not set_file:
+		status_obj['set_file'] = {'pct_complete':0, 'status':'complete'}
+		# This enables me to set the 'overall' completion status
 
-#### FORMATTING PROCENTATGE COMPLETE
-for val in status_obj.values():
-	val['pct_complete'] = int(val['pct_complete']) ### Formatting numbers
+	if annotate:
+		with open(file_status_annotate, 'r') as json_data:
+			tmp = json.load(json_data)
+			status_obj['annotate'] = tmp['annotate'] ## OBS: key must be in sync with snpsnap_query.py status keywords!
+	else:
+		## ***OBS: HACK
+		status_obj['annotate'] = {'pct_complete':0, 'status':'complete'} ## OBS: dirty code. 
+		# This enables me to set the 'overall' completion status  
 
-## ***OBS: BAD CODE
-## TODO: rewrite this later
-status_all_complete = True
-for val in status_obj.values():
-	if val['status'] != 'complete':
-		status_all_complete = False
+	#### FORMATTING PROCENTATGE COMPLETE
+	for val in status_obj.values():
+		val['pct_complete'] = int(val['pct_complete']) ### Formatting numbers
 
-status_obj['status_all_complete'] = status_all_complete
+	## ***OBS: BAD CODE
+	## TODO: rewrite this later
+	status_all_complete = True
+	for val in status_obj.values():
+		if val['status'] != 'complete':
+			status_all_complete = False
 
-### DUMPING dict of dict as json string
-status2parse = json.dumps(status_obj)
+	status_obj['status_all_complete'] = status_all_complete
 
-with open('/cvar/jhlab/snpsnap/snpsnap/web/call_stat.txt', 'a') as f:
-	timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H.%M.%S')
-	f.write( '%s | someone called me: %s. status is: %s\n' % (timestamp, session_id, status2parse) ) 
+	### DUMPING dict of dict as json string
+	status2parse = json.dumps(status_obj)
 
+	# with open('/cvar/jhlab/snpsnap/web_logs/call_stat.txt', 'a') as f:
+	# 	timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H.%M.%S')
+	# 	f.write( '%s | someone called me: %s. status is: %s\n' % (timestamp, session_id, status2parse) ) 
 
-print "Content-Type: application/json" # for raw text use: "Content-Type: text/plain"
-print ""
-print status2parse
+	### RETURNING json string to ajax calls
+	print "Content-Type: application/json" # for raw text use: "Content-Type: text/plain"
+	print ""
+	print status2parse
+
+except Exception as e: # DIRTY: but properly the file(s) does not exists
+	status_obj = {}
+	status_obj['match'] = {'pct_complete':0, 'status':'initialyzing'} ## OBS: dirty code.
+	status_obj['set_file'] = {'pct_complete':0, 'status':'initialyzing'} ## OBS: dirty code.
+	status_obj['annotate'] = {'pct_complete':0, 'status':'initialyzing'} ## OBS: dirty code.
+	
+	### RETURNING json string to ajax calls
+	print "Content-Type: application/json"
+	print ""
+	print json.dumps(status_obj)
+
 
 #http://stackoverflow.com/questions/17347404/python-cgi-and-json-dumps
 
