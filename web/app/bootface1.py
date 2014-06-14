@@ -9,8 +9,9 @@ import hashlib
 import random
 
 
-import launchApp
-
+#import launchApp
+from import launchApp
+ 
 
 # First try to read content of file upload. Hereafter read the content of textinput
 def get_snplist():

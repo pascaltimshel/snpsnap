@@ -1,5 +1,11 @@
 #!/bin/env python
 
+############## README ##############
+# This CGI script parses a single number to a AJAX call
+# Newer version of this script parses json
+#
+###################################
+
 # Import modules for CGI handling 
 import cgi, cgitb
 import json
