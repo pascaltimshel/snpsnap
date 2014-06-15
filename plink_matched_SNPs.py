@@ -26,6 +26,11 @@ from queue import QueueJob,ShellUtils,ArgparseAdditionalUtils
 
 current_script_name = os.path.basename(__file__)
 
+############################ SETTING ZERO BUFFERING for STDOUT ######################################
+# Consider this for unbuffered output. This may be useful when the function is called via run_multiple_...py
+sys.stdout = os.fdopen(sys.stdout.fileno(), 'wb', 0)
+#######################################################################
+
 
 def makehash():
 	return collections.defaultdict(makehash) 
@@ -57,10 +62,12 @@ def get_freq_bin(f):
 
 # Funciton to read in summary statiscs and bin SNPs into MAF percentiles
 def get_snps_by_freq(infilename):
+	print "called get_snps_by_freq()"
 	snps_by_freq = {} 
 	# @@TODO freq_bin_size is unnessesary
 	for bin in range(0,len(range(0,50,freq_bin_size)),1):
 		snps_by_freq[bin] = [] # TODO: use containers.defaultdict[list] instead
+	print "get_snps_by_freq(): now reading infilename %s" % infilename
 	infile = open(infilename,'r')
 	lines = infile.readlines()[1:] # skip header in frequency file
 	infile.close()
@@ -76,7 +83,7 @@ def get_snps_by_freq(infilename):
 			# Add to correct bin if still space
 			if len(snps_by_freq[bin]) < max_snps_per_bin:
 				snps_by_freq[bin].append(words[1])
-	
+	print "get_snps_by_freq(): done"
 	return snps_by_freq
 
 def write_batch_size_distribution_file():
@@ -90,6 +97,7 @@ def write_batch_size_distribution_file():
 
 # Funciton to save into files to be run in plink
 def write_batches():
+	print "called write_batches()"
 	batches = []
 	# Construct batch for each frequency bin
 	bins = range(0,50,freq_bin_size)
@@ -110,6 +118,7 @@ def write_batches():
 			# break ############### TEMPORARY 06/13/2014 ############################
 			############### NOTE: the outer loop should also be 'break'
 	# break ############### TEMPORARY 06/13/2014 ############################
+	print "write_batches(): function DONE"
 	return batches
 
 def get_plink_command(batch_id):
@@ -145,10 +154,15 @@ def get_plink_command(batch_id):
 
 
 
-def run_ldfile(batch_id, snp_list):
+def run_ldfile(batch_id, snp_list, unit_test_file):
+	unit_test_file['NO_PREVIOUS_FILE'] = []
+	unit_test_file['FILE_EXISTS_OK'] = []
+	unit_test_file['FILE_EXISTS_BAD'] = []
+
 	ldfile = output_dir_path + "/ldlists/" + batch_id + ".ld"
 	if not os.path.exists(ldfile): # Test if already run
-		print "%s: CREATING NEW" % ldfile
+		unit_test_file['NO_PREVIOUS_FILE'].append(ldfile)
+		#print "%s: CREATING NEW" % ldfile ## USE THIS!!! June 2014
 		#print "*** LDfile %s\nNOT exists. Appending jobs for batch ID %s to QueueJob.py... ***" % (ldfile, batch_id)
 		return True # submit job is there is no existing ldfile
 	else:
@@ -186,28 +200,60 @@ def run_ldfile(batch_id, snp_list):
 				rs_no = line.strip()
 				batch_snplist[rs_no] = 1
 		if len(existing_ld_snplist) == len(batch_snplist):
-			print "%s: OK" % ldfile
+			unit_test_file['FILE_EXISTS_OK'].append(ldfile)
+			#print "%s: OK" % ldfile ## USE THIS!!! June 2014
+			
 			#print "LDfile %s\nExists and are validated for batch ID %s. Not appending any jobs to QueueJob.py..." % (ldfile, batch_id)
 			return None # Do not submit new job if files are ok!
 		else:
-			print "%s: BAD FILE EXISTS. MAKING NEW" % ldfile
+			unit_test_file['FILE_EXISTS_BAD'].append(ldfile)
+			#print "%s: BAD FILE EXISTS. MAKING NEW" % ldfile ## USE THIS!!! June 2014
+
 			#print "LDfile %s\n*** Exists but are NOT ok! Running job for batch ID %s ***" % (ldfile, batch_id)
 			return True # Re-run job.
 
 
 # Function to submit jobs to queue
 def submit(batch_ids):
+	block_str = '========================================================================'
+	unit_test_file = {}
+	#unit_test_file = collections.defaultdict(list)
 	jobs = []
 	for batch_id in batch_ids:
 		(command, snp_list) = get_plink_command(batch_id)
-		run = run_ldfile(batch_id, snp_list)
-		if run:
-			jobs.append( QueueJob(command, log_dir_path, queue_name, walltime, mem_per_job , flags, "plink_matched_SNPs_"+batch_id, script_name=current_script_name) )
-		#break ############### TEMPORARY 06/13/2014 ############################
+		run = run_ldfile(batch_id, snp_list, unit_test_file)
+		if run: # run is True --> file is defect or does not exists
+			jobs.append( QueueJob(command, log_dir_path, queue_name, walltime, mem_per_job , flags, "plink_matched_SNPs_"+batch_id, script_name=current_script_name, job_name=batch_id) )
+		else: # file is exists and are ok
+			pass
+		#break ### TEMPORARY 06/13/2014 ####
+	
+	################## PRINT STATS ##########################
+	print '\n'.join([block_str]*3)
+	print "#################### **** STATS from 'unit_test_file' **** ####################"
+	for stat_key, stat_list in unit_test_file.items():
+		print "{}: {}".format( stat_key, len(stat_list) )
+	for stat_key, stat_list in unit_test_file.items():
+		#print "{}: {}".format( stat_key, len(stat_list) )
+		for ldfile in stat_list:
+			print "{}\t{}".format( stat_key, ldfile )
+		print block_str
+	print '\n'.join([block_str]*3)
+
+	################## NOW SUBMIT JOBS #######################
 	for job in jobs:
-	    time.sleep(2)
-	    job.run()
-	    #break ############### TEMPORARY 06/13/2014 ############################
+		time.sleep(2)
+		job.run()
+		#break ### TEMPORARY 06/13/2014 ####
+
+	################## PRINT FAILS ##########################
+	dummy = QueueJob()
+	print '\n'.join([block_str]*3)
+	print "#################### **** JOBS THAT COULD NOT BE SUBMITTED - from QueueJob **** ####################"
+	print "Number of jobs that were not submitted: %s" % len(QueueJob.QJ_job_fails_list)
+	for no, job_name in enumerate(QueueJob.QJ_job_fails_list, start=1):
+		print "{}\t{}".format(no, job_name)
+	print '\n'.join([block_str]*3)
 
 #
 # Fixed variables
@@ -278,9 +324,10 @@ print("Running with %s option, using cutoff %s"%(args.distance_type,args.distanc
 #prepare queue parameters and commands
 #
 ##TODO@@ Adjust queue parameters??
-#queue_name = "cbs" # default
-queue_name = "idle" 
-walltime="604800" # 60*60*24*7=7 days
+queue_name = "cbs" # default - 06/15/2014
+#queue_name = "idle" 
+#walltime="604800" # 60*60*24*7=7 days
+walltime="86400" # 60*60*24=24 hours - 06/15/2014
 #mem_per_job="15gb" #=>> PBS: job killed: mem job total 4323312 kb exceeded limit 3145728 kb
 mem_per_job="8gb"
 #walltime="86400" # 60*60*24=1 day

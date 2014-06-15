@@ -5,6 +5,9 @@
 # This script was written by Pascal June 10.
 # The queue parameter is "idle"
 
+
+#logging.basicConfig(filename='example.log', filemode='w', level=logging.DEBUG)
+
 import sys
 import os
 import subprocess 
@@ -19,6 +22,7 @@ import datetime
 #param_list=[0.5]
 
 param_list=[100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
+#param_list=[100]
 distance_type = 'kb' # choose 'ld' or 'kb'
 
 start_time = time.time()
@@ -34,14 +38,19 @@ for param in param_list:
 	cmd="./plink_matched_SNPs.py --output_dir_path {out} --distance_type {type} --distance_cutoff {cutoff}".format(out=out, type=distance_type, cutoff=param)
 	print "making command: %s" % cmd
 	#with open(log_file, 'a') as f:
-	f = open(log_file, 'a')
+	f = open(log_file, mode='a', buffering=1) # buffering: 0 means unbuffered, 1 means line buffered, 
 	processes[str(param)]['fh'] = f
 	f.write( '####################################### %s #######################################\n' % batch_time )
-	sys.stdout.flush()
-	p=subprocess.Popen(cmd, stdout=f, stderr=subprocess.STDOUT, shell=True)
+	#f.flush() # this should also work
+	#sys.stdout.flush()
+	p=subprocess.Popen(cmd, stdout=f, stderr=subprocess.STDOUT, shell=True) #bufsize=0 is default
 	processes[str(param)]['p'] = p
 	processes[str(param)]['pid'] = p.pid
-	break ############### TEMPORARY ############################
+
+########## ***** QUESTION ****** #############
+# - can the filehandle be closed before the subprocess has ended?
+# 	---> no I do not think so!
+# 	---> safe way is the keep the filehandle open as wait for the process to end
 
 # Consider flushing by writing to pipe
 #stdout = PIPE, 

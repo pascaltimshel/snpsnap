@@ -18,11 +18,12 @@ import time # use for sleep and more
 
 class QueueJob:
     QJ_job_counter = 0
-    QJ_job_fails = 0
+    QJ_job_fails_counter = 0
+    QJ_job_fails_list = []
     QJ_time_stamp = datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H.%M.%S') # date/time string e.g. 2012-12-15_01:21:05, # or do ShellUtils.gen_timestamp()
     #QJ_err_log_name = 'QueueJob_error_log_' + QJ_time_stamp + '.txt'
     #QJ_jobs_log_name = 'QueueJob_jobs_log_' + QJ_time_stamp + '.txt'
-    def __init__(self, cmd, logdir, queue, walltime, mem, flags, logname, script_name='unknown_name'):
+    def __init__(self, cmd, logdir, queue, walltime, mem, flags, logname, script_name='unknown_name', job_name='NoJobName'):
         QueueJob.QJ_job_counter += 1 # Counter the number of jobs
         self.job_number = QueueJob.QJ_job_counter
         self.id = -1
@@ -33,12 +34,13 @@ class QueueJob:
         self.cmd = cmd
         self.call = self.qcmd + " " + self.cmd
         self.attempts = 0
+        self.job_name = job_name
 
         self.err_log = 'QueueJob_' + script_name + '_error_log_' + QueueJob.QJ_time_stamp + '.txt'
         self.jobs_log = 'QueueJob_' + script_name + '_jobs_log_' + QueueJob.QJ_time_stamp + '.txt'
 
     def run(self):
-        max_calls = 15
+        max_calls = 10
         sleep_time = 20 # pause time before making a new call.
         #TODO make sleep_time increse for each attempt.
         emsg = "" # placeholder for error massage from CalledProcessError exception
@@ -65,12 +67,13 @@ class QueueJob:
                 # return if no exceptions are cought
                 return
         # These lines are only executed if attempts <= max_calls
-        QueueJob.QJ_job_fails += 1
+        QueueJob.QJ_job_fails_counter += 1
+        QueueJob.QJ_job_fails_list.append(self.job_name)
         err_log_path = "%s/%s" % (self.logdir, self.err_log)
         print "ATTEMPT #%d/%d *** Maximum number of attempts reached ****" % (self.attempts, max_calls)
         print "ATTEMPT #%d/%d *** Reporting this in logfile ***\n%s" % (self.attempts, max_calls, err_log_path) # CHECK
         with open(err_log_path, 'a') as QJ_err_log:
-            QJ_err_log.write( 'JOB FAIL #%d   Last error message is\n' % QueueJob.QJ_job_fails )
+            QJ_err_log.write( 'JOB FAIL #%d   Last error message is\n' % QueueJob.QJ_job_fails_counter )
             QJ_err_log.write( '%s \n\n' % emsg )
 
             
