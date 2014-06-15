@@ -155,10 +155,6 @@ def get_plink_command(batch_id):
 
 
 def run_ldfile(batch_id, snp_list, unit_test_file):
-	unit_test_file['NO_PREVIOUS_FILE'] = []
-	unit_test_file['FILE_EXISTS_OK'] = []
-	unit_test_file['FILE_EXISTS_BAD'] = []
-
 	ldfile = output_dir_path + "/ldlists/" + batch_id + ".ld"
 	if not os.path.exists(ldfile): # Test if already run
 		unit_test_file['NO_PREVIOUS_FILE'].append(ldfile)
@@ -216,8 +212,13 @@ def run_ldfile(batch_id, snp_list, unit_test_file):
 # Function to submit jobs to queue
 def submit(batch_ids):
 	block_str = '========================================================================'
-	unit_test_file = {}
-	#unit_test_file = collections.defaultdict(list)
+	#unit_test_file = {}
+	unit_test_file = collections.defaultdict(list)
+	# Initialyzing keys
+	unit_test_file['NO_PREVIOUS_FILE']
+	unit_test_file['FILE_EXISTS_OK']
+	unit_test_file['FILE_EXISTS_BAD']
+
 	jobs = []
 	for batch_id in batch_ids:
 		(command, snp_list) = get_plink_command(batch_id)
@@ -233,12 +234,12 @@ def submit(batch_ids):
 	print "#################### **** STATS from 'unit_test_file' **** ####################"
 	for stat_key, stat_list in unit_test_file.items():
 		print "{}: {}".format( stat_key, len(stat_list) )
+	print block_str
 	for stat_key, stat_list in unit_test_file.items():
 		#print "{}: {}".format( stat_key, len(stat_list) )
 		for ldfile in stat_list:
 			print "{}\t{}".format( stat_key, ldfile )
 		print block_str
-	print '\n'.join([block_str]*3)
 
 	################## NOW SUBMIT JOBS #######################
 	for job in jobs:
@@ -247,7 +248,6 @@ def submit(batch_ids):
 		#break ### TEMPORARY 06/13/2014 ####
 
 	################## PRINT FAILS ##########################
-	dummy = QueueJob()
 	print '\n'.join([block_str]*3)
 	print "#################### **** JOBS THAT COULD NOT BE SUBMITTED - from QueueJob **** ####################"
 	print "Number of jobs that were not submitted: %s" % len(QueueJob.QJ_job_fails_list)
