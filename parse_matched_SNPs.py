@@ -136,7 +136,7 @@ def get_matched_snps(path,outfilename):
 				#gene_start is transcription start site
 				gene_start = gene_info_red[gene]['sta'] # This should be an integer
 
-				gene_end = gene_info_red[gene]['gene_end'] # This should be an integer
+				gene_end = gene_info_red[gene]['end'] # This should be an integer
 		
 				# Mark if gene overlaps matched locus
 				##@DOC We cover four possible scenarios: 
@@ -216,6 +216,9 @@ def get_matched_snps(path,outfilename):
 			# - this will give a nicer human readble output
 			# - both R (na.strings = "NA") and pandas will handle this as a missing value by default 
 
+			# IMPORTANT: 
+			# - REMEMBER THAT THE NUMBER OF COLUMS MUST BE UPDATED IN THE VALIDATION IN run_parse_matched_SNPs.py
+			# - First column MUST be rs_ID
 			outfile.write("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t{10}\t{11}\t{12}\t{13}\t{14}\n".format( \
 				matched_rsID, \
 				freq_bin, \
