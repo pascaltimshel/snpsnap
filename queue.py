@@ -29,7 +29,8 @@ class QueueJob:
         self.id = -1
         self.is_running = False
         self.status = ""
-        self.qcmd = "xmsub -de -o %s/%s.out -e %s/%s.err -r y -q %s -l mem=%s,walltime=%s,flags=%s"%(logdir, logname, logdir, logname,queue, mem, walltime,flags) 
+        #self.qcmd = "xmsub -de -o %s/%s.out -e %s/%s.err -r y -q %s -l mem=%s,walltime=%s,flags=%s"%(logdir, logname, logdir, logname,queue, mem, walltime,flags) 
+        self.qcmd = "xmsub -de -o %s/%s.out -e %s/%s.err -r y -q %s -l mem=%s,walltime=%s"%(logdir, logname, logdir, logname,queue, mem, walltime) 
         self.logdir = logdir
         self.cmd = cmd
         self.call = self.qcmd + " " + self.cmd

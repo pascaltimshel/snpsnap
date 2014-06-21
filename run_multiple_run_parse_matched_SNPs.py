@@ -1,9 +1,8 @@
 #!/usr/bin/env python2.7
 
-
 # Production V1
-# This script was written by Pascal June 10.
-# The queue parameter is "idle"
+# This script was written by Pascal June 18 2014.
+# The queue parameter is "??"
 
 
 #logging.basicConfig(filename='example.log', filemode='w', level=logging.DEBUG)
@@ -18,24 +17,30 @@ import collections
 import time
 import datetime
 
-param_list=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-distance_type = 'ld' # choose 'ld' or 'kb'
+#param_list=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+#distance_type = 'ld' # choose 'ld' or 'kb'
 
 
-#param_list=[100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
-#distance_type = 'kb' # choose 'ld' or 'kb'
+param_list=[100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
+distance_type = 'kb' # choose 'ld' or 'kb'
 
 start_time = time.time()
 
 batch_time = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H.%M.%S')
 
-out = "/home/projects/tp/childrens/snpsnap/data/step2/1KG_snpsnap_production_v1"
+output_dir_base = "/home/projects/tp/childrens/snpsnap/data/step2/1KG_snpsnap_production_v1"
+
+
 
 processes = collections.defaultdict(dict)
 
 for param in param_list:
-	log_file = './logs_step2/log_{type}_{cutoff}'.format(type=distance_type, cutoff=param)
-	cmd="./plink_matched_SNPs.py --output_dir_path {out} --distance_type {type} --distance_cutoff {cutoff}".format(out=out, type=distance_type, cutoff=param)
+	log_file = './logs_step3/log_{type}_{cutoff}'.format(type=distance_type, cutoff=param)
+	# OBS: overwriting variable - BAD PRACTICE
+	out = output_dir_base + '/' + distance_type + str(param) + '/' # e.g /step2/1KG_snpsnap_production_v1/ld0.5/  --> NB: it is unknow why the last slash is included
+	
+	#./run_parse_matched_SNPs.py --plink_matched_snps_path /home/projects/tp/childrens/snpsnap/data/step2/1KG_test_thin0.02_duprm/ld0.5/
+	cmd="./run_parse_matched_SNPs.py --plink_matched_snps_path {out}".format(out=out)
 	print "making command: %s" % cmd
 	#with open(log_file, 'a') as f:
 	f = open(log_file, mode='a', buffering=1) # buffering: 0 means unbuffered, 1 means line buffered, 
