@@ -224,8 +224,11 @@ def submit(batch_ids):
 		(command, snp_list) = get_plink_command(batch_id)
 		run = run_ldfile(batch_id, snp_list, unit_test_file)
 		if run: # run is True --> file is defect or does not exists
+			print "will submit job for batch_id: %s" % batch_id
+			# flags parameter not currenlty used because script is run on protein-s0
 			jobs.append( QueueJob(command, log_dir_path, queue_name, walltime, mem_per_job , flags, "plink_matched_SNPs_"+batch_id, script_name=current_script_name, job_name=batch_id) )
 		else: # file is exists and are ok
+			print "will NOT submit job for batch_id: %s" % batch_id
 			pass
 		#break ### TEMPORARY 06/13/2014 ####
 	
@@ -312,6 +315,13 @@ if False:
 	 	ans = raw_input("Confirm: ")
 	print "Ok let's start..."
 
+######### Non-finished statement for checking if /snplists path. #######
+# if True:
+# 	snp_list_dir = os.path.join(output_dir_path, "snplists")
+# 	if os.listdir(snp_list_dir):  # directory is NOT empty
+# 		print "It apears that the /snplists path is non-empty"
+#########################################################################
+
 
 ShellUtils.mkdirs(output_dir_path + "/snplists/") #TODO: remove trailing slash and see if it still works
 ShellUtils.mkdirs(output_dir_path + "/ldlists/") #TODO: remove trailing slash and see if it still works
@@ -324,15 +334,15 @@ print("Running with %s option, using cutoff %s"%(args.distance_type,args.distanc
 #prepare queue parameters and commands
 #
 ##TODO@@ Adjust queue parameters??
-queue_name = "cbs" # default - 06/15/2014
+queue_name = "idle" # default - 06/15/2014
 #queue_name = "idle" 
-#walltime="604800" # 60*60*24*7=7 days
-walltime="86400" # 60*60*24=24 hours - 06/15/2014
+walltime="604800" # 60*60*24*7=7 days
+#walltime="86400" # 60*60*24=24 hours - 06/15/2014
 #mem_per_job="15gb" #=>> PBS: job killed: mem job total 4323312 kb exceeded limit 3145728 kb
-mem_per_job="8gb"
+mem_per_job="7gb"
 #walltime="86400" # 60*60*24=1 day
 #mem_per_job="1gb"
-flags = "sharedmem"
+flags = "sharedmem" # NOT USED
 
 
 

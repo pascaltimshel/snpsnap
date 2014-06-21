@@ -15,6 +15,8 @@ def makehash():
 
 # Function to read gene positions
 def read_gene_info(infile):
+	# ENSG00000125454 SLC25A19        17      -1 70780669 70797109
+
 	# Ensembl Gene ID,Transcript Start (bp),Transcript End (bp),Strand,Gene Start (bp),Chromosome Name,Gene End (bp)
 	# ENSG00000239156,20113,20230,1,20113,GL000228.1,20230
 	# ENSG00000238762,22673,22791,1,22673,GL000228.1,22791
@@ -26,6 +28,7 @@ def read_gene_info(infile):
 	chr_pattern = re.compile('^([1-9]|1[0-9]|2[0-4]|[X,Y])$', re.IGNORECASE) # this should match the numeric range 1-24 and X,Y. Match case insensitive.
 	for line in lines:
 		words = line.strip().split(',') # comma separated file
+		#chr = words[2]
 		chr = words[5]
 
 		# IMPORTANT: there exists strange chr names such as GL000228.1, LRG_13 etc...
@@ -37,30 +40,42 @@ def read_gene_info(infile):
 		if chr == "Y":
 			chr = "24"
 
-		# Saving ENSEMBLE ID in dict
+		#info[chr][words[4]] = words[0] #@TODO test if start exists
 		info[chr][words[0]] = 1
+		#info_red[words[0]]['sta'] = words[4] # old ENSEMBLE Tune
+		#info_red[words[0]]['end'] = words[5] # old ENSEMBLE Tune
 
 		########################## USING TRANSCRIPTION START/END ######################
 		### OBS: that there may be many different Transcript Start/End FOR THE SAME ENSEMBL ID
 		### ----> SEE 'exp_gene_definition.txt' for details
-
+		# if words[3] == '1': # Strand is FORWARD
+		# 	info_red[words[0]]['sta'] = words[1] # ===> Transcript Start (bp)
+		# 	info_red[words[0]]['end'] = words[2] # ===> Transcript End (bp)
+		# elif words[3] == '-1': # Strand is REVERSE - then START should be END by ENSEMBL convention
+		# 	info_red[words[0]]['sta'] = words[2] # ===> Transcript END (bp)
+		# 	info_red[words[0]]['end'] = words[1] # ===> Transcript START (bp) 
+		# else:
+		# 	pass
+		# 	#TODO: make some exeption
 		
 		#if words[0] == 'ENSG00000176771': pdb.set_trace()
 		########################## USING GENE START/END ######################
 		if words[3] == '1': # Strand is FORWARD
-			info_red[words[0]]['sta'] = int(words[4]) # ===> Gene Start (bp)
-			info_red[words[0]]['end'] = int(words[6]) # ===> Gene End (bp)
+			info_red[words[0]]['sta'] = words[4] # ===> Gene Start (bp)
+			info_red[words[0]]['end'] = words[6] # ===> Gene End (bp)
 		elif words[3] == '-1': # Strand is REVERSE - then START should be END by ENSEMBL convention
-			info_red[words[0]]['sta'] = int(words[6]) # ===> Gene End (bp)
-			info_red[words[0]]['end'] = int(words[4]) # ===> Gene Start (bp)
+			info_red[words[0]]['sta'] = words[6] # ===> Gene End (bp)
+			info_red[words[0]]['end'] = words[4] # ===> Gene Start (bp)
 		else:
-			print "Warning: strange 'Strand' column entry in ENSEMBL file. Expected '1' or '-1' got [%s]. The below shows the full line:\n%s" % ( words[3], line )
-			#TODO: make some exeption or print
-			# Currently we skip genes that do have stran '1' or '-1'
-			# This is OK since I checked this: 
-			#	cut -d',' -f4 ensg_mart_ensembl64_buildGRCh37.p5.tab | egrep -v '(-1)|(1)'
-			# 	--> gives only "Strand"
+			pass
+			#TODO: make some exeption
 
+		### USED BEFORE JUNE 18 2014 ###
+		# info_red[words[0]]['sta'] = words[1] # ===> Transcript Start (bp) - USED BEFORE JUNE 18 2014
+		# info_red[words[0]]['end'] = words[2] # ===> Transcript End (bp) - USED BEFORE JUNE 18 2014
+
+		#info_red[words[0]]['sta'] = words[4] # ===> Gene Start (bp)
+		#info_red[words[0]]['end'] = words[6] # ===> Gene End (bp)
 	infile.close()
 	return info,info_red
 
@@ -116,11 +131,16 @@ def get_matched_snps(path,outfilename):
 	
 		# Loop over matched SNPs and report gene density as observed SNP
 		for matched_rsID in matched_snps_boundaries: #
+		#for matched_rsID in ['rs1370600']: # used for debugging
+			#pdb.set_trace()
 			snp_chr = matched_snps_boundaries[matched_rsID]['chr'] # NB. integer!
 			snp_position = matched_snps_boundaries[matched_rsID]['pos'] # NB. integer!
 
 			genes_in_matched_locus = {} # orig
+			#genes_in_matched_locus = 0 ## tune and pascal counter. Pascal outcomment again 04-17-2014
 		
+			# Loop over all genes on chromosome
+			# TODO Maybe sort and break
 			matched_nearest_gene = "" 
 			matched_nearest_gene_dist = float("inf")
 			
@@ -128,53 +148,127 @@ def get_matched_snps(path,outfilename):
 			matched_nearest_gene_located_within = "" 
 			matched_nearest_gene_dist_located_within = float("inf")
 
-			# Loop over all genes on chromosome
-			# TODO Maybe sort and break?
-			for gene in gene_info[str(snp_chr)]: # e.g. gene_info['5'] returns all ENSEMBL IDs in chromosome 5.
+
+			for gene in gene_info[str(snp_chr)]:
+			#for gene in ['ENSG00000176771']: # used for debugging. Gene is on reverse strand and SNP 'rs1370600' is located within
+				# TODO: possible sort gene_info? 
+
+				# matched_snps_boundaries[matched_rsID] ===> "original input snp"
+				# str(matched_snps_boundaries[matched_rsID]['chr']) ===> chromosome number
+				# e.g. gene_info['5'] returns all ENSEMBL IDs in chromosome 5.
 
 				# gene is a key in hash, i.e. a ENSEMBL ID string. gene_info[] is a hash
-				#gene_start is transcription start site
-				gene_start = gene_info_red[gene]['sta'] # This should be an integer
+				#tss is transcription start site
+				tss = int(gene_info_red[gene]['sta'])
 
-				gene_end = gene_info_red[gene]['gene_end'] # This should be an integer
+				#e = gene_info[str(matched_snps_boundaries[matched_rsID]['chr'])][tss] 
+				#end = gene_info_red[e]['end']
+				end = int(gene_info_red[gene]['end'])
 		
+				#### USED FOR DEBUGGING
+				# print (int(tss) > matched_snps_boundaries[matched_rsID]['up'] and int(tss) < matched_snps_boundaries[matched_rsID]['down'])
+				# print (int(end) > matched_snps_boundaries[matched_rsID]['up'] and int(end) < matched_snps_boundaries[matched_rsID]['down'])
+				# print (int(tss) < matched_snps_boundaries[matched_rsID]['up'] and int(end) > matched_snps_boundaries[matched_rsID]['down'])
+				# print "tss < upstream ||| %s < %s ||| %s" % ( int(tss), matched_snps_boundaries[matched_rsID]['up'],  int(tss) < matched_snps_boundaries[matched_rsID]['up'])
+				# print "end > down ||| %s < %s ||| %s" % ( int(end), matched_snps_boundaries[matched_rsID]['down'], int(end) > matched_snps_boundaries[matched_rsID]['down'] )
+
+
 				# Mark if gene overlaps matched locus
 				##@DOC We cover four possible scenarios: 
 				# 1. line: gene START is within locus. this applies both to forward and reverse genes
 				# 2. line: gene END is within locus. this applies both to forward and reverse genes
-				# 3. line: gene extends through locus. gene is on FORWARD strand (gene_start < gene_end)
-				# 4. line: gene extends through locus. gene is on REVERSE strand (gene_start > gene_end)
-				# NB: read_gene_info() sets the gene gene_start and gene_end correctly according the the ENSEMBL convention "strand" information
-				if (int(gene_start) > matched_snps_boundaries[matched_rsID]['up'] and int(gene_start) < matched_snps_boundaries[matched_rsID]['down']) \
-				or (int(gene_end) > matched_snps_boundaries[matched_rsID]['up'] and int(gene_end) < matched_snps_boundaries[matched_rsID]['down']) \
-				or (int(gene_start) < matched_snps_boundaries[matched_rsID]['up'] and int(gene_end) > matched_snps_boundaries[matched_rsID]['down']) \
-				or (int(gene_end) < matched_snps_boundaries[matched_rsID]['up'] and int(gene_start) > matched_snps_boundaries[matched_rsID]['down']):
+				# 3. line: gene extends through locus. gene is on FORWARD strand (tss < end)
+				# 4. line: gene extends through locus. gene is on REVERSE strand (tss > end)
+				# NB: read_gene_info() sets the gene tss and end correctly according the the ENSEMBL convention "strand" information
+				if (int(tss) > matched_snps_boundaries[matched_rsID]['up'] and int(tss) < matched_snps_boundaries[matched_rsID]['down']) \
+				or (int(end) > matched_snps_boundaries[matched_rsID]['up'] and int(end) < matched_snps_boundaries[matched_rsID]['down']) \
+				or (int(tss) < matched_snps_boundaries[matched_rsID]['up'] and int(end) > matched_snps_boundaries[matched_rsID]['down']) \
+				or (int(end) < matched_snps_boundaries[matched_rsID]['up'] and int(tss) > matched_snps_boundaries[matched_rsID]['down']):
 					genes_in_matched_locus[gene]= 1
+					#genes_in_matched_locus += 1 # tune and pascal. Pascal outcomment 04-17-2014
 				
 		
 				########### FINDING NEAREST GENE AND DIST #########
 				# Update nearest gene
-				dist = abs( int(gene_start) - snp_position ) #
+				dist = abs( int(tss) - snp_position ) #
 				if dist < matched_nearest_gene_dist: 
 					matched_nearest_gene = gene 
 					matched_nearest_gene_dist = dist # this is dist_nearest_gene
 
 
 				################ NEW JUNE 18 2014 - FINDING NEAREST GENE DIST WITHIN #############
-				## 1. gene_start <= snp_position <= gene_end | ===> SNP position within gene on FORWARD strand
-				## 2. gene_end <= snp_position <= gene_start | ===> SNP position within gene on REVERSE strand
+				## 1. tss <= snp_position <= end | ===> SNP position within gene on FORWARD strand
+				## 2. end <= snp_position <= tss | ===> SNP position within gene on REVERSE strand
 				# NB: you could "merge" the nested 'if statement' by using "and". 
 				# I chose a nested if statement for code readability
-				if (gene_start <= snp_position <= gene_end) \
-				or (gene_end <= snp_position <= gene_start): # if condition is true ===> SNP position is inside gene
+				if (tss <= snp_position <= end) \
+				or (end <= snp_position <= tss): # if condition is true ===> SNP position is inside gene
 					if dist < matched_nearest_gene_dist_located_within: # if condition in true ===> distance to current gene is the smallest seen so far
 						matched_nearest_gene_located_within = gene
 						matched_nearest_gene_dist_located_within = dist
+
+				############# USED BEFORE JUNE 18 2014 - DO NOT DELETE ################
+				# # Update nearest gene
+				# dist = abs( int(tss) - snp_position ) #
+				# if dist < matched_nearest_gene_dist: 
+				# 	##matched_nearest_gene = gene_info[str(matched_snps_boundaries[matched_rsID]['chr'])][tss] # outcommented by pascal and Tune
+				# 	matched_nearest_gene = gene # pascal new, 04-17-2014. Save ENSEMBLE ID of nearest gene. Saves gene name in correct scope
+				# 	matched_nearest_gene_dist = dist
+		
+
+
+
+			# Add nearest gene to genes in matched locus. 
+			# PASCAL NOTE: this ensures that there is always at least ONE gene in the locus
+			# genes_in_matched_locus[matched_nearest_gene] = 1 # orig. OUTCOMMENTED by Tune and Pascal
+			#pdb.set_trace()
+			# Report distance to nearest gene
+			#@DOC Distance is measured as distance to nearest start site
+			#matched_dist_to_nearest_gene = int(abs( matched_snps_boundaries[matched_rsID]['pos'] - int(gene_info_red[gene]['sta']))) # pascal and Tune - PASCAL NOTE: CHECK IF THIS IS CORRECT!
+			#print "DEBUG-message | chr = " + str(matched_snps_boundaries[matched_rsID]['chr'])
+			#print "DEBUG-message | gene = " + gene
+			#print "DEBUG-message | position of nearest gene (gene_info_red[gene]['sta']) = " + gene_info_red[gene]['sta']
+			#print "DEBUG-message | gene_info_red[matched_nearest_gene]['sta'] =" + gene_info_red[matched_nearest_gene]['sta']
+			
+			############# USED BEFORE JUNE 18 2014 - DO NOT DELETE ################
+			#### VERY UGLY WAY OF SETTING matched_dist_to_nearest_gene ########
+			# matched_dist_to_nearest_gene = int(abs( snp_position - int(gene_info_red[matched_nearest_gene]['sta']))) # original - works?
+			########################################################################
 
 
 			# Report gene density
 			matched_gene_count = len(genes_in_matched_locus)
 			
+
+			#outfile.write("%s\t%s\t%s\t%s\t%s\t%s\n"%(matched_rsID,freq_bin,matched_dist_to_nearest_gene,genes_in_matched_locus,matched_nearest_gene,",".join(genes_in_matched_locus.keys()))) # pascal and tune style
+			#outfile.write("%s\t%s\t%s\t%s\t%s\t%s\n"%(matched_rsID,freq_bin,matched_dist_to_nearest_gene,matched_gene_count,matched_nearest_gene,",".join(genes_in_matched_locus.keys()))) # orig - works, but needed extension
+			
+			#rs201245847     9-10    49791307        1               ENSG00000212587
+			
+			#1=rsID
+			#2=freq_bin
+			#3=chromosome number of rsID
+			#4=position of rsID
+			#5=gene count in matched locus (density)
+			#6=dist to nearest gene
+			#7=boundary_upstream #NEW
+			#8=boundary_downstream #NEW
+			#9=nearest_gene ENSEMBL_ID (alway present)
+			#10=genes in matches locus, multiple ENSEMBL IDs
+
+			############# USED BEFORE JUNE 18 2014 - DO NOT DELETE ################
+			# outfile.write("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\n".format( \
+			# 	matched_rsID, \
+			# 	freq_bin, \
+			# 	snp_chr, \
+			# 	snp_position, \
+			# 	matched_gene_count, \
+			# 	matched_dist_to_nearest_gene, \
+			# 	matched_snps_boundaries[matched_rsID]['up'], \
+			# 	matched_snps_boundaries[matched_rsID]['down'], \
+			# 	matched_nearest_gene, \
+			# ";".join(genes_in_matched_locus.keys()) )) # pascal - with added extension
+				
 
 			################ NEW JUNE 18 2014 - WRITE OUT #############
 
@@ -238,7 +332,13 @@ def get_matched_snps(path,outfilename):
 
 	outfile.close()
 	
-################################# ENSEMBL Gene file #######################################################
+	
+# Variables
+#gene_information_file = "/home/projects/tp/data/mapping/biomart/ensg_mart_ensembl54_build36.tab" # Ensembl 54, HG16
+# ENSG00000125454 SLC25A19        17      -1 70780669 70797109
+# ENSG00000163328 GPR155  2       -1 175004621 175060068
+# ENSG00000167555 ZNF534  19      1 57592933 57647004
+# ENSG00000156976 EIF4A2  3       1 187984055 187990377
 gene_information_file="/home/projects/tp/childrens/snpsnap/data/misc/ensg_mart_ensembl64_buildGRCh37.p5.tab"
 # Ensembl Gene ID,Transcript Start (bp),Transcript End (bp),Strand,Gene Start (bp),Chromosome Name,Gene End (bp)
 # ENSG00000239156,20113,20230,1,20113,GL000228.1,20230
@@ -246,6 +346,7 @@ gene_information_file="/home/projects/tp/childrens/snpsnap/data/misc/ensg_mart_e
 # ENSG00000240442,21191674,21191827,1,21191674,18,21191827
 # ENSG00000242521,21868882,21868958,1,21868882,18,21868958
 # ENSG00000244478,63142749,63142836,1,63142749,18,63142836
+#@TODO: update biomart file. Download via web. Use scp
 #
 # Parse arguments  
 #
