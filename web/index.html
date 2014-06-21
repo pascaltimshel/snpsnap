@@ -1,92 +1,109 @@
-<html>
-<head>
-<title>SNPSNAP</title>
-<style>
-h2 {font-weight:bold; color:blue;}
-p.info {margin-top: 0em; margin-bottom: 0em;}
-p.remark {font-style:italic; color:gray; margin-top: 0em; margin-bottom: 0em;}
-</style>
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<meta name="description" content="">
+		<meta name="author" content="">
+
+		<!-- Bootstrap core CSS -->
+		<link href="/static/css/bootstrap.min.css" rel="stylesheet">
+
+		<!-- Custom styles for SNPsnap -->
+		<link href="/css/jumbotron-narrow.css" rel="stylesheet">
+		<link href="/css/snpsnap.css" rel="stylesheet">
+
+
+		<!-- GOOGLE FONTS -->
+		<link href="http://fonts.googleapis.com/css?family=Crimson+Text" rel="stylesheet" type="text/css">
+
+
+		<!-- Bootstrap core JavaScript -->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+
+
+		<script src="/static/js/bootstrap.min.js"></script>
 </head>
+
+
 <body>
-<h1 style="text-align:center;">Welcome to SNPSNAP - matching your SNPs</h1>
 
-This site is developed for Google Chrome browser. Please use it for optimal compatibility.
+<div class="container">
 
-<div style="position:relative;">
-	<form action="/app/webface.py" method="POST" target="_blank" enctype="multipart/form-data">
-		<!-- ############# FILE UPLOAD ############## -->
-		<div style="border:2px solid;padding:10px 10px;">
-			<h2>File upload</h2>
-			<textarea name="snplist_text" cols="40" rows="5", placeholder="Paste SNP list here...">
-14:69873335
-9:5453460
-7:88660988
-1:201688955
-1:181844943
-18:67015865
-6:32592119
-			</textarea>
-			<br/>
-			Upload SNPlist: <input type="file" name="snplist_fileupload">
-		</div>
-		<br/>
-		<!-- ############# CRITERIA ############## -->
-		<div style="border:2px solid;padding:10px 10px;">
-			<h2>Criteria</h2>
-			Distance type:
-			<input type="radio" id="ld_distance_type" name="distance_type" value="ld" required="required" checked="checked">
-			<label for="ld_distance_type">LD</label>
-			<input type="radio" id="kb_distance_type" name="distance_type" value="kb" required="required">
-			<label for="kb_distance_type">KB</label>
-			<br/>
-			Distance cutoff: <select name="distance_cutoff" id="distance_cutoff">
-				<option value="0.1">ld0.1</option>
-				<option value="0.5" selected="selected">ld0.5</option>
-				<option value="0.9">ld0.9</option>
-				<option value="100">kb100</option>
-				<option value="500">kb500</option>
-				<option value="1000">kb1000</option>
-			</select>
-			<!-- <label for="distance_cutoff">Distance cutoff</label> -->
-			<p style="font-weight:bold; margin-bottom:0">Maximum deviations for matching SNPs</p>
-			MAF: <input type="text" name="max_freq_deviation" value="5" size=5><br/>
-			Gene count in loci: <input type="text" name="max_genes_count_deviation" value="20">%<br/>
-			Distance to nearest gene: <input type="text" name="max_distance_deviation" value="20">%
-			<br/>
-		</div>
-		<br/>
-		<!-- ############# OPTIONS ############## -->
-		<div style="border:2px solid;padding:10px 10px;">
-			<h2>Options</h2>
-			Number of matching SNP sets: <input type="text" name="N_sample_sets" value="1000">
-			<br/>
-			<input type="checkbox" name="annotate" id="annotate" value="true">
-			<label for="annotate">Annotate input SNPs</label>
-			<p class="remark">This MAY take longer time...</p>
-			<br/>
-			<input type="checkbox" name="set_file" id="set_file" value="true">
-			<label for="set_file">Create set file</label>
-			<p class="info">Enable this to create an annotated SNP set file for matched SNPs.</p>
-			<p class="remark">This will take significantly longer time and potentially produce a large output file</p>
-			<br/>
+<!-- 
+<nav class="navbar">
+		<div class="navbar-header">
+				<a class="navbar-brand" href="#">
+						<img style="max-width:100px; margin-top: -7px;" src="/img/broad_logo/BroadLogo.png">
+				</a>
 
-			<!-- <label for="distance_cutoff">Distance cutoff</label> -->
+				<ul class="nav nav-pills pull-right">
+					<li class="active"><a href="#">Home</a></li>
+					<li><a href="#">About</a></li>
+					<li><a href="#">Contact</a></li>
+				</ul>
 		</div>
-		<br/>
-		<!-- ############# SESSION ############## -->
-		<div style="border:2px solid;padding:10px 10px;">
-			<h2>Session information</h2>
-			Please fill in information for you to later identify your job<br/>
-			Job name: <input type="text" name="job_name"><br/>
-			Email: <input type="text" name="email" value="pascal.timshel@gmail.com">
-			<br/>
+</nav> -->
+
+<!-- <div class="navbar-header">
+		<a class="navbar-brand" rel="home" href="#" title="Buy Sell Rent Everyting">
+				<img style="max-width:100px; margin-top: -7px;"
+						 src="/img/broad_logo/BroadLogo.png">
+		</a>
+</div> -->
+
+
+		<div class="row">
+			<!-- <div class="col-xs-6"><h2 class="text-muted">SNPsnap</h2></div> -->
+			<div class="col-xs-6"><h1 class='allerta'>SNPsnap</h1></div>
+			<div class="col-xs-6"><img class="img-responsive" src="/img/broad_logo/BroadLogo.png"></div>
 		</div>
-		<input type="submit" value="Submit" />
-	</form>
+			</br>
+			
+			<div class="header">
+				<ul class="nav nav-pills pull-right">
+					<li class="active"><a href="/index.html">Home</a></li>
+					<li><a href="/match_snps.html">Match SNPs</a></li>
+					<li><a href="/faq">FAQ</a></li>
+					<li><a href="/documentation.html">Documentation</a></li>
+					<li><a href="/contact.html">Contact</a></li>
+				</ul>
+				<!-- <a class="navbar-brand" href="#">Project BRAND name</a> -->
+			</div>
+			</br>
+
+			<div class="jumbotron">
+				<h1>Match your SNPs with SNPsnap!</h1>
+				<p class="lead"></p>
+				<p><a class="btn btn-lg btn-success" href="/match_snps.html" role="button">Start now</a></p>
+			</div>
+
+			<div class="row marketing">
+				<div class="col-lg-6">
+					<h4>Introduction</h4>
+					<p>SNPsnap is a novel tool for machting your SNPs</p>
+
+					<h4>Why use SNPsnap?</h4>
+					<p>SNPsnap is developed for GWAS that need a background distribution  </p>
+
+					<h4>Subheading</h4>
+					<p>Maecenas sed diam eget risus varius blandit sit amet non magna.</p>
+				</div>
+
+
+			</div>
+
+ <!-- ############## FOOTER ################### -->
+<div class="footer">
+	<div class="col-xs-3"><p>&copy; Broad 2014</p></div>
+	<div class="col-xs-8"></div>
+	<div class="col-xs-1"><img class="img-responsive" src="/img/broad_logo/BroadSeal.png"></div>
 </div>
-<!--
-Comment
--->
+ <!-- end FOOTER -->
+
+
+</div> <!-- /container -->
+
 
 </body>
 </html>

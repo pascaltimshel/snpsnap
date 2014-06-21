@@ -15,7 +15,7 @@ from email.mime.text import MIMEText
 import argparse
 import json
 
-import 
+import zipfile
 
 #### LEFTOVERS: attempt to make threading/multiprocessing
 #import multiprocessing
@@ -201,7 +201,7 @@ class Processor(object):
 		    </p>
 		    <p>{report}</p>
 		    </br>
-		    <p>--SNPsnap Team</p>
+		    <p><i>SNPsnap Team</i></p>
 		  </body>
 		</html>
 		""".format( job=self.job_name, link=link_result, report=self.generate_report_for_email() )
@@ -226,8 +226,28 @@ class Processor(object):
 		server.sendmail(fromaddr, toaddr, text)
 		server.quit()
 
-	def zip_results():
-		self.path_session_output
+
+	@staticmethod
+	def zip_folder(folder_path, output_path):
+		"""Zip the contents of an entire folder (with that folder included
+		in the archive). Empty subfolders will be included in the archive
+		as well.
+		"""
+		zip_file = zipfile.ZipFile(output_path, 'w', compression=zipfile.ZIP_DEFLATED)
+		parent_folder = os.path.dirname(folder_path) # this should remove any trailing slashes in the 'folder_path'. Check this...
+		# Retrieve the paths of the folder contents.
+		contents = os.walk(folder_path) # ---> type generator
+		for root, folders, files in contents:
+			# Include all subfolders, including empty ones.
+			for folder_name in folders:
+				absolute_path = os.path.join(root, folder_name)
+				relative_path = absolute_path.replace(parent_folder + os.sep, '')
+				zip_file.write(absolute_path, arcname=relative_path)
+			for file_name in files:
+				absolute_path = os.path.join(root, file_name)
+				relative_path = absolute_path.replace(parent_folder + os.sep, '')
+				zip_file.write(absolute_path, arcname=relative_path)
+		zip_file.close()
 
 
 	def run(self):
@@ -284,8 +304,11 @@ class Processor(object):
 
 		### Now all is done: 
 		self.read_report() # this sets the nessesary instance variables (i.e. self.report_obj) for the email to be generated
-		self.write_snpsnap_summary()
-		## Zip result dir
+		self.write_snpsnap_summary() # adds additional information (email, jobname) to report_obj and WRITE report to output dir (i.e. not temp dir)
+		self.zip_folder(self.path_session_output, self.path_session_output+'.zip')
+		
+		# Now clean up:
+		#os.removedirs(path_session_output)
 
 		## Send out email
 		self.send_email()

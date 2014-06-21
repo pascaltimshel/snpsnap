@@ -1,0 +1,165 @@
+
+<!-- DROPDOWN BOTTON FOR LOCUS DEFINITION -->
+	<div class="form-group">
+		<div class="col-xs-3 label_text text-right">
+		  Distance type
+		</div>
+		<div class="col-xs-4">
+			<div class="input-group">
+			  <div class="input-group-btn">
+			    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">Distance type <span class="caret"></span></button>
+			    <ul class="dropdown-menu">
+			    	<li><input type="radio" name="distance_type" id="kb_distance_type" value="kb" required="required">LD</li>
+			    	<li>KB</li>
+			   </ul>
+			  </div><!-- /btn-group -->
+			  <select class="form-control" name="distance_cutoff">
+			  	<option value="100">100</option>
+			  	<option value="200">200</option>
+			  	<option value="300">300</option>
+			  	<option value="400">400</option>
+			  	<option value="500" selected="selected">500</option>
+			  	<option value="600">600</option>
+			  	<option value="700">700</option>
+			  	<option value="800">800</option>
+			  	<option value="900">900</option>
+			  	<option value="1000">1000</option>
+			  </select>
+			</div><!-- /input-group -->
+		</div>
+	</div>
+
+
+
+
+
+
+
+	<div style="border:2px solid;padding:10px 10px;">
+		<h2>Options</h2>
+		Number of matching SNP sets: <input type="text" name="N_sample_sets" value="1000">
+		<br/>
+		<input type="checkbox" name="annotate" id="annotate" value="true">
+		<label for="annotate">Annotate input SNPs</label>
+		<p class="remark">This MAY take longer time...</p>
+		<br/>
+		<input type="checkbox" name="set_file" id="set_file" value="true">
+		<label for="set_file">Create set file</label>
+		<p class="info">Enable this to create an annotated SNP set file for matched SNPs.</p>
+		<p class="remark">This will take significantly longer time and potentially produce a large output file</p>
+		<br/>
+
+		<!-- <label for="distance_cutoff">Distance cutoff</label> -->
+	</div>
+	<br/>
+	<!-- ############# SESSION ############## -->
+	<div style="border:2px solid;padding:10px 10px;">
+		<h2>Session information</h2>
+		Please fill in information for you to later identify your job<br/>
+		Job name: <input type="text" name="job_name"><br/>
+		Email: <input type="text" name="email_address" value="pascal.timshel@gmail.com">
+		<br/>
+	</div>
+	<input type="submit" value="Submit"/>
+</form>
+
+
+
+
+<!-- TEESTING  -->
+			<div class="form-group has-error">
+			  <label class="control-label" for="inputError1">Input with error</label>
+			  <input type="text" class="form-control" id="inputError1">
+			</div>
+
+<!-- EXAMPLE FROM TUTORIAL -->
+		<label for="name">Example of Default Checkbox and radio button </label>
+		<div class="checkbox">
+			 <label><input type="checkbox" value="">Option 1</label>
+		</div>
+		<div class="checkbox">
+			 <label><input type="checkbox" value="">Option 2</label>
+		</div>
+
+		<div class="radio">
+			 <label>
+					<input type="radio" name="optionsRadios" id="optionsRadios1" 
+						 value="option1" checked> Option 1
+			 </label>
+		</div>
+		<div class="radio">
+			 <label>
+					<input type="radio" name="optionsRadios" id="optionsRadios2" 
+						 value="option2">
+						 Option 2 - selecting it will deselect option 1
+			 </label>
+		</div>
+		<label for="name">Example of Inline Checkbox and radio button </label>
+		<div>
+			 <label class="checkbox-inline">
+					<input type="checkbox" id="inlineCheckbox1" value="option1"> Option 1
+			 </label>
+			 <label class="checkbox-inline">
+					<input type="checkbox" id="inlineCheckbox2" value="option2"> Option 2
+			 </label>
+			 <label class="checkbox-inline">
+					<input type="checkbox" id="inlineCheckbox3" value="option3"> Option 3
+			 </label>
+			 <label class="checkbox-inline">
+					<input type="radio" name="optionsRadiosinline" id="optionsRadios3" 
+						 value="option1" checked> Option 1
+			 </label>
+			 <label class="checkbox-inline">
+					<input type="radio" name="optionsRadiosinline" id="optionsRadios4" 
+						 value="option2"> Option 2
+			 </label>
+		</div>
+
+
+
+<!-- METARANKER OPTIONS -->
+<fieldset>
+		<legend>Input</legend>
+		<div class="control-group">
+				<label class="control-label" for="GENE_NOMENCLATURE">Gene nomenclature:</label>
+				<div class="controls">
+						<SELECT id="GENE_NOMENCLATURE" name="GENE_NOMENCLATURE" >
+								<option VALUE="ensembl">Ensembl</option>
+								<option VALUE="hgnc">Hugo Gene Symbol</option>
+								<option VALUE="entrez">Entrez</option>
+						</SELECT>
+				</div><!--controls-->
+		</div><!--control-group-->
+		<div class="control-group">
+				<label class="control-label" for="input_session_name">Session Name</label>
+				<div class="controls">
+						<input type="text" name="SESSION_NAME" class="span3 popup_on_hover" id="input_session_name" data-content="Must be a single word containing alphanumerical characters or '-_'" data-original-title="Hint" data-validation-regex-regex="[0-9a-zA-Z_\-]*" data-validation-regex-message="Must be a single word containing alphanumerical characters or '-_'" required />
+						<p class="help-block">A name that will help you identify this query</p>
+				</div><!--controls--> 
+		</div><!--control-group--> 
+		<div class="control-group">
+			<label class="control-label" for="input_email">Email Address</label>
+			<div class="controls">
+				<input type="email" name="EMAIL_ADDRESS" class="span3 popup_on_hover" id="input_email" rel="popover" data-content="Your email will only be used in the event of a problem with the service in case of which we will contact you when the problem has been resolved" data-original-title="Hint" >
+				<!--p class="help-block">Supporting help text</p-->
+				</div><!--controls--> 
+		</div><!--control-group--> 
+</fieldset>
+
+
+<!-- SOME TEST -->
+<fieldset>
+	<legend>Input</legend>
+	<div class="form-group">
+	      <label for="name">Name</label>
+	      <input type="text" class="form-control" id="name" 
+	         placeholder="Enter Name">
+	   </div>
+	   <div class="form-group">
+	      <label for="inputfile">File input</label>
+	      <input type="file" id="inputfile">
+	      <p class="help-block">Example block-level help text here.</p>
+	   </div>
+	</div>
+</fieldset>
+

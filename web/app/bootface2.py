@@ -3,6 +3,8 @@
 # Import modules for CGI handling 
 import cgi, cgitb
 
+cgitb.enable()
+
 import os
 import time # potential
 import hashlib
@@ -42,7 +44,7 @@ def list_args():
 
 def construct_job_params():
 	params = """
-	<div style='width:70%;'>
+	<div style='width:100%;'>
 	<table class="table table-hover table-condensed">
 	  <thead>
 	    <tr>
@@ -144,7 +146,6 @@ file_snplist = path_web_tmp_output+'/'+session_id+'_user_snplist' # version3
 file_prefix_web_tmp = path_web_tmp_output+'/'+session_id
 
 
-cgitb.enable()
 
 
 snplist_input_type = get_snplist() # read input snplist and write to file in /tmp
@@ -227,39 +228,94 @@ print
 print "<!DOCTYPE html>"
 print "<html>"
 print "<head>"
-print "<title>SNPSNAP - query result</title>"
-print "<style>"
-print """
-body {
-  padding-top: 50px;
-}
-.h1 {
-  text-align: center;
-}
-"""
-# .results {
-#   padding: 40px 15px;
+print "<title>SNPsnap</title>"
+# print "<style>"
+# print """
+# body {
+#   padding-top: 50px;
+# }
+# .h1 {
 #   text-align: center;
 # }
+## """
+## .results {
+##   padding: 40px 15px;
+##   text-align: center;
+## }
+# print "</style>"
 
-print "</style>"
+
 ## SEE: http://stackoverflow.com/questions/10721244/ajax-posting-to-python-cgi
 ## IMPORTANT: http://stackoverflow.com/questions/9540957/jquery-ajax-loop-to-refresh-jqueryui-progressbar
-#print "<script src='http://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js'></script>"
-print "<script type='text/javascript' src='http://code.jquery.com/jquery-latest.min.js'></script>"
-print "<link href='/static/css/bootstrap.min.css' rel='stylesheet'>"
-print "<script src='/static/js/bootstrap.min.js'></script>"
-#print "<script src='/js/get_status_boot.js'></script>"
+############# THIS WORKED - OUTCOMMENTED June 18 ##################
+# print "<script type='text/javascript' src='http://code.jquery.com/jquery-latest.min.js'></script>"
+# print "<link href='/static/css/bootstrap.min.css' rel='stylesheet'>"
+# print "<script src='/static/js/bootstrap.min.js'></script>"
+
+print """
+<!-- Bootstrap core CSS -->
+<link href="/static/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Custom styles for SNPsnap -->
+<link href="/css/jumbotron-narrow.css" rel="stylesheet">
+<link href="/css/snpsnap.css" rel="stylesheet">
+
+
+<!-- GOOGLE FONTS -->
+<link href="http://fonts.googleapis.com/css?family=Crimson+Text" rel="stylesheet" type="text/css">
+
+
+<!-- Bootstrap core JavaScript -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+<script src="/static/js/bootstrap.min.js"></script>
+
+
+<!-- JQUERY VALIDATION -->
+<!-- http://jqueryvalidation.org/digits-method/ -->
+<script src="http://jquery.bassistance.de/validate/jquery.validate.js"></script>
+<script src="http://jquery.bassistance.de/validate/additional-methods.js"></script>
+"""
+
+###################################### MY JAVASCRIPTS ######################################
 print "<script src='/js/get_report_boot.js'></script>"
+###############################################################################################
 
-#print "<script>$(function() { alert('hello') });</script>"
+###################################### HEAD - END ######################################
 print "</head>"
+###############################################################################################
 
+
+###################################### BODY - START ######################################
 print "<body>"
+###############################################################################################
 
 
+###################################### CONTAINER - START ######################################
+print "<div class='container'>"
+###############################################################################################
 
-print "<div class='container'>" ## START container
+
+print """
+<div class="row">
+	<div class="col-xs-6"><h1 class='allerta'>SNPsnap</h1></div>
+	<div class="col-xs-6"><img class="img-responsive" src="/img/broad_logo/BroadLogo.png"></div>
+</div>
+	</br>
+	
+	<div class="header">
+		<ul class="nav nav-pills pull-right">
+			<li><a href="/index_boot.html">Home</a></li>
+			<li class="active"><a href="/match.html">Match SNPs</a></li>
+			<li><a href="#">Documentation</a></li>
+			<li><a href="#">FAQ</a></li>
+			<li><a href="#">Contact</a></li>
+		</ul>
+	</div>
+	</br>
+"""
+
+
+#print "<div class='container'>" ## START container
 
 	# <div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
 	#   <div class="container">
@@ -421,9 +477,12 @@ print """
 """
 
 ################## PANEL: RESULTS ##################
-url_results = '/results/{sid}'.format(sid=session_id)
-link_results = "<a href='{url}' style='color:green;'>Download result files</a>".format(url=url_results)
-str_results = "Your job is done!</br>{link}".format(link=link_results)
+url_results = '/results/{sid}.zip'.format(sid=session_id)
+#link_results = "<a href='{url}' style='color:green;'>Download result files</a>".format(url=url_results) # version1
+#str_results = "Your job is done!</br>{link}".format(link=link_results) # version1
+#str_results = "<button type='button' class='btn btn-success'>{link}</button>".format(link=link_results)  # version2 - not complete?
+#str_results = "<a class='btn btn-success' href='{url}'><i class='icon-download'></i>Download results</a>".format(url=url_results) # version3 - works only for bootstrap 2
+str_results = "<a href='{url}' class='btn btn-default btn-success'><span class='glyphicon glyphicon-download'></span> Download Results</a>".format(url=url_results) # verison4 - works for bootstrap 3!
 
 print """
   <div class="panel panel-default" id='panel_results'>
@@ -448,7 +507,23 @@ print '</div>'
 ###############################################################################################
 
 
-print "</div>" ## END container
+###################################### FOOTER ######################################
+
+print """
+<div class="footer">
+<div class="col-xs-3"><p>&copy; Broad 2014</p></div>
+<div class="col-xs-8"></div>
+<div class="col-xs-1"><img class="img-responsive" src="/img/broad_logo/BroadSeal.png"></div>
+<!-- <img class="img-responsive" src="/img/broad_logo/BroadSeal.png"> -->
+</div> 
+"""
+###############################################################################################
+
+
+###################################### CONTAINER - END ######################################
+print "</div>" 
+###############################################################################################
+
 
 print "</body>"
 print "</html>"
