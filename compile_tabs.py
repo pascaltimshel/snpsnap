@@ -94,7 +94,7 @@ from memory_profiler import profile
 # 		print "Size of concatenated tab file: %s bytes (%.1f MB)" % (file_tab_size, file_tab_size/(1024*1024.0))
 
 
-### FUNCTION to edit and concatenate - slow, but only run once!
+### FUNCTION to edit and concatenate - slow (~30 min to write a COMBINED tab file), but only run once!
 ## WORKS OK (TESTED ON NEW COL STRUCTURE - with boundaries) - DO NOT DELETE
 # NB: Needs additional functionality to find and remove duplicates
 #@profile
