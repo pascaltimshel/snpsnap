@@ -138,7 +138,14 @@ session_id = hashlib.md5(str(random.random())).hexdigest()
 #### ***OBS***: if you change these paths you MUST change them in launchApp.py status_json.py and report_json.py 
 path_session_output = '/cvar/jhlab/snpsnap/web_results'+'/'+session_id
 path_web_tmp_output = '/cvar/jhlab/snpsnap/web_tmp'
+#os.mkdir('/local/data/web_results')
+#os.mkdir('/local/data/web_tmp')
+
+#path_session_output = '/local/data/web_results'+'/'+session_id # New June 21 - after Andrew Teixeira. Only present here!
+#path_web_tmp_output = '/local/data/web_tmp' # New June 21 - Fix in 'launchApp.py', report_html.py', 'status_json.py'
 os.mkdir(path_session_output)
+
+url_results = 'results/{sid}.zip'.format(sid=session_id) # used in PANEL: RESULTS
 
 #file_snplist = os.path.join(path_web_tmp_output, "{}_{}".format(session_id, 'user_snplist') ) # version1
 #file_snplist = "{}/{}_{}".format(path_web_tmp_output, session_id, 'user_snplist') # version2
@@ -228,7 +235,6 @@ print
 print "<!DOCTYPE html>"
 print "<html>"
 print "<head>"
-print "<title>SNPsnap</title>"
 # print "<style>"
 # print """
 # body {
@@ -252,13 +258,25 @@ print "<title>SNPsnap</title>"
 # print "<link href='/static/css/bootstrap.min.css' rel='stylesheet'>"
 # print "<script src='/static/js/bootstrap.min.js'></script>"
 
+## CONSIDER USING A BASE TAG ON THIS SITE
+# <BASE href="http://www.aviary.com/products/intro.html">
+
+
 print """
+<BASE href="http://snpsnap.broadinstitute.org/mpg/snpsnap/">
+
+<!-- FAVICON -->
+<link rel="shortcut icon" href="img/broad_logo/BroadSeal-20140621-favicon.ico">
+<link rel="icon" type="image/png" href="img/broad_logo/favicon-32x32.png" sizes="32x32">
+
+<title>SNPsnap</title>
+
 <!-- Bootstrap core CSS -->
-<link href="/static/css/bootstrap.min.css" rel="stylesheet">
+<link href="static/css/bootstrap.min.css" rel="stylesheet">
 
 <!-- Custom styles for SNPsnap -->
-<link href="/css/jumbotron-narrow.css" rel="stylesheet">
-<link href="/css/snpsnap.css" rel="stylesheet">
+<link href="css/jumbotron-narrow.css" rel="stylesheet">
+<link href="css/snpsnap.css" rel="stylesheet">
 
 
 <!-- GOOGLE FONTS -->
@@ -267,17 +285,13 @@ print """
 
 <!-- Bootstrap core JavaScript -->
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
-<script src="/static/js/bootstrap.min.js"></script>
+<script src="static/js/bootstrap.min.js"></script>
 
 
-<!-- JQUERY VALIDATION -->
-<!-- http://jqueryvalidation.org/digits-method/ -->
-<script src="http://jquery.bassistance.de/validate/jquery.validate.js"></script>
-<script src="http://jquery.bassistance.de/validate/additional-methods.js"></script>
 """
 
 ###################################### MY JAVASCRIPTS ######################################
-print "<script src='/js/get_report_boot.js'></script>"
+print "<script src='js/results.js'></script>"
 ###############################################################################################
 
 ###################################### HEAD - END ######################################
@@ -295,24 +309,44 @@ print "<div class='container'>"
 ###############################################################################################
 
 
+# print """
+# <div class="row">
+# 	<div class="col-xs-6"><h1 class='allerta'>SNPsnap</h1></div>
+# 	<div class="col-xs-6"><img class="img-responsive" src="img/broad_logo/BroadLogo.png"></div>
+# </div>
+# 	</br>
+	
+# 	<div class="header">
+# 		<ul class="nav nav-pills pull-right">
+# 			<li><a href="/index_boot.html">Home</a></li>
+# 			<li class="active"><a href="/match.html">Match SNPs</a></li>
+# 			<li><a href="#">Documentation</a></li>
+# 			<li><a href="#">FAQ</a></li>
+# 			<li><a href="#">Contact</a></li>
+# 		</ul>
+# 	</div>
+# 	</br>
+# """
+
 print """
 <div class="row">
 	<div class="col-xs-6"><h1 class='allerta'>SNPsnap</h1></div>
-	<div class="col-xs-6"><img class="img-responsive" src="/img/broad_logo/BroadLogo.png"></div>
+	<div class="col-xs-6"><img class="img-responsive" src="img/broad_logo/BroadLogo.png"></div>
 </div>
 	</br>
 	
 	<div class="header">
 		<ul class="nav nav-pills pull-right">
-			<li><a href="/index_boot.html">Home</a></li>
-			<li class="active"><a href="/match.html">Match SNPs</a></li>
-			<li><a href="#">Documentation</a></li>
-			<li><a href="#">FAQ</a></li>
-			<li><a href="#">Contact</a></li>
+			<li><a href="index.html">Home</a></li>
+			<li class="active"><a href="match_snps.html">Match SNPs</a></li>
+			<li><a href="faq.html">FAQ</a></li>
+			<li><a href="documentation.html">Documentation</a></li>
+			<li><a href="contact.html">Contact</a></li>
 		</ul>
 	</div>
 	</br>
 """
+
 
 
 #print "<div class='container'>" ## START container
@@ -350,7 +384,7 @@ print """
 
 print "<h1>Job submitted</h1>"
 
-print "<p>Your session ID is: %s</p>" % session_id
+#print "<p>Your session ID is: %s</p>" % session_id
 print "<p> An email will be sent to <strong>%s</strong> when the job is completed.</p>" % email_address
 
 
@@ -394,10 +428,10 @@ str_bar_match = """
 	<div class='col-xs-1'>
 		<p class="text-primary"><strong>Match</strong></p>
 	</div>
-	<div class='col-xs-1'>
+	<div class='col-xs-2'>
 		<p class="text-info"></p>
 	</div>
-	<div class='col-xs-10'>
+	<div class='col-xs-9'>
 		<div class='progress progress-striped active' id='progress_bar_match'>
 			<div class='progress-bar' style='width: 0%'></div>
 		</div>
@@ -410,10 +444,10 @@ str_bar_set_file = """
 	<div class='col-xs-1'>
 		<p class="text-primary"><strong>Set_file</strong></p>
 	</div>
-	<div class='col-xs-1'>
+	<div class='col-xs-2'>
 		<p class="text-info"></p>
 	</div>
-	<div class='col-xs-10'>
+	<div class='col-xs-9'>
 		<div class='progress progress-striped active' id='progress_bar_set_file'>
 			<div class='progress-bar' style='width: 0%'></div>
 		</div>
@@ -427,10 +461,10 @@ str_bar_annotate = """
 	<div class='col-xs-1'>
 		<p class="text-primary"><strong>Annotate</strong></p>
 	</div>
-	<div class='col-xs-1'>
+	<div class='col-xs-2'>
 		<p class="text-info"></p>
 	</div>
-	<div class='col-xs-10'>
+	<div class='col-xs-9'>
 		<div class='progress progress-striped active' id='progress_bar_annotate'>
 			<div class='progress-bar' style='width: 0%'></div>
 		</div>
@@ -477,7 +511,7 @@ print """
 """
 
 ################## PANEL: RESULTS ##################
-url_results = '/results/{sid}.zip'.format(sid=session_id)
+#url_results = '/results/{sid}.zip'.format(sid=session_id)
 #link_results = "<a href='{url}' style='color:green;'>Download result files</a>".format(url=url_results) # version1
 #str_results = "Your job is done!</br>{link}".format(link=link_results) # version1
 #str_results = "<button type='button' class='btn btn-success'>{link}</button>".format(link=link_results)  # version2 - not complete?
@@ -513,8 +547,7 @@ print """
 <div class="footer">
 <div class="col-xs-3"><p>&copy; Broad 2014</p></div>
 <div class="col-xs-8"></div>
-<div class="col-xs-1"><img class="img-responsive" src="/img/broad_logo/BroadSeal.png"></div>
-<!-- <img class="img-responsive" src="/img/broad_logo/BroadSeal.png"> -->
+<div class="col-xs-1"><img class="img-responsive" src="img/broad_logo/BroadSeal.png"></div>
 </div> 
 """
 ###############################################################################################

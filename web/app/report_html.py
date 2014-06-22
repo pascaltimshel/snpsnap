@@ -14,8 +14,9 @@ form = cgi.FieldStorage()
 
 session_id = form.getvalue('session_id', '')
 
-path_tmp_output = '/cvar/jhlab/snpsnap/web_tmp'
-file_report = "{base}/{sid}_{type}.{ext}".format(base=path_tmp_output, sid=session_id, type='report', ext='json')
+path_web_tmp_output = '/cvar/jhlab/snpsnap/web_tmp'
+#path_web_tmp_output = '/local/data/web_tmp' # NEW
+file_report = "{base}/{sid}_{type}.{ext}".format(base=path_web_tmp_output, sid=session_id, type='report', ext='json')
 # e.g. 2ede5955021a10cb0e1a13882be520eb_report.json
 
 try:
@@ -47,11 +48,11 @@ try:
 	#insufficient_rating_img = None
 	#match_size_rating_img = None
 	img_path = {
-		'very good': '/img/rating/rating_very_good.png',
-		'good': '/img/rating/rating_good.png',
-		'ok': '/img/rating/rating_ok.png',
-		'poor': '/img/rating/rating_poor.png',
-		'very poor': '/img/rating/rating_very_poor.png',
+		'very good': 'img/rating/rating_very_good.png',
+		'good': 'img/rating/rating_good.png',
+		'ok': 'img/rating/rating_ok.png',
+		'poor': 'img/rating/rating_poor.png',
+		'very poor': 'img/rating/rating_very_poor.png',
 	}
 
 	rating_img = {} # this dict will contain two keys
@@ -87,7 +88,7 @@ try:
 	  </table>
 
 	<p class='text-muted'>You may safely ignore the <i>Match Size</i> rating if the <i>Insufficient Matches</i> rating is better than <q>Ok</q>. 
-	See the <a href='#'>docs</a> for more information.</p> 
+	See the <a href='documentation.html'>documentation</a> for more information.</p> 
 	</div>
 	""".format(
 		img_insufficient_rating=rating_img['insufficient_rating'],
@@ -101,7 +102,7 @@ try:
 except Exception as e: # DIRTY: but properly the file(s) does not exists
 	html2parse = """
 	<p class='text-danger text-center'> Sorry, we could not generate the report. 
-	Please report this bug to the <a href='#'>webmaster</a>.</p> 
+	Please report this bug to the <a href='contact.html'>SNPsnap team</a>.</p> 
 	"""
 	#%s""" % e
 	print "Content-Type: text/html"

@@ -39,6 +39,12 @@ class Processor(object):
 		#self.commands_called = []
 		#self.returncodes = 
 		self.path_session_output = '/cvar/jhlab/snpsnap/web_results'+'/'+self.session_id
+		self.path_web_tmp_output = '/cvar/jhlab/snpsnap/web_tmp'
+		
+		#self.path_session_output = '/local/data/web_results'+'/'+self.session_id
+		#self.path_web_tmp_output = '/local/data/web_tmp'
+		self.link_result = "http://snpsnap.broadinstitute.org/mpg/snpsnap/results/{session_id}".format(session_id=self.session_id)
+
 		self.summary = {}
 
 	def daemonize(self):
@@ -113,11 +119,10 @@ class Processor(object):
 
 	def read_report(self):
 		#TODO: these files should go into the config file
-
-		path_tmp_output = '/cvar/jhlab/snpsnap/web_tmp'
+		#path_web_tmp_output = '/cvar/jhlab/snpsnap/web_tmp'
 		
 		#OBS: this is the existing 'report/summary' file
-		file_report = "{base}/{sid}_{type}.{ext}".format(base=path_tmp_output, sid=self.session_id, type='report', ext='json')
+		file_report = "{base}/{sid}_{type}.{ext}".format(base=self.path_web_tmp_output, sid=self.session_id, type='report', ext='json')
 
 		## TODO: make try: execpt: block
 		self.report_obj = None ## Needed for correct variable scope
@@ -177,7 +182,7 @@ class Processor(object):
 		msg['To'] = toaddr
 
 		## create link to result file
-		link_result = "http://snpsnap.broadinstitute.org/results/{session_id}".format(session_id=self.session_id)
+		#link_result = "http://snpsnap.broadinstitute.org/results/{session_id}".format(session_id=self.session_id)
 		
 
 		### QUICK FUNCTION to write out call, process ID and return code
@@ -191,7 +196,7 @@ class Processor(object):
 
 		#<a href="{link}">link</a>
 		# Create the body of the message (a plain-text and an HTML version).
-		text = "Your job {job} has finished.\n Details should be available at:\n{link}\n--SNPsnap Team".format(job=self.session_id, link=link_result)
+		text = "Your job {job} has finished.\n Details should be available at:\n{link}\n--SNPsnap Team".format(job=self.session_id, link=self.link_result)
 		html = """
 		<html>
 		  <head></head>
@@ -204,7 +209,7 @@ class Processor(object):
 		    <p><i>SNPsnap Team</i></p>
 		  </body>
 		</html>
-		""".format( job=self.job_name, link=link_result, report=self.generate_report_for_email() )
+		""".format( job=self.job_name, link=self.link_result, report=self.generate_report_for_email() )
 
 		# Record the MIME types of both parts - text/plain and text/html.
 		part1 = MIMEText(text, 'plain')
@@ -269,6 +274,7 @@ class Processor(object):
 
 
 		if self.cmd_set_file:
+			print "cmd cmd_set_file"
 			command_shell = self.cmd_set_file
 			#self.commands_called.append(command_shell)
 			self.processes['match']['call'] = command_shell
@@ -277,19 +283,14 @@ class Processor(object):
 				#self.processes.append(p)
 				self.processes['match']['process_obj'] = p
 
-		# else:
-		# 	command_shell = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type {distance_type} --distance_cutoff {distance_cutoff} --status_file {file_status} match --N_sample_sets {N_sample_sets} --max_freq_deviation {max_freq_deviation} --max_distance_deviation {max_distance_deviation} --max_genes_count_deviation {max_genes_count_deviation}".format(program=script2call, snplist=file_snplist, outputdir=path_session_output, distance_type=distance_type, distance_cutoff=distance_cutoff, file_status=file_status, \
-		# 																																																																											N_sample_sets=N_sample_sets, max_freq_deviation=max_freq_deviation, max_distance_deviation=max_distance_deviation, max_genes_count_deviation=max_genes_count_deviation)
-		# 	#self.commands_called.append(command_shell)
+		# USED FOR DEBUGGING
+		# if self.cmd_set_file:
+		# 	print "cmd cmd_set_file"
+		# 	command_shell = self.cmd_set_file
 		# 	self.processes['match']['call'] = command_shell
-		# 	with open(os.devnull, "w") as fnull: # same as open('/dev/null', 'w')
-		# 		p = subprocess.Popen(command_shell, stdout = fnull, stderr = subprocess.STDOUT, shell=True)
-		# 		#self.processes.append(p)
-		# 		self.processes['match']['process_obj'] = p
-
-		# ### Now wait for all processes to finish
-		# for p in self.processes:
-		# 	p.wait() # this will also enable us to get the return code of the process
+		# 	p = subprocess.Popen(command_shell, stdout = None, stderr = subprocess.STDOUT, shell=True)
+		# 	#self.processes.append(p)
+		# 	self.processes['match']['process_obj'] = p
 
 		### Now save PID (for potential later use) and WAIT for all processes to finish
 		for call_type in self.processes:

@@ -7,14 +7,18 @@
 		<meta name="description" content="">
 		<meta name="author" content="">
 
+		<!-- FAVICON -->
+		<link rel="shortcut icon" href="img/broad_logo/BroadSeal-20140621-favicon.ico">
+		<link rel="icon" type="image/png" href="img/broad_logo/favicon-32x32.png" sizes="32x32">
+
 		<title>SNPsnap</title>
 
 		<!-- Bootstrap core CSS -->
-		<link href="/static/css/bootstrap.min.css" rel="stylesheet">
+		<link href="static/css/bootstrap.min.css" rel="stylesheet">
 
 		<!-- Custom styles for SNPsnap -->
-		<link href="/css/jumbotron-narrow.css" rel="stylesheet">
-		<link href="/css/snpsnap.css" rel="stylesheet">
+		<link href="css/jumbotron-narrow.css" rel="stylesheet">
+		<link href="css/snpsnap.css" rel="stylesheet">
 
 
 		<!-- GOOGLE FONTS -->
@@ -31,107 +35,20 @@
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
 
 
-		<script src="/static/js/bootstrap.min.js"></script>
+		<script src="static/js/bootstrap.min.js"></script>
 
 		<!-- JQUERY VALIDATION -->
 		<!-- http://jqueryvalidation.org/digits-method/ -->
-		<script src="http://jquery.bassistance.de/validate/jquery.validate.js"></script>
-		<script src="http://jquery.bassistance.de/validate/additional-methods.js"></script>
+		<!-- <script src="http://jquery.bassistance.de/validate/jquery.validate.js"></script> -->
+		<!-- <script src="http://jquery.bassistance.de/validate/additional-methods.js"></script> -->
+		
+		<script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.12.0/jquery.validate.min.js"></script>
+		<script src="http://ajax.aspnetcdn.com/ajax/jquery.validate/1.12.0/additional-methods.min.js"></script>
 
+		
 
-
-		<script type="text/javascript">
-		$(document).ready(function(){
-			// Activate tooltip
-			$("[data-toggle='tooltip']").tooltip({'placement': 'top'});
-			
-			// Jquery function for updating distance_cutoff select (dropdown) based on distance_type
-			$("input[name='distance_type']").change(function() {
-				if ($("input[name='distance_type']:checked").val() == 'ld') {
-					$("#ld_distance_cutoff").show();
-					$("#kb_distance_cutoff").hide();
-					console.log('ld called, val:' + $("input[name='distance_type']:checked").val())
-				} else if ($("input[name='distance_type']:checked").val() == 'kb') {
-					$("#ld_distance_cutoff").hide();
-					$("#kb_distance_cutoff").show();
-					console.log('kb called, val:' + $("input[name='distance_type']:checked").val())
-				}
-
-			});
-
-			$('#snp_example_link').click(function() { //this will apply to the snp example anchor tag
-				var example_snp_input_str = 
-					["14:69873335",
-					"9:5453460",
-					"7:88660988",
-					"1:201688955",
-					"1:181844943",
-					"18:67015865",
-					"6:32592119",
-					"4:58923290",
-					"4:59511935",
-					"2:73321971"].join('\n');
-				$('#snplist_text').val(example_snp_input_str); //this puts the example_snp_input_str inside the textarea for the id labeled 'snplist_text'
-			})
-
-// http://stackoverflow.com/questions/20316117/error-placement-with-selectpicker-jquery-validation-plugins
-// errorPlacement: function (error, element) {
-//     if ($(element).is('select')) {
-//         element.next().after(error); // special placement for select elements
-//     } else {
-//         error.insertAfter(element);  // default placement for everything else
-//     }
-// }
-
-			$('#snpsnap_match_form').validate({ // initialize the plugin
-				rules: {
-					max_freq_deviation: {
-						required: true,
-						digits: true
-					},
-					max_genes_count_deviation: {
-						required: true,
-						digits: true
-					},
-					max_distance_deviation: {
-						required: true,
-						digits: true
-					},
-					email_address: {
-						required: true,
-						email: true
-					},
-					job_name: {
-						required: true,
-						minlength: 3,
-						maxlength: 30
-					},
-					snplist_text: {
-						require_from_group: [1, ".snp_input_group"]
-					},
-					snplist_fileupload: {
-						require_from_group: [1, ".snp_input_group"]
-					},
-					highlight: function(element) { 
-						$(element).closest('.form-group').removeClass('has-success').addClass('has-error');
-						// console.log("highlight function was called")
-
-					},
-					success: function(element) {
-					  element
-					  .text('OK!').addClass('valid')
-					  .closest('.form-group').removeClass('has-error').addClass('has-success');
-					  // console.log("success function was called")
-					}
-					// success: function(element) {
-					//   $(element).text('OK!').addClass('valid')
-					//   // $(element).closest('.form-group').removeClass('has-error').addClass('has-success');
-					// }
-				}
-			}); // end .validate
-		}) // end .ready
-
-		</script>
+		<!-- MY JAVASCRIPTS -->
+		<script src="js/match_snps.js"></script>
 
 
 	</head>  <!-- END HEAD -->
@@ -143,17 +60,17 @@
 
 		<div class="row">
 			<div class="col-xs-6"><h1 class='allerta'>SNPsnap</h1></div>
-			<div class="col-xs-6"><img class="img-responsive" src="/img/broad_logo/BroadLogo.png"></div>
+			<div class="col-xs-6"><img class="img-responsive" src="img/broad_logo/BroadLogo.png"></div>
 		</div>
 			</br>
 			
 			<div class="header">
 				<ul class="nav nav-pills pull-right">
-					<li><a href="/index.html">Home</a></li>
-					<li class="active"><a href="/match_snps.html">Match SNPs</a></li>
-					<li><a href="/faq">FAQ</a></li>
-					<li><a href="/documentation.html">Documentation</a></li>
-					<li><a href="/contact.html">Contact</a></li>
+					<li><a href="index.html">Home</a></li>
+					<li class="active"><a href="match_snps.html">Match SNPs</a></li>
+					<li><a href="faq">FAQ</a></li>
+					<li><a href="documentation.html">Documentation</a></li>
+					<li><a href="contact.html">Contact</a></li>
 				</ul>
 				<!-- <a class="navbar-brand" href="#">Project BRAND name</a> -->
 			</div>
@@ -161,8 +78,7 @@
 
 
 
-<!-- <form class="form-horizontal" id="snpsnap_match_form" action="/app/bootface2.py" method="POST" target="_blank" enctype="multipart/form-data"> -->
-<form class="form-horizontal" id="snpsnap_match_form" action="/app/bootface2.py" method="POST" target="_self" enctype="multipart/form-data">
+<form class="form-horizontal" id="snpsnap_match_form" action="app/bootface2.py" method="POST" target="_self" enctype="multipart/form-data">
 	<!-- ############# FILE UPLOAD ############## -->
 	<fieldset>
 		<legend class="margin_bottom5">Input</legend>
@@ -296,6 +212,7 @@
 	</div>
 </fieldset>
 
+<input type="hidden"
 
 
 <!-- ############# Matching CRITERIA ############## -->
@@ -445,7 +362,7 @@
 <div class="footer">
 <div class="col-xs-3"><p>&copy; Broad 2014</p></div>
 <div class="col-xs-8"></div>
-<div class="col-xs-1"><img class="img-responsive" src="/img/broad_logo/BroadSeal.png"></div>
+<div class="col-xs-1"><img class="img-responsive" src="img/broad_logo/BroadSeal.png"></div>
 </div> 
 
  </div> <!-- /container -->

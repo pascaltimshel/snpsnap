@@ -153,7 +153,7 @@ def lookup_user_snps_iter(file_db, user_snps):
 
 
 def write_snps_not_in_db(path_output, user_snps, df):
-	user_snps_not_found = path_output+"/snps_not_found.tab"
+	user_snps_not_found = path_output+"/input_snps_not_found.tab"
 
 	logger.info( "START: doing write_snps_not_in_db" )
 	start_time = time.time()
@@ -187,7 +187,7 @@ def write_snps_not_in_db(path_output, user_snps, df):
 
 
 def write_user_snps_stats(path_output, df):
-	user_snps_stats_file = path_output+"/snps_stats.tab"
+	user_snps_stats_file = path_output+"/input_snps.tab"
 	df.to_csv(user_snps_stats_file, sep='\t', header=True, index=True,  mode='w')
 
 #@memory_profiler.profile
@@ -215,7 +215,7 @@ def read_collection(file_collection):
 def write_user_snps_annotation(path_output, df, df_collection):
 	status_obj.update_status('annotate', 'running')
 
-	user_snps_annotated_file = path_output+"/snps_annotated.tab"
+	user_snps_annotated_file = path_output+"/input_snps_annotated.tab"
 	df_user_snp_found_index = df.index # index of (found) user snps
 	df_user_snps_annotated = df_collection.ix[df_user_snp_found_index]
 	df_user_snps_annotated.to_csv(user_snps_annotated_file, sep='\t', header=True, index=True,  mode='w')
@@ -255,7 +255,7 @@ def few_matches_score(x, lim, scale):
 def few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps):
 	########## Write few_matches - ONLY IF THERE ARE FEW MATCHES ##############
 	if len(df_snps_few_matches) != 0:
-		user_snps_few_matches_file = path_output+"/snps_few_matches.tab"
+		user_snps_few_matches_file = path_output+"/input_snps_insufficient_matches.tab"
 		df_snps_few_matches.to_csv(user_snps_few_matches_file, sep='\t', index=True, header=True, index_label='snpID', mode='w') 
 	############################################
 	
@@ -359,7 +359,7 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, max_freq_deviati
 	
 	df_snps_few_matches = None
 
-	user_snps_matrix_file = path_output+"/snps_matrix.tab"
+	user_snps_matrix_file = path_output+"/snpsnap_matrix.tab"
 	if os.path.exists(user_snps_matrix_file): # removing any existing file. REASON: we are appending to matrix_file
 		os.remove(user_snps_matrix_file)
 	f_matrix_out = open(user_snps_matrix_file,'a')
@@ -463,8 +463,15 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, max_freq_deviati
 		# few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps)
 
 def write_set_file(path_output, df_collection):
-	user_snps_set_file = path_output+"/set_file.tab"
-	matrix_file = path_output+"/snps_matrix.tab" #TODO OBS: FIX THIS. the file name should be parsed to the function
+	#snpsnap_set_file.tab
+	#snpsnap_collection.tab
+	#snpsnap_set_collection.tab
+	#snpsnap_sets.tab
+	#snpsnap_matrix_stats.tab
+	#snpsnap_table.tab
+	#snpsnap_set_annotation.tab
+	user_snps_set_file = path_output+"/snpsnap_sets.tab"
+	matrix_file = path_output+"/snpsnap_matrix.tab" #TODO OBS: FIX THIS. the file name should be parsed to the function
 	#TODO: check 'integrity' of df_matrix before reading?
 	# TWO DIFFERENT VERSIONS. None of them set the index explicitly, but rely either on header or pandas naming columns [0,1,2,...] where 0 is giving to the index
 	

@@ -25,7 +25,7 @@ $(document).ready(function(){
 	if (true) {
 		var progresspump = setInterval(function(){
 		$.ajax({
-			url:"/app/status_json.py",
+			url:"app/status_json.py",
 			data: data_parse_cgi, 
 			dataType: "json",
 			success: function(res){
