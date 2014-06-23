@@ -304,9 +304,6 @@ print "<body>"
 ###############################################################################################
 
 
-###################################### CONTAINER - START ######################################
-print "<div class='container'>"
-###############################################################################################
 
 
 # print """
@@ -328,24 +325,29 @@ print "<div class='container'>"
 # 	</br>
 # """
 
+###################################### HEADER OF PAGE ######################################
 print """
+<div class="container-non-responsive">
+
 <div class="row">
 	<div class="col-xs-6"><h1 class='allerta'>SNPsnap</h1></div>
-	<div class="col-xs-6"><img class="img-responsive" src="img/broad_logo/BroadLogo.png"></div>
+	<div class="col-xs-6"><img class="img-responsive min-limits" src="img/broad_logo/BroadLogo.png"></div>
 </div>
-	</br>
+<br>
 	
-	<div class="header">
-		<ul class="nav nav-pills pull-right">
-			<li><a href="index.html">Home</a></li>
-			<li class="active"><a href="match_snps.html">Match SNPs</a></li>
-			<li><a href="faq.html">FAQ</a></li>
-			<li><a href="documentation.html">Documentation</a></li>
-			<li><a href="contact.html">Contact</a></li>
-		</ul>
-	</div>
-	</br>
+<div class="header">
+	<!-- <ul class="nav nav-pills pull-right"> -->
+	<!-- <ul class="nav nav-pills navbar-right"> --> <!-- does not work at all! -->
+	<ul class="nav nav-pills">
+		<li><a href="index.html">Home</a></li>
+		<li class="active"><a href="match_snps.html">Match SNPs</a></li>
+		<li><a href="faq.html">FAQ</a></li>
+		<li><a href="documentation.html">Documentation</a></li>
+		<li><a href="contact.html">Contact</a></li>
+	</ul>
+</div>
 """
+###############################################################################################
 
 
 
@@ -382,11 +384,14 @@ print """
 	# </div><!-- /.container -->
 
 
-print "<h1>Job submitted</h1>"
+print "<h2 class='text-center'>SNPsnap is now matching your SNPs</h2>"
 
 #print "<p>Your session ID is: %s</p>" % session_id
 print "<p> An email will be sent to <strong>%s</strong> when the job is completed.</p>" % email_address
-
+print """<p class='text-muted'><i>If you browse back you will not be able to retrieve this site again it again.<br>
+However, you will still receive an email notification about your job completion.
+</i></p>
+"""
 
 ################ PARSING SESSION ID ##################
 print "<input type='hidden' id='session_id' value='%s'>" % session_id

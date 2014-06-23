@@ -31,13 +31,35 @@ body {
   border-top: 1px solid #e5e5e5;
 }
 
-/* Customize container */
-@media (min-width: 768px) {
+
+/*.center-pills { display: inline-block; }*/
+
+/*PASCAL INSERTS*/
+/*.nav-pills {
+    text-align:center;
+}*/
+
+/*FROM http://stackoverflow.com/questions/18146476/how-to-turn-off-the-responsive-feature-completely-from-twitter-bootstrap-3*/
+.container-non-responsive {
+  /* Margin/padding copied from Bootstrap */
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 15px;
+  padding-right: 15px;
+
+  /* Set width to your desired site width */
+  /*width: 1170px;*/
+  width: auto;
+  max-width: 800px;
+}
+
+/*PASCAL OUTCOMMENT*/
+/*@media (min-width: 768px) {
   .container {
     max-width: 730px;
   }
-}
-.container-narrow > hr {
+}*/
+.container-narrow > hr { /*affects immediate children of container-narrow*/
   margin: 30px 0;
 }
 

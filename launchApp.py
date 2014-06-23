@@ -43,7 +43,7 @@ class Processor(object):
 		
 		#self.path_session_output = '/local/data/web_results'+'/'+self.session_id
 		#self.path_web_tmp_output = '/local/data/web_tmp'
-		self.link_result = "http://snpsnap.broadinstitute.org/mpg/snpsnap/results/{session_id}".format(session_id=self.session_id)
+		self.link_result = "http://snpsnap.broadinstitute.org/mpg/snpsnap/results/{session_id}.zip".format(session_id=self.session_id)
 
 		self.summary = {}
 
