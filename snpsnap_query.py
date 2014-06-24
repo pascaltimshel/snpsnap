@@ -21,10 +21,6 @@ import time
 #import timeit
 #import cProfile #or profile
 
-
-import logging
-from pplogger import Logger
-
 import json
 
 import pdb
@@ -571,24 +567,22 @@ def ParseArguments():
 
 def setup_logger(args):
 	""" Function to setup logger """
+	import logging
+	import sys
+	import pplogger
+
 	logger = None
 	if args.NoLogger:
-		logger = logging.getLogger()
-		noop = logging.NullHandler()
-		logger.addHandler(noop)
+		logger = pplogger.Logger(name=current_script_name, log_dir=args.output_dir, log_format=1, enabled=False).get()
 	else:
 		current_script_name = os.path.basename(__file__).replace('.py','')
-		logger = Logger(name=current_script_name, logdir=args.output_dir, format=1).get() # gives logname --> snapsnap_query.py
-		#logger = Logger(name=__name__, logdir=args.output_dir, format=1).get() # gives logname --> __name__ == main
-		logger.setLevel(logging.DEBUG) # consider setting 
-
+		logger = pplogger.Logger(name=current_script_name, log_dir=args.output_dir, log_format=1, enabled=True).get() # gives logname --> snapsnap_query.py
+		logger.setLevel(logging.DEBUG)
 		## This works. Exceptions are written to the log AND printed to sys.stderr
 		## An alternative solution is to make one big "try except" block in main:
-			# 
 		def handleException(excType, excValue, traceback, logger=logger):
 			logger.error("Logging an uncaught exception", exc_info=(excType, excValue, traceback))
 		sys.excepthook = handleException
-
 	return logger
 
 
