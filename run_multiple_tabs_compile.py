@@ -1,11 +1,5 @@
 #!/usr/bin/env python2.7
 
-# Production V1
-# This script was written by Pascal June 18 2014.
-# The queue parameter is "??"
-
-
-#logging.basicConfig(filename='example.log', filemode='w', level=logging.DEBUG)
 
 import sys
 import os
