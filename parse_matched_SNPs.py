@@ -115,7 +115,12 @@ def get_matched_snps(path,outfilename):
 		infile.close()
 	
 		# Loop over matched SNPs and report gene density as observed SNP
-		for matched_rsID in matched_snps_boundaries: #
+		#for matched_rsID in matched_snps_boundaries: # <<<<--- THIS unsorted loop was used for generating 1KG_snpsnap_production_v1 data on CBS (the parse_matched_SNPs.py) was run around June 20 (06/20/2014).
+		# ^^ It is impractical printing out the SNPs in 'random' order for each bin. If you sort on the matched_rsID (rsID) you should get SNP files with rsID in the same order. Then you can use 'cut' and other unix tools
+		# NB: the sorting should be ok. The freq1-2 bin have around 1 Million SNPs, which needs to be sorted
+		# OBS: consider using collections.OrderedDict() which remembers the order in which the elements have been inserted
+		#	----> no do not do that. Sorting is more stable because we do not have to reply on the order in which the SNPs is inserted.
+		for matched_rsID in sorted(matched_snps_boundaries.keys()): #
 			snp_chr = matched_snps_boundaries[matched_rsID]['chr'] # NB. integer!
 			snp_position = matched_snps_boundaries[matched_rsID]['pos'] # NB. integer!
 
@@ -129,7 +134,10 @@ def get_matched_snps(path,outfilename):
 			matched_nearest_gene_dist_located_within = float("inf")
 
 			# Loop over all genes on chromosome
-			# TODO Maybe sort and break?
+			# TODO: sort the genes. Running the loop in a sorted order gives MORE RELIABLE results (at least when debugging etc.)
+			#	---> Pascal likes sorted dicts...
+			# OBS: consider using collections.OrderedDict() which remembers the order in which the elements have been inserted
+			#	----> Yes use this. Do not sort this has inside another for loop. That will be waay to slow.
 			for gene in gene_info[str(snp_chr)]: # e.g. gene_info['5'] returns all ENSEMBL IDs in chromosome 5.
 
 				# gene is a key in hash, i.e. a ENSEMBL ID string. gene_info[] is a hash
