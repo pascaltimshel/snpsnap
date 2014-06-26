@@ -29,6 +29,8 @@ class Logger(object):
 		# Call class method to log an 'instantiation of the log'. NB: nothing will happen (be logged) if enable=False
 		self.log_mark_of_initiation()
 
+		#TODO: implement a optional log_note. Like
+		#logger.info( "INSTANTIATION NOTE: placeholder" )
 
 
 	def setup_logger(self):
@@ -61,21 +63,30 @@ class Logger(object):
 			if self.log_format == 0:
 				fh_formatter = logging.Formatter('%(message)s')
 				ch_formatter = logging.Formatter('%(message)s')
-			elif self.log_format == 1: #these fields are TAB SEPERATED
+			elif self.log_format == 1: 
+				#1) fields are TAB SEPERATED
+				#2) asctime is without miliseconds
+				fh_formatter = logging.Formatter('%(asctime)s	%(levelname)s	%(message)s', '%Y-%m-%d %H:%M:%S')
+				ch_formatter = logging.Formatter('%(message)s')
+			elif self.log_format == 2: #these fields are TAB SEPERATED
 				fh_formatter = logging.Formatter('%(asctime)s	%(filename)s	%(levelname)s	%(message)s')
 				ch_formatter = logging.Formatter('%(levelname)s	%(message)s')
-			elif self.log_format == 2:
+			elif self.log_format == 3:
 				fh_formatter = logging.Formatter('%(asctime)s %(filename)-18s %(levelname)-8s %(message)s')
 				ch_formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
 				# file format (fh_formatter) gives ---- *** check that below information is actually updated
 				# 2014-05-16 09:17:14,092 pplaunch.py        INFO     _report_bacct runtime: 58.0431189537 s (0.967385315895 min)
 				# 2014-05-16 09:17:14,092 pplaunch.py        INFO     6865113|Primary_biliary_cirrhosis: jobstatus = DONE. Waiting for
-			elif self.log_format == 2:
+			elif self.log_format == 4:
 				fh_formatter = logging.Formatter('%(asctime)s %(filename)-18s %(levelname)-8s %(message)s')
 				ch_formatter = logging.Formatter('%(levelname)-8s %(message)s')
-			elif self.log_format == 3:
+			elif self.log_format == 5:
 				fh_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 				ch_formatter = logging.Formatter('%(levelname)-8s %(message)s')
+			else: # if 'wrong' log_format is given then 'fallback' on this formatter
+				fh_formatter = logging.Formatter('%(asctime)s	%(levelname)s	%(message)s', '%Y-%m-%d %H:%M:%S')
+				ch_formatter = logging.Formatter('%(message)s')
+
 
 			fh.setFormatter(fh_formatter)
 			fh.setLevel(logging.DEBUG)
