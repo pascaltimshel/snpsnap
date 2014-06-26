@@ -62,9 +62,9 @@ class LaunchBsub(object):
 		if no_output:
 			self.file_output = '/dev/null'
 		elif file_output is None:
-			self.file_output = "bsub_outfile_ID{job_number}.{ext}".format(job_number=job_number, ext='out')
+			self.file_output = "bsub_outfile_ID{job_number}.{ext}".format(job_number=self.job_number, ext='out')
 		else:
-			self.file_output = os.path.join(self.path_stdout, file_output)
+			self.file_output = os.path.join(self.path_stdout, file_output) # OBSL overwriting variable. Change this!
 
 		self.jobname = jobname
 		self.projectname = projectname
