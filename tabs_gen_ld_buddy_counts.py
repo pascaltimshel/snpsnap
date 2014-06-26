@@ -200,9 +200,9 @@ def create_ld_buddy_counts():
 	logger.info( 'JOIN_INDEX: start concat and writing csv' )
 	merged = pd.concat(df_list, axis=1, join_axes=[df_index_list[0]])
 	merged.to_csv(outfile_ld_buddy+"_join_index", sep='\t', header=True, index=True, index_label=None) # index_label=None ==> use index names from df
+	elapsed_time = time.time()-start_time
 	logger.info( "DONE | elapsed time: %s min" % (elapsed_time/60, ) )
 	logger.info( 'JOIN_INDEX: len of data frame: %s' % len(merged) )
-	elapsed_time = time.time()-start_time
 
 
 	#http://stackoverflow.com/questions/14247586/python-pandas-how-to-select-rows-with-one-or-more-nulls-from-a-dataframe-without

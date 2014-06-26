@@ -46,9 +46,46 @@ def report_bacct(pid, jobname):
 
 
 class LaunchBsub(object):
+	"""
+	DOCUMENTATION
+
+	About output:
+		The output of the job is NEVER sent by email because the -o {output} is allways given.
+		LaunchBsub ONLY uses the -o {output} option, meaning that the standard error of the job is stored in the output file.
+
+	Dotkit inheritance:
+		LaunchBsub does not issue any dotkit commands (e.g reuse -q Python-2.7) so the SHELL calling LaunchBsub is responsible for having loaded the correct dotkits
+		The dotkits from the calling shell SHOULD be inherited to the bsub command.
+		*** Disclaimer #1: using a TMUX session may conflict with this so check 'echo $PATH' before you submit the jobs.
+		*** Disclaimer #2: the bsub command is called as a subprocess.Popen(..., shell=True) which hopefully inherits the dotkit
+		See more on https://it.broadinstitute.org/wiki/Dotkit
+
+	- path_stdout:
+		- sets the PATH for the stdout/stderr (output file) from bsub. (this path is also used for the logger if no logger is given)
+		- DEFAULT: os.getcwd()
+	- file_output:
+		- sets the FILENAME of the stdout/stderr (output file) from bsub.
+		- RECOMMENDATION: leave this input BLANK. LaunchBsub will set a sensable filename like 'bsub_outfile_IDXX_jobnameYY.out'
+		- DEFAULT: 'bsub_outfile_IDXX_jobnameYY.out'
+	- no_output: 
+		- if this value is set to true, then the stdout and stderr is written to /dev/null.
+	- email: 
+		- parse an email address to this argument. The user MUST set email_status_notification or email_report to 'True' for any email to be sent
+		- DEFAULT: None
+		- Example: email='pascal.timshel@gmail.com'
+		* email_status_notification:
+			if enabled, you will receive email notification when the job starts/stops. 
+		* email_report:
+			if enabled, the JOB REPORT is sent by email and NOT written to the stdout file.
+	- logger:
+		- if no logger (a object of the class 'Logging') is parsed, then LaunchBsub creates a log file in path_stdout (os.getcwd by default) with a name like 'LauchBsub_NoLoggerParsed_2014-05-15_23.08.59.log' (notice that LauchBsub sets the timestamp itself)
+	- cmd_custom:
+		- if any true value (in a boolean context) is given then the cmd_custom COMPLETELY overwrites the other settings
+		- RECOMMENDATION: when using cmd_custom, instantiate the LaunchBsub object with 'None' in ALL other arguments
+	"""
 	LB_job_counter = 0
 	LB_job_fails = 0
-	def __init__(self, cmd, queue_name, walltime, mem, jobname='NoJobName', projectname='NoProjectName', path_stdout=os.getcwd(), file_output=None, no_output=False, email=False, logger=False): #file_output=os.path.join(os.getcwd(), __name__+'.tmp.log'
+	def __init__(self, cmd, queue_name, mem, jobname='NoJobName', projectname='NoProjectName', path_stdout=os.getcwd(), file_output=None, no_output=False, email=None, email_status_notification=False, email_report=False, logger=False, cmd_custom=None): #file_output=os.path.join(os.getcwd(), __name__+'.tmp.log'
 		LaunchBsub.LB_job_counter += 1 # Counter the number of jobs
 		self.job_number = LaunchBsub.LB_job_counter
 		
@@ -56,15 +93,15 @@ class LaunchBsub(object):
 		if logger: #TODO: check that logger is of class Logger?
 			self.logger = logger
 		else: # create new logger, with name e.g. LauchBsub_NoLoggerParsed_2014-05-15_23.08.59.log
-			self.logger = Logger(self.__class__.__name__+"_NoLoggerParsed", path_stdout).get() #*** find out why .get() is necessary
-		
+			self.logger = Logger(name=self.__class__.__name__+"_NoLoggerParsed"+HelperUtils.gen_timestamp(), log_dir=path_stdout, log_format=1, enabled=True).get()
 		#OBS: updating variable
 		if no_output:
 			self.file_output = '/dev/null'
 		elif file_output is None:
-			self.file_output = "bsub_outfile_ID{job_number}.{ext}".format(job_number=self.job_number, ext='out')
+			file_output = "bsub_outfile_ID{job_number}_{jobname}.{ext}".format(job_number=self.job_number, jobname=jobname, ext='out')
+			self.file_output = os.path.join(self.path_stdout, file_output) # OBS: overwriting variable. Change this!
 		else:
-			self.file_output = os.path.join(self.path_stdout, file_output) # OBSL overwriting variable. Change this!
+			self.file_output = os.path.join(self.path_stdout, file_output) # OBS: overwriting variable. Change this!
 
 		self.jobname = jobname
 		self.projectname = projectname
@@ -72,32 +109,55 @@ class LaunchBsub(object):
 		self.attempts = 0
 
 		self.p_queue_name = queue_name # string
-		self.p_walltime = walltime # hours		format HOURS | or hh:mm  (hours:minutes)
+		#self.p_walltime = walltime # hours		format HOURS | or hh:mm  (hours:minutes)
 		self.p_mem = mem #
 		#TODO self.mem_per_process ## M --> a per-process (soft) memory limit
 		#TODO self.p_cpu ## n (e.g. 2 or 1-4)
 		#TODO self.p_n_span
-		#TODO -N --> If you use both -o and -N, the output is stored in the output file and the job report is sent by mail.
 		#TODO: overwrite output files with -oo ?
 
-		self.cmd = cmd
-		if email:
-			#TODO: consider using -N option to seperate output and report
-			self.email = email
-			self.bcmd = "bsub -P {project} -J {jobname} -o {output} -r -q {queue} -W {walltime} -R 'rusage[mem={mem}]' -N -u {email}".format(project=self.projectname, jobname=self.jobname,  output=self.file_output, queue=self.p_queue_name, walltime=self.p_walltime, mem=self.p_mem, email=self.email) 
-		else:
-			self.bcmd = "bsub -P {project} -J {jobname} -o {output} -r -q {queue} -W {walltime} -R 'rusage[mem={mem}]'".format(project=self.projectname, jobname=self.jobname,  output=self.file_output, queue=self.p_queue_name, walltime=self.p_walltime, mem=self.p_mem) 
+		#-W run_limit[/host_spec]: Set the wall-clock run time limit of this batch job. 
+		 # ---> hard limit!? Do not use
 
-		self.call = self.bcmd + " " + self.cmd
+		self.cmd = cmd # this is the command/program to run
+		cmd_default = "bsub -P {project} -J {jobname} -o {output} -r -q {queue} -R 'rusage[mem={mem}]'".format(project=self.projectname, jobname=self.jobname,  output=self.file_output, queue=self.p_queue_name, mem=self.p_mem) 
+		
+		self.email = email
+		if self.email:
+			#TODO: consider using -N option to seperate output and report
+			# -B: Sends email to the job submitter when the job is dispatched and begins running
+			# -N: If you want to separate the job report information from the job output, use the -N option to specify that the job report information should be sent by email.
+			# *Question: can I get the report in both an email and the stdout file?
+				# ---> NO!
+			if email_status_notification and email_report: # -B and -N
+				self.bcmd = "bsub -P {project} -J {jobname} -o {output} -r -q {queue} -R 'rusage[mem={mem}]' -N -B -u {email}".format(project=self.projectname, jobname=self.jobname,  output=self.file_output, queue=self.p_queue_name, mem=self.p_mem, email=self.email) 
+			elif email_status_notification: # -B
+				self.bcmd = "bsub -P {project} -J {jobname} -o {output} -r -q {queue} -R 'rusage[mem={mem}]' -B -u {email}".format(project=self.projectname, jobname=self.jobname,  output=self.file_output, queue=self.p_queue_name, mem=self.p_mem, email=self.email) 
+			elif email_report: # -N
+				self.bcmd = "bsub -P {project} -J {jobname} -o {output} -r -q {queue} -R 'rusage[mem={mem}]' -N -u {email}".format(project=self.projectname, jobname=self.jobname,  output=self.file_output, queue=self.p_queue_name, mem=self.p_mem, email=self.email)
+			else: # OBS
+				self.bcmd = cmd_default
+		else:
+			self.bcmd = cmd_default
+
+		### GENERATING CALL
+		self.call = ''
+		if not cmd_custom:
+			self.call = self.bcmd + " " + self.cmd
+		else:
+			self.logger.warning( "OBS: custom command parsed to LaunchBsub(). The command is: %s" % cmd_custom )
+			self.call = cmd_custom
 
 		# self.logger.critical( "JOB:{} | here is some CRIT information".format(jobname) )
 		# self.logger.info( "JOB:{} | here is some INFO information".format(jobname) )
 		# self.logger.debug( "JOB:{} | here is some DEBUG information".format(jobname) )
 
 
+
+
 	def run(self):
 		max_calls = 15
-		sleep_time = 15 # pause time before making a new call.
+		sleep_time = 15 # if ERROR occurs, pause time before making a new call
 		#TODO make sleep_time increse for each attempt.
 
 		pattern = re.compile("<(.*?)>")
@@ -178,11 +238,14 @@ class LaunchBsub(object):
 
 	@staticmethod
 	def report_status(pids, logger): #LB_List_Of_Instances
-		sleep_time = 20 # seconds
+		sleep_time = 40 # seconds
 		incomplete = copy.deepcopy(pids)
 		finished = []
 		failed = []
 		done = []
+
+		waiting = []
+		running = []
 		#**TODO: make sure that pids and incomplete is UNIQUE
 		#TODO: make sure that len(finished) NEVER becomes larger than len(pids)
 		counter = 0
@@ -192,6 +255,7 @@ class LaunchBsub(object):
 			elapsed_time = time.time() - start_time
 			logger.info( "Checking status: #{:d} | Run time = {:.5g} s ({:.3g} min)".format( counter, elapsed_time, elapsed_time/float(60) ) )
 			logger.info( "Checking status: #{:d} | Finished={:d}, Incomplete={:d}, Total={:d} [Fails={:d}]".format( counter, len(finished), len(incomplete), len(pids), len(failed) ) )
+			logger.info( "Checking status: #{:d} | Waiting={:d}, Running={:d}".format( counter, len(waiting), len(running) ) )
 			lines = ['']
 			call = "bjobs -aw {jobs}".format( jobs=" ".join(incomplete) ) #consider bjobs -aw
 			try:
@@ -206,7 +270,7 @@ class LaunchBsub(object):
 			for line in lines:
 				cols = line.strip().split()
 				(tmp_pid, tmp_status, tmp_jobname) = (cols[0], cols[2], cols[6])
-				#[RUN,EXIT,DONE,PENDING?]
+				#'STAT' field has: [RUN,EXIT,DONE,PEND] and more!
 				if tmp_status == 'EXIT':
 					logger.info( "{pid}|{name}: jobstatus = EXIT. Waiting for _report_bacct...".format(pid=tmp_pid, name=tmp_jobname) )
 					t1 = time.time()
@@ -216,6 +280,11 @@ class LaunchBsub(object):
 					incomplete.remove(tmp_pid)
 					finished.append(report_line)
 					failed.append(report_line)
+
+					if tmp_pid in waiting: waiting.remove(tmp_pid) # remove from waiting - added June 2014
+					if tmp_pid in running: running.remove(tmp_pid) # remove from running - added June 2014
+
+
 				elif tmp_status == 'DONE':
 					logger.info( "{pid}|{name}: jobstatus = DONE. Waiting for _report_bacct...".format(pid=tmp_pid, name=tmp_jobname) )
 					t1 = time.time()
@@ -225,6 +294,20 @@ class LaunchBsub(object):
 					incomplete.remove(tmp_pid)
 					finished.append(report_line)
 					done.append(report_line)
+
+					if tmp_pid in waiting: waiting.remove(tmp_pid) # remove from waiting - added June 2014
+					if tmp_pid in running: running.remove(tmp_pid) # remove from running - added June 2014
+				elif tmp_status == 'RUN':
+					if not tmp_pid in running: # only add pid ONCE
+						logger.info( "{pid}|{name}: jobstatus = RUN. Adding job to list of running jobs".format(pid=tmp_pid, name=tmp_jobname) )
+						running.append(tmp_pid)
+					if tmp_pid in waiting: waiting.remove(tmp_pid) # remove from waiting - added June 2014
+				elif tmp_status in ['PEND', 'PSUSP', 'USUSP', 'SSUSP']:
+					if not tmp_pid in waiting: # only add pid ONCE
+						logger.info( "{pid}|{name}: jobstatus = ['PEND', 'PSUSP', 'USUSP', 'SSUSP']. Adding job to list of waiting jobs".format(pid=tmp_pid, name=tmp_jobname) )
+						waiting.append(tmp_pid)
+					if tmp_pid in running: running.remove(tmp_pid) # remove from running - added June 2014
+
 
 
 			#consider sleeping for some time
@@ -409,8 +492,9 @@ class LaunchSubprocess(object):
 		if logger: #TODO: check that logger is of class Logger?
 			self.logger = logger
 		else: # create new logger, with name e.g. LaunchSubprocess_NoLoggerParsed_2014-05-15_23.08.59.log
-			self.logger = Logger(self.__class__.__name__+"_NoLoggerParsed", path_stdout).get() #*** find out why .get() is necessary
-		
+			#self.logger = Logger(self.__class__.__name__+"_NoLoggerParsed", path_stdout).get() # BEFORE JUNE 2014
+			self.logger = Logger(name=self.__class__.__name__+"_NoLoggerParsed"+HelperUtils.gen_timestamp(), log_dir=path_stdout, log_format=1, enabled=True).get()
+			
 		self.jobname = jobname
 		self.cmd = cmd
 
