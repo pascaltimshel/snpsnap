@@ -1,9 +1,8 @@
 #!/usr/bin/env python2.7
 
-### On SNPsnap
-#!/bin/env python
-#source /opt/rh/python27/enable
-	#---> gives Python 2.7.5 (where as Broad Dotkit python is Python 2.7.1)
+###### This is the version which was running fast using the 'original' ld0.5 HDF5 file
+###### The never version of this program was developed 06/27/2014.
+###### The never version added arguments for ld_buddy counts
 
 import os
 import sys
@@ -30,7 +29,7 @@ import json
 
 import pdb
 
-########### Example calls ############
+## Example calls:
 #./snpsnap_query.py --user_snps_file /Users/pascaltimshel/git/snpsnap/samples/sample_10randSNPs.list --output_dir /Users/pascaltimshel/snpsnap/data/query --distance_type ld --distance_cutoff 0.5 --N_sample_sets 10
 
 # test data, 10 samples, match, no-sets
@@ -39,21 +38,13 @@ import pdb
 # test data, 10 samples, annotate
 #./snpsnap_query.py --user_snps_file /Users/pascaltimshel/git/snpsnap/samples/sample_10randSNPs.list --output_dir /Users/pascaltimshel/snpsnap/data/query --distance_type ld --distance_cutoff 0.5 annotate
 
-###### BROAD - production_v1
-#./snpsnap_query.py --user_snps_file /cvar/jhlab/snpsnap/snpsnap/samples/sample_10randSNPs.list --output_dir /cvar/jhlab/snpsnap/snpsnap/tmp_query --distance_type ld --distance_cutoff 0.5 match --N_sample_sets 1000 --ld_buddy_cutoff 0.5 --max_freq_deviation 5 --max_distance_deviation 20 --max_genes_count_deviation 20 --max_ld_buddy_count_deviation 20 --set_file
-############################
-
-# N_sample_sets
-# ld_buddy_cutoff
-# max_freq_deviation
-# max_distance_deviation
-# max_genes_count_deviation
-# max_ld_buddy_count_deviation
-# set_file
-
 ########### OBS ############
 # Hardcoded paths: path_data, e.g. os.path.abspath("/Users/pascaltimshel/snpsnap/data/step3")
+
 ############################
+
+## TODO:
+# setup login module
 
 
 
@@ -69,24 +60,25 @@ import pdb
 # 		sys.exit(1)
 # 	if "db" in files[0]: pass
 
-#/cvar/jhlab/snpsnap/data/step3/1KG_snpsnap_production_v1/ld0.1_db.h5.
-
 def locate_db_file(path, prefix):
 	#TODO fix this. Make checks
-	file_db = "{path}/{type}/{type}_db.{ext}".format(path=path, type=prefix, ext='h5')
+	file_db = "{path}/{type}_db.{ext}".format(path=path, type=prefix, ext='h5')
 	# META FILE DISAPLED TEMPORARY
 	#file_meta = "{path}/{type}_meta.{ext}".format(path=path, type=prefix, ext='h5')
 	#if not ( os.path.exists(file_db) and os.path.exists(file_meta) ): # both file must exists
 	if not os.path.exists(file_db): # TODO- FIX THIS LATER
-		raise Exception( "Could not find file_db file: %s" % file_db )
+		logger.error( "Could not find collection file: %s." % file_db )
+		logger.error( "Exiting..."  )
+		sys.exit(1)
 	#return (file_db, file_meta)
 	return file_db
 
 def locate_collection_file(path, prefix):
-	#file_collection = "{path}/{type}_collection.{ext}".format(path=path, type=prefix, ext='tab.gz') # compressed file
-	file_collection = "{path}/{type}/{type}_collection.{ext}".format(path=path, type=prefix, ext='tab')
+	file_collection = "{path}/{type}_collection.{ext}".format(path=path, type=prefix, ext='tab.gz')
 	if not os.path.exists(file_collection): # TODO- FIX THIS LATER
-		raise Exception( "Could not find collection file: %s" % file_collection )
+		logger.error( "Could not find collection file: %s." % file_collection )
+		logger.error( "Exiting..."  )
+		sys.exit(1)
 	return file_collection
 
 
@@ -213,10 +205,8 @@ def read_collection(file_collection):
 	#8 ID_in_matched_locus
 	logger.info( "START: reading CSV file PRIM..." )
 	start_time = time.time()
-	#f_tab = gzip.open(file_collection, 'rb') #Before June 2014 - compressed file
-	#df_collection = pd.read_csv(f_tab, index_col=0, header=0, delim_whitespace=True) # index is snpID. #Before June 2014
-	f_tab = open(file_collection, 'r')
-	df_collection = pd.read_csv(f_tab, index_col=0, header=0, delimiter="\t") # index is snpID. # production_v1
+	f_tab = gzip.open(file_collection, 'rb')
+	df_collection = pd.read_csv(f_tab, index_col=0, header=0, delim_whitespace=True) # index is snpID
 	f_tab.close()
 	elapsed_time = time.time() - start_time
 	logger.info( "END: read CSV file PRIM into DataFrame in %s s (%s min)" % (elapsed_time, elapsed_time/60) )
@@ -228,7 +218,8 @@ def write_user_snps_annotation(path_output, df, df_collection):
 	user_snps_annotated_file = path_output+"/input_snps_annotated.tab"
 	df_user_snp_found_index = df.index # index of (found) user snps
 	df_user_snps_annotated = df_collection.ix[df_user_snp_found_index]
-	df_user_snps_annotated.to_csv(user_snps_annotated_file, sep='\t', header=True, index=True,  mode='w') 
+	df_user_snps_annotated.to_csv(user_snps_annotated_file, sep='\t', header=True, index=True,  mode='w')
+
 	status_obj.update_status('annotate', 'complete')
 
 
@@ -359,7 +350,7 @@ def few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps):
 
 
 
-def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff, max_freq_deviation, max_distance_deviation, max_genes_count_deviation, max_ld_buddy_count_deviation):
+def query_similar_snps(file_db, path_output, df, N_sample_sets, max_freq_deviation, max_distance_deviation, max_genes_count_deviation):
 	status_obj.update_status('match', 'running')
 	
 
@@ -368,7 +359,7 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff,
 	
 	df_snps_few_matches = None
 
-	user_snps_matrix_file = path_output+"/matched_snps.tab"
+	user_snps_matrix_file = path_output+"/snpsnap_matrix.tab"
 	if os.path.exists(user_snps_matrix_file): # removing any existing file. REASON: we are appending to matrix_file
 		os.remove(user_snps_matrix_file)
 	f_matrix_out = open(user_snps_matrix_file,'a')
@@ -382,9 +373,7 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff,
 		query_snpID = df.index[i]
 		freq = df.ix[i,'freq_bin']
 		gene_count = df.ix[i,'gene_count']
-		dist = df.ix[i,'dist_nearest_gene_snpsnap']
-		colname_ld_buddy_count = 'friends_ld'+str(ld_buddy_cutoff).replace(".", "") # e.g. friends_ld02. "ld_buddy_cutoff" will be a FLOAT like "0.2"
-		ld_buddy_count = df.ix[i,colname_ld_buddy_count] #NEW
+		dist = df.ix[i,'dist_nearest_gene']
 
 		### Setting delta space ####
 		delta_freq = np.rint(np.linspace(0,max_freq_deviation, n_attempts)).astype(int) # rounds to nearest integer and convert to int
@@ -394,7 +383,6 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff,
 		    logger.error( "max_distance_deviation set to %s. Lowest possible max_distance_deviation is 1." % max_distance_deviation )
 		    max_distance_deviation = 1
 		delta_dist = np.linspace(1,max_distance_deviation, n_attempts)/float(100) # OBS distance deviation starts at 1 %
-		delta_ld_buddy_count = np.linspace(1,max_ld_buddy_count_deviation, n_attempts)/float(100) # NEW
 
 		### Calculating low/high boundaries
 		freq_low = np.repeat(freq, n_attempts) - delta_freq # ABSOLUTE DEVIATION
@@ -403,8 +391,6 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff,
 		gene_count_high = np.repeat(gene_count, n_attempts)*(1+delta_gene_count)
 		dist_low = np.repeat(dist, n_attempts)*(1-delta_dist)
 		dist_high = np.repeat(dist, n_attempts)*(1+delta_dist)
-		ld_buddy_count_low = np.repeat(ld_buddy_count, n_attempts)*(1-delta_ld_buddy_count)
-		ld_buddy_count_high = np.repeat(ld_buddy_count, n_attempts)*(1+delta_ld_buddy_count)
 
 
 		match_ID_old = None # placeholder for a Numpy array
@@ -412,10 +398,9 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff,
 		for attempt in xrange(n_attempts):
 		    query_freq = '(freq_bin >= %s & freq_bin <= %s)' % (freq_low[attempt], freq_high[attempt])
 		    query_gene_count = '(gene_count >= %s & gene_count <= %s)' % (gene_count_low[attempt], gene_count_high[attempt])
-		    query_dist = '(dist_nearest_gene_snpsnap  >= %s & dist_nearest_gene_snpsnap  <= %s)' % (dist_low[attempt], dist_high[attempt])
-		    query_ld_buddy_count = '({col} >= {min} & {col} <= {max})'.format(col=colname_ld_buddy_count, min=ld_buddy_count_low[attempt], max=ld_buddy_count_high[attempt])
-
-		    query = "%s & %s & %s & %s" % (query_freq, query_gene_count, query_dist, query_ld_buddy_count)
+		    query_dist = '(dist_nearest_gene  >= %s & dist_nearest_gene  <= %s)' % (dist_low[attempt], dist_high[attempt])
+		    
+		    query = "%s & %s & %s" % (query_freq, query_gene_count, query_dist)
 		    match_ID = store.select('dummy', query, columns=[]).index.values # return no columns --> only index
 		    
 		    
@@ -485,8 +470,8 @@ def write_set_file(path_output, df_collection):
 	#snpsnap_matrix_stats.tab
 	#snpsnap_table.tab
 	#snpsnap_set_annotation.tab
-	user_snps_set_file = path_output+"/matched_snps_annotated.tab"
-	matrix_file = path_output+"/matched_snps.tab" #TODO OBS: FIX THIS. the file name should be parsed to the function
+	user_snps_set_file = path_output+"/snpsnap_sets.tab"
+	matrix_file = path_output+"/snpsnap_matrix.tab" #TODO OBS: FIX THIS. the file name should be parsed to the function
 	#TODO: check 'integrity' of df_matrix before reading?
 	# TWO DIFFERENT VERSIONS. None of them set the index explicitly, but rely either on header or pandas naming columns [0,1,2,...] where 0 is giving to the index
 	
@@ -494,7 +479,7 @@ def write_set_file(path_output, df_collection):
 	#df_matrix = pd.read_csv(matrix_file, index_col=0, header=0, delim_whitespace=True) # index is PARRENT snpID.
 	
 	# version SKIP HEADER: gives index {0, 1, 2}
-	df_matrix = pd.read_csv(matrix_file, index_col=0, header=None, skiprows=1, delimiter="\t") # index is PARRENT snpID.
+	df_matrix = pd.read_csv(matrix_file, index_col=0, header=None, skiprows=1, delim_whitespace=True) # index is PARRENT snpID.
 
 	if os.path.exists(user_snps_set_file):
 		logger.warning( "user_snps_set_file exists. removing file before annotating..." )
@@ -554,17 +539,12 @@ def ParseArguments():
 	arg_parser_match = subparsers.add_parser('match')
 	#arg_parser_annotate.set_defaults(func=run_match)
 
+
 	arg_parser.add_argument("--user_snps_file", help="Path to file with user-defined SNPs", required=True) # TODO: make the program read from STDIN via '-'
 	arg_parser.add_argument("--output_dir", help="Directory in which output files, i.e. random SNPs will be written", required=True)
 	#arg_parser.add_argument("--output_dir", type=ArgparseAdditionalUtils.check_if_writable, help="Directory in which output files, i.e. random SNPs will be written", required=True)
-	arg_parser.add_argument("--distance_type", help="ld or kb", required=True, choices=['ld', 'kb'])
-	
-	### Distance cutoff - including choices - gives problem with the need for converting distance_cutoff to str (that is, str(distance_cutoff) is needed at some point) 
-	# cutoff_chices = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]+[100, 200, 300, 400, 500, 600, 700, 800, 900, 1000] # or range(100,1100,100)
-	# arg_parser.add_argument("--distance_cutoff", help="r2, or kb distance", type=float, required=True, choices=cutoff_chices)
-	### Distance cutoff - no choices specified
+	arg_parser.add_argument("--distance_type", help="ld or kb", required=True)
 	arg_parser.add_argument("--distance_cutoff", help="r2, or kb distance", required=True)
-
 	# NEW: options
 	#arg_parser.add_argument("--status_file", help="Bool (switch, takes no value after argument); if set then logging is ENABLED.", action='store_true')
 	#arg_parser.add_argument("--status_file", help="If set, a json file will be written. Value should be the a filepath.")
@@ -574,13 +554,12 @@ def ParseArguments():
 
 	### MATCH arguments
 	arg_parser_match.add_argument("--N_sample_sets", type=int, help="Number of matched SNPs to retrieve", required=True) # 1000 - "Permutations?" TODO: change name to --n_random_snp_sets or --N
-	arg_parser_match.add_argument("--ld_buddy_cutoff", type=float, help="Choose which ld to use for the ld_buddy_count property, e.g 0.1, 0.2, .., 0.9", required=True, choices=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
 	#TODO: add argument that describes if ABSOLUTE of PERCENTAGE deviation should be used
-	arg_parser_match.add_argument("--max_freq_deviation", type=int, help="Maximal PERCENTAGE POINT deviation of SNP MAF bin [MAF +/- deviation]", required=True) # default=5
-	arg_parser_match.add_argument("--max_distance_deviation", type=int, help="Maximal PERCENTAGE deviation of distance to nearest gene [distance +/- %%deviation])", required=True) # default=5
+	arg_parser_match.add_argument("--max_freq_deviation", type=int,help="Maximal deviation of SNP MAF bin [MAF +/- deviation]", default=5) # 5
+	arg_parser_match.add_argument("--max_distance_deviation", type=int, help="Maximal PERCENTAGE POINT deviation of distance to nearest gene [distance +/- %%deviation])", default=5) # 20000
 	#TODO: CHECK THAT max_distance_deviation > 1 %
-	arg_parser_match.add_argument("--max_genes_count_deviation", type=int, help="Maximal PERCENTAGE deviation of genes in locus [gene_density +/- %%deviation]", required=True) # default=5
-	arg_parser_match.add_argument("--max_ld_buddy_count_deviation", type=int, help="Maximal PERCENTAGE deviation of genes in locus [ld_buddy_count +/- %%deviation]", required=True) # default=5
+	#TODO: WHY IS max_genes_count_deviation type float!!!!????
+	arg_parser_match.add_argument("--max_genes_count_deviation", type=float, help="Maximal PERCENTAGE POINT deviation of genes in locus [gene_density +/- %%deviation]", default=5) # 0.2
 	arg_parser_match.add_argument("--set_file", help="Bool (switch, takes no value after argument); if set then write out set files to rand_set..gz. Default is false", action='store_true')
 
 	args = arg_parser.parse_args()
@@ -623,7 +602,7 @@ def LogArguments(args):
 			logger.critical( '# \t' + "{:<30}".format(arg) + "{:<30}".format(getattr(args, arg)) )
 
 
-def run_match(path_data, path_output, prefix, user_snps_file, N_sample_sets, ld_buddy_cutoff, max_freq_deviation, max_distance_deviation, max_genes_count_deviation, max_ld_buddy_count_deviation, set_file):
+def run_match(path_data, path_output, prefix, user_snps_file, N_sample_sets, max_freq_deviation, max_distance_deviation, max_genes_count_deviation, set_file):
 	logger.info( "running match" )
 	file_db = locate_db_file(path_data, prefix) # Locate DB files. TODO: make function more robust
 	file_collection = locate_collection_file(path_data, prefix) # Locate DB files. TODO: make function more robust
@@ -632,7 +611,7 @@ def run_match(path_data, path_output, prefix, user_snps_file, N_sample_sets, ld_
 	write_snps_not_in_db(path_output, user_snps, user_snps_df) # Report number of matches to DB (print STDOUT and file)
 	
 	write_user_snps_stats(path_output, user_snps_df) # write stats file (no meta annotation)
-	query_similar_snps(file_db, path_output, user_snps_df, N_sample_sets, ld_buddy_cutoff, max_freq_deviation, max_distance_deviation, max_genes_count_deviation, max_ld_buddy_count_deviation)
+	query_similar_snps(file_db, path_output, user_snps_df, N_sample_sets, max_freq_deviation, max_distance_deviation, max_genes_count_deviation)
 
 	### STATUS
 	status_obj.update_status('match', 'complete')
@@ -763,10 +742,7 @@ def main():
 
 	### CONSTANTS ###
 	#path_data = os.path.abspath("/Users/pascaltimshel/snpsnap/data/step3") ## OSX - HARD CODED PATH!!
-	#path_data = os.path.abspath("/cvar/jhlab/snpsnap/data/step3/ld0.5") ## BROAD - HARD CODED PATH - BEFORE June 2014 (before production_v1)!!
-	
-	#path_data = os.path.abspath("/cvar/jhlab/snpsnap/data/step3/1KG_snpsnap_production_v1") ## BROAD - version: production_v1
-	path_data = os.path.abspath("/cvar/jhlab/snpsnap/data/step3/1KG_snpsnap_production_v1_single_ld") ## SINGLE LD BROAD - version: production_v1
+	path_data = os.path.abspath("/cvar/jhlab/snpsnap/data/step3/ld0.5") ## BROAD - HARD CODED PATH!!
 	prefix = args.distance_type + args.distance_cutoff
 	path_output = os.path.abspath(args.output_dir)
 
@@ -792,21 +768,17 @@ def main():
 		max_freq_deviation = args.max_freq_deviation
 		max_distance_deviation = args.max_distance_deviation
 		max_genes_count_deviation = args.max_genes_count_deviation
-		max_ld_buddy_count_deviation = args.max_ld_buddy_count_deviation
 		N_sample_sets = args.N_sample_sets
-		ld_buddy_cutoff = args.ld_buddy_cutoff # NEW
 		set_file = args.set_file
-		run_match(path_data, path_output, prefix, user_snps_file, N_sample_sets, ld_buddy_cutoff, max_freq_deviation, max_distance_deviation, max_genes_count_deviation, max_ld_buddy_count_deviation, set_file)
+		run_match(path_data, path_output, prefix, user_snps_file, N_sample_sets, max_freq_deviation, max_distance_deviation, max_genes_count_deviation, set_file)
 		if report_obj.enabled:
 			report_news =	{'max_freq_deviation':max_freq_deviation,
 							'max_distance_deviation':max_distance_deviation,
-							'max_genes_count_deviation':max_genes_count_deviation,
-							'max_ld_buddy_count_deviation':max_ld_buddy_count_deviation # NEW
+							'max_genes_count_deviation':max_genes_count_deviation
 							}
 			report_obj.report['match_criteria'].update(report_news)
 			
 			report_news =	{'N_sample_sets':N_sample_sets,
-							'ld_buddy_cutoff':ld_buddy_cutoff, #NEW
 							'set_file':set_file
 							}
 			report_obj.report['options'].update(report_news)
@@ -818,8 +790,9 @@ def main():
 		# if report_obj.enabled:
 		# 	report_obj.report = {"annotate":elapsed_time}
 	else:
-		logger.error( "Error in command line arguments - raising exception" )
-		raise Exception( "ERROR: command line arguments not passed correctly. Fix source code!" )
+		logger.error( "ERROR: command line arguments not passed correctly. Fix source code!" )
+		logger.error( "Exiting..." )
+		sys.exit(1)
 	elapsed_time = time.time() - start_time
 	logger.info( "TOTAL RUNTIME: %s s (%s min)" % (elapsed_time, elapsed_time/60) )
 
