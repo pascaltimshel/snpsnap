@@ -43,6 +43,10 @@ def report_bacct(pid, jobname):
 	return keep
 
 
+### TODO - improvements:
+#1) Add each instance of LaunchBsub to a class variable list.
+#2) Add class method 'print_processes' to print the PID of the class
+#3) 'Unit test': make 'test method' that submits a 'echo and sleep' job
 
 
 class LaunchBsub(object):
