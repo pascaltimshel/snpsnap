@@ -14,8 +14,9 @@ form = cgi.FieldStorage()
 
 session_id = form.getvalue('session_id', '')
 
-path_web_tmp_output = '/cvar/jhlab/snpsnap/web_tmp'
-#path_web_tmp_output = '/local/data/web_tmp' # NEW
+#path_web_tmp_output = '/cvar/jhlab/snpsnap/web_tmp'
+path_web_tmp_output = '/local/data/web_tmp' # NEW
+
 file_report = "{base}/{sid}_{type}.{ext}".format(base=path_web_tmp_output, sid=session_id, type='report', ext='json')
 # e.g. 2ede5955021a10cb0e1a13882be520eb_report.json
 

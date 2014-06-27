@@ -38,12 +38,13 @@ class Processor(object):
 		self.processes = collections.defaultdict(dict) # two-level dict
 		#self.commands_called = []
 		#self.returncodes = 
-		self.path_session_output = '/cvar/jhlab/snpsnap/web_results'+'/'+self.session_id
-		self.path_web_tmp_output = '/cvar/jhlab/snpsnap/web_tmp'
 		
-		#self.path_session_output = '/local/data/web_results'+'/'+self.session_id
-		#self.path_web_tmp_output = '/local/data/web_tmp'
-		self.link_result = "http://snpsnap.broadinstitute.org/mpg/snpsnap/results/{session_id}.zip".format(session_id=self.session_id)
+		#self.path_session_output = '/cvar/jhlab/snpsnap/web_results'+'/'+self.session_id
+		#self.path_web_tmp_output = '/cvar/jhlab/snpsnap/web_tmp'
+		
+		self.path_session_output = '/local/data/web_results'+'/'+self.session_id
+		self.path_web_tmp_output = '/local/data/web_tmp'
+		self.link_result = "http://snpsnap.broadinstitute.org/mpg/snpsnap/results/{session_id}/{prefix}_{job}.zip".format(session_id=self.session_id, prefix='SNPsnap', job=self.job_name)
 
 		self.summary = {}
 
@@ -231,15 +232,13 @@ class Processor(object):
 		server.sendmail(fromaddr, toaddr, text)
 		server.quit()
 
-
+	###################### NOTE USED ANY MORE - zips entrie DIRECTORY STRUCTURE ###############
 	@staticmethod
 	def zip_folder(folder_path, output_path):
-		"""Zip the contents of an entire folder (with that folder included
-		in the archive). Empty subfolders will be included in the archive
-		as well.
-		"""
+		"""Zip the contents of an entire folder (with that folder included in the archive). 
+		Empty subfolders will be included in the archive as well."""
 		zip_file = zipfile.ZipFile(output_path, 'w', compression=zipfile.ZIP_DEFLATED)
-		parent_folder = os.path.dirname(folder_path) # this should remove any trailing slashes in the 'folder_path'. Check this...
+		parent_folder = os.path.dirname(folder_path) # this is the PARRENT folder of the folder_path. e.g. parrent=/local/data when folder_path=/local/data/<session_id>
 		# Retrieve the paths of the folder contents.
 		contents = os.walk(folder_path) # ---> type generator
 		for root, folders, files in contents:
@@ -252,6 +251,31 @@ class Processor(object):
 				absolute_path = os.path.join(root, file_name)
 				relative_path = absolute_path.replace(parent_folder + os.sep, '')
 				zip_file.write(absolute_path, arcname=relative_path)
+		zip_file.close()
+	#########################################################################################
+
+	@staticmethod
+	def zip_files(folder_path, output_path, archive_base_dir):
+		"""Zip all the FILES in a folder and write them to a archive inside the folder_path. 
+		path_output: specifies the dir and filename of the output zip file.
+		archive_base_dir: specifices the name of the top level folder (where the files resides) inside the zip archive.
+		NOTE: archive_base_name will be the name of the dir when the zip file is extracted
+		RECOMMENDATION: use the same name for the output file and the archive name"""
+		zip_file = zipfile.ZipFile(output_path, 'w', compression=zipfile.ZIP_DEFLATED)
+		# Retrieve the paths of the folder contents.
+		contents = os.walk(folder_path) # ---> type generator
+		for root, folders, files in contents:
+			#logger.info( "root: %s\nfolders:[%s]\nfiles:[%s]" % (root, " ".join(folders), " ".join(files)) )
+			for file_name in files: # we only care about files in the dir
+				absolute_path = os.path.join(root, file_name)
+				if '.zip' in file_name: continue # skip the zip_file we have just created
+				archive_name=archive_base_dir+"/"+file_name
+				zip_file.write(absolute_path, arcname=archive_name)
+				
+				#logger.info( "file_name:%s" % file_name )
+				#logger.info( "archive_name:%s" % archive_name )
+				
+			break # we only want the TOP level in the dir
 		zip_file.close()
 
 
@@ -306,10 +330,13 @@ class Processor(object):
 		### Now all is done: 
 		self.read_report() # this sets the nessesary instance variables (i.e. self.report_obj) for the email to be generated
 		self.write_snpsnap_summary() # adds additional information (email, jobname) to report_obj and WRITE report to output dir (i.e. not temp dir)
-		self.zip_folder(self.path_session_output, self.path_session_output+'.zip')
 		
-		# Now clean up:
-		#os.removedirs(path_session_output)
+		#self.zip_folder(self.path_session_output, self.path_session_output+'.zip') # OLD ZIP - zipping whole dir
+		self.zip_files(folder_path=self.path_session_output, output_path=self.path_session_output+'/SNPsnap_'+self.job_name+'.zip', archive_base_dir='SNPsnap_'+self.job_name)
+		#folder_path: /local/data/web_results/f0fc477e4eaba3c4e0dbce1674ba26f2
+		#output_path=/local/data/web_results/f0fc477e4eaba3c4e0dbce1674ba26f2/SNPsnap_<job_name>.zip 
+		#archive_base_dir=SNPsnap_<job_name>
+
 
 		## Send out email
 		self.send_email()

@@ -136,16 +136,13 @@ session_id = hashlib.md5(str(random.random())).hexdigest()
 
 ########## PATHS ############
 #### ***OBS***: if you change these paths you MUST change them in launchApp.py status_json.py and report_json.py 
-path_session_output = '/cvar/jhlab/snpsnap/web_results'+'/'+session_id
-path_web_tmp_output = '/cvar/jhlab/snpsnap/web_tmp'
-#os.mkdir('/local/data/web_results')
-#os.mkdir('/local/data/web_tmp')
+#path_session_output = '/cvar/jhlab/snpsnap/web_results'+'/'+session_id
+#path_web_tmp_output = '/cvar/jhlab/snpsnap/web_tmp'
 
-#path_session_output = '/local/data/web_results'+'/'+session_id # New June 21 - after Andrew Teixeira. Only present here!
-#path_web_tmp_output = '/local/data/web_tmp' # New June 21 - Fix in 'launchApp.py', report_html.py', 'status_json.py'
+path_session_output = '/local/data/web_results'+'/'+session_id # New June 21 - after Andrew Teixeira. Fix in 'bootface.py', 'launchApp.py'
+path_web_tmp_output = '/local/data/web_tmp' # New June 21 - Fix in 'bootface.py', 'launchApp.py', report_html.py', 'status_json.py'
 os.mkdir(path_session_output)
 
-url_results = 'results/{sid}.zip'.format(sid=session_id) # used in PANEL: RESULTS
 
 #file_snplist = os.path.join(path_web_tmp_output, "{}_{}".format(session_id, 'user_snplist') ) # version1
 #file_snplist = "{}/{}_{}".format(path_web_tmp_output, session_id, 'user_snplist') # version2
@@ -170,6 +167,11 @@ if job_name == '': # setting 'default' job name
 	job_name = 'no_name'
 elif len(job_name) >= 50: # only allow up to 50 character long job_name
 	job_name = job_name[:50]
+
+###################### URL Results - remember that the HTML <base> tag is used #############
+#url_results = 'results/{sid}.zip'.format(sid=session_id) # used in PANEL: RESULTS
+url_results = "results/{session_id}/{prefix}_{job}.zip".format(session_id=session_id, prefix='SNPsnap', job=job_name)
+
 
 annotate = form.getvalue('annotate', '')
 set_file = form.getvalue('set_file', '')
@@ -336,8 +338,6 @@ print """
 <br>
 	
 <div class="header">
-	<!-- <ul class="nav nav-pills pull-right"> -->
-	<!-- <ul class="nav nav-pills navbar-right"> --> <!-- does not work at all! -->
 	<ul class="nav nav-pills">
 		<li><a href="index.html">Home</a></li>
 		<li class="active"><a href="match_snps.html">Match SNPs</a></li>

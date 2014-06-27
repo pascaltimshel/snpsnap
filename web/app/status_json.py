@@ -16,8 +16,8 @@ session_id = form.getvalue('session_id', '')
 set_file = form.getvalue('set_file', '')
 annotate = form.getvalue('annotate', '')
 
-path_web_tmp_output = '/cvar/jhlab/snpsnap/web_tmp'
-#path_web_tmp_output = '/local/data/web_tmp'
+#path_web_tmp_output = '/cvar/jhlab/snpsnap/web_tmp'
+path_web_tmp_output = '/local/data/web_tmp'
 
 file_status_match = "{base}/{sid}_{type}.{ext}".format(base=path_web_tmp_output, sid=session_id, type='status_match', ext='json')
 file_status_annotate = "{base}/{sid}_{type}.{ext}".format(base=path_web_tmp_output, sid=session_id, type='status_annotate', ext='json')
