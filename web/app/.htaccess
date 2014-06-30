@@ -1,13 +1,15 @@
+ErrorDocument 404 /mpg/snpsnap/error_pages/error404_job_expired.html
+ErrorDocument 500 /mpg/snpsnap/error_pages/error500.html
+
+###################################### Old stuff ######################################
+#Alias /mpg/snpsnap/error_pages/ "/cvar/jhlab/snpsnap/snpsnap/web/error_pages/"
+
 #ErrorDocument 404 /error_pages/error404_job_expired.html
 #ErrorDocument 500 /error_pages/error500.html
 
 #ErrorDocument 404 /error404_job_expired.html
 #ErrorDocument 500 /error500.html
 
-#Alias /mpg/snpsnap/error_pages/ "/cvar/jhlab/snpsnap/snpsnap/web/error_pages/"
-
-ErrorDocument 404 /mpg/snpsnap/error_pages/error404_job_expired.html
-ErrorDocument 500 /mpg/snpsnap/error_pages/error500.html
 
 #ErrorDocument 404 /cvar/jhlab/snpsnap/snpsnap/web/error_pages/error404_job_expired.html
 #ErrorDocument 500 /cvar/jhlab/snpsnap/snpsnap/web/error_pages/error500.html

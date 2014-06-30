@@ -243,8 +243,8 @@ def df2collection(df, file_collection, file_dup, no_compression):
 # NO SPLITTING INTO prim and meta
 @profile
 def collection2dataframe(file_collection, no_compression):
-	#friends_ld09
-	col_string = "snpID freq_bin gene_count dist_nearest_gene_snpsnap friends_ld05"
+	#col_string = "snpID freq_bin gene_count dist_nearest_gene_snpsnap friends_ld05" # single_ld_buddy
+	col_string = "snpID freq_bin gene_count dist_nearest_gene_snpsnap" # no_ld_buddy
 	cols2read = col_string.split()
 	logger.info( "Will read the following columns from the collection: %s" % col_string )
 

@@ -59,6 +59,16 @@ $(document).ready(function(){
 //         error.insertAfter(element);  // default placement for everything else
 //     }
 // }
+
+	//SEE BELOW LINK for more info about this.optional(element) in jQuery validation method: 
+		// ---> http://stackoverflow.com/questions/13093971/what-does-this-optionalelement-do-when-adding-a-jquery-validation-method
+	// GOT REGEX METHOD FROM: http://stackoverflow.com/questions/280759/jquery-validate-how-to-add-a-rule-for-regular-expression-validation
+	$.validator.addMethod("regex", function(value, element, regexp) {
+		var re = new RegExp(regexp);
+		return this.optional(element) || re.test(value);
+	}, "Your input does not match a valid pattern" );
+
+	// FORM VALIDATION
 	$('#snpsnap_match_form').validate( { // initialize the plugin
 		errorClass: "error", // this is default
 		// errorClass: 'help-block', // Consider using this
@@ -81,6 +91,11 @@ $(document).ready(function(){
 				digits: true,
 				min: 1
 			},
+			max_ld_buddy_count_deviation: {
+				required: true,
+				digits: true,
+				min: 1
+			},
 			N_sample_sets: {
 				required: true,
 				digits: true,
@@ -94,7 +109,9 @@ $(document).ready(function(){
 			job_name: {
 				required: true,
 				minlength: 3,
-				maxlength: 30
+				maxlength: 30,
+				// regex: "^[a-zA-Z0-9_\-]{3,30}$"  // the {3,30} is a bit redundant given the min and max length
+				regex: "^[a-zA-Z0-9_\-]+$" // consider using this pattern: [\w._\-]+
 			},
 			snplist_text: {
 				require_from_group: [1, ".snp_input_group"]
@@ -115,8 +132,12 @@ $(document).ready(function(){
 			},
 			snplist_fileupload: { 
 				require_from_group: "Please either paste in your SNPs or upload a SNPlist file"
+			},
+			job_name: {
+				regex: 'only letters (a-z), numbers, underscores and hyphens are allowed' //input pattern must match [a-zA-Z0-9_-]:
 			}
 		},
+
 		// highlight - How to highlight invalid fields. default: Adds errorClass to the element
 		// element (Type: Element): The invalid DOM element, usually an input.
 		highlight: function(element) {
