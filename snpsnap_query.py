@@ -359,7 +359,7 @@ def few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps):
 
 
 
-def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff, max_freq_deviation, max_distance_deviation, max_genes_count_deviation, max_ld_buddy_count_deviation):
+def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff, exclude_input_SNPs, max_freq_deviation, max_distance_deviation, max_genes_count_deviation, max_ld_buddy_count_deviation):
 	status_obj.update_status('match', 'running')
 	
 
@@ -391,8 +391,8 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff,
 		# OBS: delta_gene_count and delta_dist are in the range of [-1;1]
 		delta_gene_count = np.linspace(0,max_genes_count_deviation, n_attempts)/float(100)
 		if max_distance_deviation < 1:
-		    logger.error( "max_distance_deviation set to %s. Lowest possible max_distance_deviation is 1." % max_distance_deviation )
-		    max_distance_deviation = 1
+			logger.error( "max_distance_deviation set to %s. Lowest possible max_distance_deviation is 1." % max_distance_deviation )
+			max_distance_deviation = 1
 		delta_dist = np.linspace(1,max_distance_deviation, n_attempts)/float(100) # OBS distance deviation starts at 1 %
 		delta_ld_buddy_count = np.linspace(1,max_ld_buddy_count_deviation, n_attempts)/float(100) # NEW
 
@@ -410,28 +410,51 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff,
 		match_ID_old = None # placeholder for a Numpy array
 		match_ID = None # placeholder for a Numpy array
 		for attempt in xrange(n_attempts):
-		    query_freq = '(freq_bin >= %s & freq_bin <= %s)' % (freq_low[attempt], freq_high[attempt])
-		    query_gene_count = '(gene_count >= %s & gene_count <= %s)' % (gene_count_low[attempt], gene_count_high[attempt])
-		    query_dist = '(dist_nearest_gene_snpsnap  >= %s & dist_nearest_gene_snpsnap  <= %s)' % (dist_low[attempt], dist_high[attempt])
-		    query_ld_buddy_count = '({col} >= {min} & {col} <= {max})'.format(col=colname_ld_buddy_count, min=ld_buddy_count_low[attempt], max=ld_buddy_count_high[attempt])
+			query_freq = '(freq_bin >= %s & freq_bin <= %s)' % (freq_low[attempt], freq_high[attempt])
+			query_gene_count = '(gene_count >= %s & gene_count <= %s)' % (gene_count_low[attempt], gene_count_high[attempt])
+			query_dist = '(dist_nearest_gene_snpsnap  >= %s & dist_nearest_gene_snpsnap  <= %s)' % (dist_low[attempt], dist_high[attempt])
+			query_ld_buddy_count = '({col} >= {min} & {col} <= {max})'.format(col=colname_ld_buddy_count, min=ld_buddy_count_low[attempt], max=ld_buddy_count_high[attempt])
 
-		    query = "%s & %s & %s & %s" % (query_freq, query_gene_count, query_dist, query_ld_buddy_count)
-		    match_ID = store.select('dummy', query, columns=[]).index.values # return no columns --> only index
-		    
-		    
-		    if len(match_ID) < N_sample_sets:
-		        match_ID_old = match_ID
-		    else: #we have enough matches
-		    	match_ID_old = np.array([]) # empty array. This line ensures that len(match_ID_old) is always valid
-		        break
+			query = "%s & %s & %s & %s" % (query_freq, query_gene_count, query_dist, query_ld_buddy_count)
+			#match_ID = store.select('dummy', query, columns=[]).index.values # return no columns --> only index # USED BEFORE JUNE 30
+			start_time = time.time()
+			match_ID = store.select('dummy', query, columns=[]) # return no columns --> only index 
+			elapsed_time = time.time() - start_time
+			logger.info( "attempt #%d/%d| SNP %s| Selecting data from store in %s s (%s min)" % (attempt+1, n_attempts, query_snpID, elapsed_time, elapsed_time/60) )
+
+
+			if len(match_ID) < N_sample_sets:
+				match_ID_old = match_ID
+			else: #we have enough matches
+				match_ID_old = np.array([]) # empty array. This line ensures that len(match_ID_old) is always valid
+				break
 
 		logger.info( "SNP #%d/%d: ID {%s}: found %d hits" % (i+1, N_snps, query_snpID, len(match_ID)) )
 		
 		# ###################################### STATUSBAR ######################################
-		# if status_obj is not None:
-		# 	status_obj.update(match=(i+1)/float(N_snps) , annotate=status_obj.annotate, set_file=status_obj.set_file)
-		# #######################################################################################
 		status_obj.update_pct('match', (i+1)/float(N_snps)*100)
+		# #######################################################################################
+
+		start_time = time.time() # START: timing how long the intersection step takes...
+		match_ID = match_ID.index # IMPORTANT: converting data frame to index
+		if exclude_input_SNPs:
+			#logger.info( 'type(match_ID):%s' % type(match_ID) ) #<class 'pandas.core.index.Index'>
+			set_intersect = match_ID.intersection(df.index) # returns Index. finding intersection between indexes in matched SNPs and user SNPs
+			logger.warning( "Found %s SNPs in intersection between matched SNPs and input SNPs." % len(set_intersect) )
+			list_of_intersecting_SNPs = set_intersect.tolist()
+			logger.warning( "List of intersection set: [%s]" % " ".join(list_of_intersecting_SNPs) )
+			logger.warning( "SNPs will be excluded" )
+			logger.warning( "Length of match_ID BEFORE dropping: %s" % len(match_ID) )
+			#match_ID = match_ID.drop(df.index, axis=0) # or inplace=True
+			match_ID = match_ID.drop(set_intersect) # returns nex Index with passed list of labels deleted.
+													# OBS: all indexes you wish to drop must exist in match_ID. If not, the following exception will be thrown: ValueError: labels ['9:5453460'....] not contained in axis
+		logger.warning( "Length of match_ID AFTER dropping: %s" % len(match_ID) )
+		
+		match_ID = match_ID.values # IMPORTANT: transforming data frame into numpy array. This is needed because we used numpy functions like np.setdiff1d
+		#^^ we need to convert to numpy regime to be able to sample properly (e.g. use np.random.choice). [Potential alternative solution: the random module could maybe be used in combination with pandas indexing]
+		elapsed_time = time.time() - start_time
+		logger.info( "run time of exclusion step:%s s (%s min)" % (elapsed_time, elapsed_time/60) )
+
 
 
 		# Unfortunately, we cannot create the 'df_snps_few_matches' DataFrame before we know the columns in df
@@ -446,7 +469,7 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff,
 			# 	pd.set_option('mode.chained_assignment',None) # OBS: avoids SettingWithCopy exception when doing: row_query['n_matches'] = len(match_ID)
 			# 	cols = np.append(df.columns.values, 'n_matches')
 			# 	df_snps_few_matches= pd.DataFrame(columns=cols) #df.columns is a Index object
-			row_query = df.ix[i]
+			row_query = df.ix[i] # this is the current user input SNP
 			row_query['n_matches'] = len(match_ID)
 			df_snps_few_matches = df_snps_few_matches.append(row_query) # select row (df.ix[i]) --> gives Series object
 
@@ -575,6 +598,7 @@ def ParseArguments():
 	### MATCH arguments
 	arg_parser_match.add_argument("--N_sample_sets", type=int, help="Number of matched SNPs to retrieve", required=True) # 1000 - "Permutations?" TODO: change name to --n_random_snp_sets or --N
 	arg_parser_match.add_argument("--ld_buddy_cutoff", type=float, help="Choose which ld to use for the ld_buddy_count property, e.g 0.1, 0.2, .., 0.9", required=True, choices=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
+	arg_parser_match.add_argument("--exclude_input_SNPs", help="Bool (switch, takes no value after argument); if set then all valid input SNPs are excluded from the matched SNPs. Default is false", action='store_true')
 	#TODO: add argument that describes if ABSOLUTE of PERCENTAGE deviation should be used
 	arg_parser_match.add_argument("--max_freq_deviation", type=int, help="Maximal PERCENTAGE POINT deviation of SNP MAF bin [MAF +/- deviation]", required=True) # default=5
 	arg_parser_match.add_argument("--max_distance_deviation", type=int, help="Maximal PERCENTAGE deviation of distance to nearest gene [distance +/- %%deviation])", required=True) # default=5
@@ -623,7 +647,7 @@ def LogArguments(args):
 			logger.critical( '# \t' + "{:<30}".format(arg) + "{:<30}".format(getattr(args, arg)) )
 
 
-def run_match(path_data, path_output, prefix, user_snps_file, N_sample_sets, ld_buddy_cutoff, max_freq_deviation, max_distance_deviation, max_genes_count_deviation, max_ld_buddy_count_deviation, set_file):
+def run_match(path_data, path_output, prefix, user_snps_file, N_sample_sets, ld_buddy_cutoff, exclude_input_SNPs, max_freq_deviation, max_distance_deviation, max_genes_count_deviation, max_ld_buddy_count_deviation, set_file):
 	logger.info( "running match" )
 	file_db = locate_db_file(path_data, prefix) # Locate DB files. TODO: make function more robust
 	file_collection = locate_collection_file(path_data, prefix) # Locate DB files. TODO: make function more robust
@@ -632,7 +656,7 @@ def run_match(path_data, path_output, prefix, user_snps_file, N_sample_sets, ld_
 	write_snps_not_in_db(path_output, user_snps, user_snps_df) # Report number of matches to DB (print STDOUT and file)
 	
 	write_user_snps_stats(path_output, user_snps_df) # write stats file (no meta annotation)
-	query_similar_snps(file_db, path_output, user_snps_df, N_sample_sets, ld_buddy_cutoff, max_freq_deviation, max_distance_deviation, max_genes_count_deviation, max_ld_buddy_count_deviation)
+	query_similar_snps(file_db, path_output, user_snps_df, N_sample_sets, ld_buddy_cutoff, exclude_input_SNPs, max_freq_deviation, max_distance_deviation, max_genes_count_deviation, max_ld_buddy_count_deviation)
 
 	### STATUS
 	status_obj.update_status('match', 'complete')
@@ -710,7 +734,7 @@ class Progress():
 		with open(self.fname, 'w') as f:
 			json.dump(self.status_now, f)
 			#json.dump(self.status_now, f, indent=3)
-	 		#json.dump(self.status, f)
+			#json.dump(self.status, f)
 
 	def finish(self):
 		""" Closing file handle """
@@ -795,8 +819,9 @@ def main():
 		max_ld_buddy_count_deviation = args.max_ld_buddy_count_deviation
 		N_sample_sets = args.N_sample_sets
 		ld_buddy_cutoff = args.ld_buddy_cutoff # NEW
+		exclude_input_SNPs = args.exclude_input_SNPs # NEW
 		set_file = args.set_file
-		run_match(path_data, path_output, prefix, user_snps_file, N_sample_sets, ld_buddy_cutoff, max_freq_deviation, max_distance_deviation, max_genes_count_deviation, max_ld_buddy_count_deviation, set_file)
+		run_match(path_data, path_output, prefix, user_snps_file, N_sample_sets, ld_buddy_cutoff, exclude_input_SNPs, max_freq_deviation, max_distance_deviation, max_genes_count_deviation, max_ld_buddy_count_deviation, set_file)
 		if report_obj.enabled:
 			report_news =	{'max_freq_deviation':max_freq_deviation,
 							'max_distance_deviation':max_distance_deviation,
@@ -807,6 +832,7 @@ def main():
 			
 			report_news =	{'N_sample_sets':N_sample_sets,
 							'ld_buddy_cutoff':ld_buddy_cutoff, #NEW
+							'exclude_input_SNPs':exclude_input_SNPs, #NEW
 							'set_file':set_file
 							}
 			report_obj.report['options'].update(report_news)

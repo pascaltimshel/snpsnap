@@ -110,6 +110,8 @@ def run():
 	os.sys.path.insert(0,'/cvar/jhlab/snpsnap/snpsnap') 
 	import launchApp
 
+	import subprocess
+	import sys
 
 	import re # used for formula validation
 
@@ -132,14 +134,6 @@ def run():
 			snplist_input_type = 'text input'
 		#snplist_input_type = "<p>%s</p>" % message # TEMPORARY
 		return snplist_input_type
-
-	def list_args():
-	  arg_list = "<ul>"
-	  for key in sorted(form.keys()):
-		arg_list += "<li>%s: %s</li>" % (key, form.getvalue(key))
-	  arg_list += "</ul>"
-	  #if key == 'snplist_fileupload': continue
-	  return arg_list
 
 	def construct_job_params():
 		params = """
@@ -180,7 +174,7 @@ def run():
 		    </tr>
 		    <tr>
 		      <td></td>
-		      <td>Gene count in loci</td>
+		      <td>Gene density</td>
 		      <td>{max_genes_count_deviation}</td>
 		    </tr>
 		    <tr>
@@ -189,13 +183,23 @@ def run():
 		      <td>{max_distance_deviation}</td>
 		    </tr>
 		    <tr>
+		      <td></td>
+		      <td>LD buddies</td>
+		      <td>{max_ld_buddy_count_deviation}</td>
+		    </tr>
+		    <tr>
 		      <th>Options</th>
 		      <td>Number of matching SNP sets</td>
 		      <td>{N_sample_sets}</td>
 		    </tr>
 		    <tr>
 		      <td></td>
-		      <td>Create set file</td>
+		      <td>Exclude input SNPs in matched SNPs</td>
+		      <td>{exclude_input_SNPs}</td>
+		    </tr>
+		    <tr>
+		      <td></td>
+		      <td>Annotate matched SNPs</td>
 		      <td>{set_file}</td>
 		    </tr>
 		    <tr>
@@ -217,7 +221,9 @@ def run():
 					max_freq_deviation=max_freq_deviation, 
 					max_genes_count_deviation=max_genes_count_deviation, 
 					max_distance_deviation=max_distance_deviation, 
+					max_ld_buddy_count_deviation=max_ld_buddy_count_deviation,
 					N_sample_sets=N_sample_sets,
+					exclude_input_SNPs='yes' if exclude_input_SNPs else 'no',
 					set_file='yes' if set_file else 'no',
 					annotate='yes' if annotate else 'no',
 					job_name=job_name
@@ -279,7 +285,7 @@ def run():
 	#url_results = 'results/{sid}.zip'.format(sid=session_id) # used in PANEL: RESULTS
 	url_results = "results/{session_id}/{prefix}_{job}.zip".format(session_id=session_id, prefix='SNPsnap', job=job_name)
 
-
+	exclude_input_SNPs = form.getvalue('exclude_input_SNPs', '')
 	annotate = form.getvalue('annotate', '')
 	set_file = form.getvalue('set_file', '')
 
@@ -289,15 +295,21 @@ def run():
 	if annotate:
 		cmd_annotate = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type {distance_type} --distance_cutoff {distance_cutoff} --web {file_prefix_web_tmp} annotate".format(program=script2call, snplist=file_snplist, outputdir=path_session_output, distance_type=distance_type, distance_cutoff=distance_cutoff, file_prefix_web_tmp=file_prefix_web_tmp)
 
-	if set_file:
+	if set_file and exclude_input_SNPs:
+		cmd_match = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type {distance_type} --distance_cutoff {distance_cutoff} --web {file_prefix_web_tmp} match --N_sample_sets {N_sample_sets} --ld_buddy_cutoff {ld_buddy_cutoff} --max_freq_deviation {max_freq_deviation} --max_distance_deviation {max_distance_deviation} --max_genes_count_deviation {max_genes_count_deviation} --max_ld_buddy_count_deviation {max_ld_buddy_count_deviation} --exclude_input_SNPs --set_file".format(program=script2call, snplist=file_snplist, outputdir=path_session_output, distance_type=distance_type, distance_cutoff=distance_cutoff, file_prefix_web_tmp=file_prefix_web_tmp,\
+																																																																													N_sample_sets=N_sample_sets, ld_buddy_cutoff=ld_buddy_cutoff, max_freq_deviation=max_freq_deviation, max_distance_deviation=max_distance_deviation, max_genes_count_deviation=max_genes_count_deviation, max_ld_buddy_count_deviation=max_ld_buddy_count_deviation)
+	elif set_file:
 		cmd_match = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type {distance_type} --distance_cutoff {distance_cutoff} --web {file_prefix_web_tmp} match --N_sample_sets {N_sample_sets} --ld_buddy_cutoff {ld_buddy_cutoff} --max_freq_deviation {max_freq_deviation} --max_distance_deviation {max_distance_deviation} --max_genes_count_deviation {max_genes_count_deviation} --max_ld_buddy_count_deviation {max_ld_buddy_count_deviation} --set_file".format(program=script2call, snplist=file_snplist, outputdir=path_session_output, distance_type=distance_type, distance_cutoff=distance_cutoff, file_prefix_web_tmp=file_prefix_web_tmp,\
 																																																																													N_sample_sets=N_sample_sets, ld_buddy_cutoff=ld_buddy_cutoff, max_freq_deviation=max_freq_deviation, max_distance_deviation=max_distance_deviation, max_genes_count_deviation=max_genes_count_deviation, max_ld_buddy_count_deviation=max_ld_buddy_count_deviation)
+	elif exclude_input_SNPs: 
+		cmd_match = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type {distance_type} --distance_cutoff {distance_cutoff} --web {file_prefix_web_tmp} match --N_sample_sets {N_sample_sets} --ld_buddy_cutoff {ld_buddy_cutoff} --max_freq_deviation {max_freq_deviation} --max_distance_deviation {max_distance_deviation} --max_genes_count_deviation {max_genes_count_deviation} --max_ld_buddy_count_deviation {max_ld_buddy_count_deviation} --exclude_input_SNPs".format(program=script2call, snplist=file_snplist, outputdir=path_session_output, distance_type=distance_type, distance_cutoff=distance_cutoff, file_prefix_web_tmp=file_prefix_web_tmp,\
+																																																																														N_sample_sets=N_sample_sets, ld_buddy_cutoff=ld_buddy_cutoff, max_freq_deviation=max_freq_deviation, max_distance_deviation=max_distance_deviation, max_genes_count_deviation=max_genes_count_deviation, max_ld_buddy_count_deviation=max_ld_buddy_count_deviation)
 	else: 
 		cmd_match = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type {distance_type} --distance_cutoff {distance_cutoff} --web {file_prefix_web_tmp} match --N_sample_sets {N_sample_sets} --ld_buddy_cutoff {ld_buddy_cutoff} --max_freq_deviation {max_freq_deviation} --max_distance_deviation {max_distance_deviation} --max_genes_count_deviation {max_genes_count_deviation} --max_ld_buddy_count_deviation {max_ld_buddy_count_deviation}".format(program=script2call, snplist=file_snplist, outputdir=path_session_output, distance_type=distance_type, distance_cutoff=distance_cutoff, file_prefix_web_tmp=file_prefix_web_tmp, \
 																																																																														N_sample_sets=N_sample_sets, ld_buddy_cutoff=ld_buddy_cutoff, max_freq_deviation=max_freq_deviation, max_distance_deviation=max_distance_deviation, max_genes_count_deviation=max_genes_count_deviation, max_ld_buddy_count_deviation=max_ld_buddy_count_deviation)
 
 
-	###################### FORKING ##################################
+	###################### FORK'ING ##################################
 	### This is a mess. Tried out the deamon process. It did not work...
 	#app = launchApp.Processor(session_id, email_address, job_name, cmd_annotate, cmd_match)
 	#app.start() #Start the process activity in a SEPERATE process.
@@ -318,8 +330,6 @@ def run():
 	# 	subprocess.Popen(cmd_launch, stdout = fnull, stderr = subprocess.STDOUT, shell=True)
 
 	############### SUBPROCESS  ####################
-	import subprocess
-	import sys
 	with open(os.devnull, "w") as fnull: # same as open('/dev/null', 'w')
 		script2call = "/cvar/jhlab/snpsnap/snpsnap/launchApp.py"
 		cmd_launch = [script2call,
@@ -396,7 +406,6 @@ def run():
 		</div>
 	  </div>
 	""".format(args=construct_job_params())
-	#""".format(args=list_args(), extra=snplist_input_type)
 
 
 	################## PANEL: PROGRESS ##################
