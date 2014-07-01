@@ -323,11 +323,11 @@
 	<!-- Number of matching SNP sets -->
 	<div class="input_box"> <!-- START input box -->
 	<div class="form-group">
-		<div class="col-xs-4 text-right">
+		<div class="col-xs-5 text-right">
 			<label for="N_sample_sets" class="control-label">Requested number of matched SNPs</label>
 		</div>
 		<div class="col-xs-2">
-			<input type="text" class="form-control" name="N_sample_sets" id="N_sample_sets" value="1000" data-toggle="tooltip" title="Note that setting this value above 5000 will make your matching prone to many insufficient matches. See the documentation for details">
+			<input type="text" class="form-control" name="N_sample_sets" id="N_sample_sets" value="1000" data-toggle="tooltip" title="Note that specifying a large value in this field (e.g. > 5000) will make your matching prone to many insufficient matches. See the documentation for details">
 		</div>
 		<div class="col-xs-5 error_msg_place">
 			<!-- PLACE HOLDER FOR VALIDATION ERROR MESSAGE -->
@@ -356,24 +356,36 @@
 		</div>
 	</div> -->
 
-	<!-- TEEEEEEEEEEEEEEEEEEEEEEST -->
+	<!-- EXCLUDE INPUT SNPs -->
+	<div class="form-group">
+		<div class="col-xs-offset-5 col-xs-5">
+			<div class="checkbox">
+				<label>
+					<input type="checkbox" name="exclude_input_SNPs" id="exclude_input_SNPs" checked="checked"> Exclude input SNPs
+				</label>
+				<p class="help-block">This will exclude all input SNPs from the matched SNPs. We recommend using this setting.</p>
+			</div>
+		</div>
+	</div>
+
 	<!-- SET_FILE -->
 	<div class="form-group">
 		<div class="col-xs-5">
 			<div class="checkbox">
 				<label>
-					<input type="checkbox" name="set_file" id="set_file" value="true"> Annotate matched SNPs
+					<!-- NOTE: the value="true" could be used. Python CGI will receive a checked checkbox as 'on' -->
+					<input type="checkbox" name="set_file" id="set_file"> Annotate matched SNPs
 				</label>
 				<p class="help-block">This will generate a file with annotated matched SNPs*</p>
 			</div>
 		</div>
-		<!-- ANNOTATE -->
+		<!-- ANNOTATE Input SNPs -->
 		<div class="col-xs-5">
 			<div class="checkbox">
-				<label>
-					<input type="checkbox" name="annotate" id="annotate" value="true"> Annotate input SNPs
-					<p class="help-block">This will generate a file with annotated input SNPs*</p>
+				<label class="control-label">
+					<input type="checkbox" name="annotate" id="annotate"> Annotate input SNPs
 				</label>
+				<p class="help-block">This will generate a file with annotated input SNPs*</p>
 			</div>
 		</div>
 	</div>

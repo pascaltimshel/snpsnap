@@ -169,7 +169,7 @@ def run():
 		    </tr>
 		    <tr>
 		      <th>Maximum deviations for matching SNPs</th>
-		      <td>MAF</td>
+		      <td>Minor Allele Frequency</td>
 		      <td>{max_freq_deviation}</td>
 		    </tr>
 		    <tr>
@@ -189,7 +189,7 @@ def run():
 		    </tr>
 		    <tr>
 		      <th>Options</th>
-		      <td>Number of matching SNP sets</td>
+		      <td>Requested number of matched SNPs</td>
 		      <td>{N_sample_sets}</td>
 		    </tr>
 		    <tr>
@@ -212,6 +212,11 @@ def run():
 		      <td>Job name</td>
 		      <td>{job_name}</td>
 		    </tr>
+		    <tr>
+		      <td></td>
+		      <td>Session ID</td>
+		      <td>{session_id}</td>
+		    </tr>
 		  </tbody>
 		</table>
 		</div>
@@ -226,7 +231,8 @@ def run():
 					exclude_input_SNPs='yes' if exclude_input_SNPs else 'no',
 					set_file='yes' if set_file else 'no',
 					annotate='yes' if annotate else 'no',
-					job_name=job_name
+					job_name=job_name,
+					session_id=session_id
 					)
 		return params
 
@@ -285,9 +291,12 @@ def run():
 	#url_results = 'results/{sid}.zip'.format(sid=session_id) # used in PANEL: RESULTS
 	url_results = "results/{session_id}/{prefix}_{job}.zip".format(session_id=session_id, prefix='SNPsnap', job=job_name)
 
-	exclude_input_SNPs = form.getvalue('exclude_input_SNPs', '')
-	annotate = form.getvalue('annotate', '')
-	set_file = form.getvalue('set_file', '')
+	###### CHECKBOXES ########
+	# INFO: type "checkbox" and "radio": will have value 'on' for selected checkbox elements without value attributes
+	# REF: http://www.eskimo.com/~scs/cclass/handouts/cgi.html
+	exclude_input_SNPs = form.getvalue('exclude_input_SNPs', '') # value will be 'on' if parsed (and no value attribute is specified)
+	annotate = form.getvalue('annotate', '') # value will be 'on' if parsed (and no value attribute is specified)
+	set_file = form.getvalue('set_file', '') # value will be 'on' if parsed (and no value attribute is specified)
 
 	cmd_annotate = '' # OBS: important that default value evaluates to false in Bool context
 	cmd_match = ''

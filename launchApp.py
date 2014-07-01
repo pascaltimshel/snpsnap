@@ -286,26 +286,28 @@ class Processor(object):
 		## Debugging must be done by me be replicating the example. 
 		## (consider sending the formular in the email)
 
-		if self.cmd_annotate:
-			command_shell = self.cmd_annotate # HACK
-			#command_shell = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type {distance_type} --distance_cutoff {distance_cutoff} annotate".format(program=script2call, snplist=file_snplist, outputdir=path_session_output, distance_type=distance_type, distance_cutoff=distance_cutoff)
-			#self.commands_called.append(command_shell)
-			self.processes['annotate']['call'] = command_shell
-			with open(os.devnull, "w") as fnull: # same as open('/dev/null', 'w')
-				p = subprocess.Popen(command_shell, stdout = fnull, stderr = subprocess.STDOUT, shell=True)
-				#self.processes.append(p)
-				self.processes['annotate']['process_obj'] = p
-
-
 		if self.cmd_set_file:
 			print "cmd cmd_set_file"
 			command_shell = self.cmd_set_file
-			#self.commands_called.append(command_shell)
 			self.processes['match']['call'] = command_shell
 			with open(os.devnull, "w") as fnull: # same as open('/dev/null', 'w')
 				p = subprocess.Popen(command_shell, stdout = fnull, stderr = subprocess.STDOUT, shell=True)
-				#self.processes.append(p)
 				self.processes['match']['process_obj'] = p
+
+
+		if self.cmd_annotate:
+			command_shell = self.cmd_annotate # HACK
+			self.processes['annotate']['call'] = command_shell
+			with open(os.devnull, "w") as fnull: # same as open('/dev/null', 'w')
+				#p = subprocess.Popen(command_shell, stdout = fnull, stderr = subprocess.STDOUT, shell=True) 
+				p = subprocess.Popen(command_shell, stdout = subprocess.PIPE, stderr = subprocess.STDOUT, shell=True) # ONLY FOR DEBUGGING!!!
+				self.processes['annotate']['process_obj'] = p
+				(stdoutdata, stderrdata) = p.communicate()
+				logger.info( "annotate STDOUT: %s" % stdoutdata )
+				logger.info( "annotate STDERR: %s" % stderrdata )
+				#SIGKILL	9	Exit	Killed
+
+
 
 		# USED FOR DEBUGGING
 		# if self.cmd_set_file:
@@ -320,25 +322,33 @@ class Processor(object):
 		for call_type in self.processes:
 			p = self.processes[call_type]['process_obj']
 			self.processes[call_type]['pid'] = p.pid
+			logger.info( "call_type=%s, waiting for PID=%s" % (call_type, p.pid) )
 			p.wait() # this will also enable us to get the return code of the process
 
 		for call_type in self.processes:
 			p = self.processes[call_type]['process_obj']
 			self.processes[call_type]['returncode'] = p.returncode # not nessesary to save value in dict...
+			logger.info( "call_type=%s, return code for PID=%s: %s" % (call_type, p.pid, p.returncode) )
 
 
-		### Now all is done: 
+		##TODO: raise Exception if return code is non-zero
+
+		### Now all is done:
+		logger.info( "read_report will be called" )
 		self.read_report() # this sets the nessesary instance variables (i.e. self.report_obj) for the email to be generated
+		logger.info( "write_snpsnap_summary will be called" )
 		self.write_snpsnap_summary() # adds additional information (email, jobname) to report_obj and WRITE report to output dir (i.e. not temp dir)
 		
 		#self.zip_folder(self.path_session_output, self.path_session_output+'.zip') # OLD ZIP - zipping whole dir
 		self.zip_files(folder_path=self.path_session_output, output_path=self.path_session_output+'/SNPsnap_'+self.job_name+'.zip', archive_base_dir='SNPsnap_'+self.job_name)
+		### SOME EXAMPLES - do not delete:
 		#folder_path: /local/data/web_results/f0fc477e4eaba3c4e0dbce1674ba26f2
 		#output_path=/local/data/web_results/f0fc477e4eaba3c4e0dbce1674ba26f2/SNPsnap_<job_name>.zip 
 		#archive_base_dir=SNPsnap_<job_name>
 
 
 		## Send out email
+		logger.info( "send_email will be called" )
 		self.send_email()
 
 
@@ -390,6 +400,9 @@ if __name__ == '__main__':
 
 	global logger
 	logger = setup_logger(outputdir='/cvar/jhlab/snpsnap/web_logs', enabled=True, path_logging_module='/cvar/jhlab/snpsnap/snpsnap')
+	logger.info( "session_id: %s" % args.session_id )
+	logger.info( "cmd_annotate: %s" % args.cmd_annotate )
+	logger.info( "cmd_match: %s" % args.cmd_match )
 	app = Processor(args.session_id, args.email_address, args.job_name, args.cmd_annotate, args.cmd_match)
 	app.run()
 
