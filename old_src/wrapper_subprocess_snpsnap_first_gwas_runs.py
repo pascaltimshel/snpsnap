@@ -5,9 +5,9 @@ import glob
 import os
 import time
 
-import pplaunch #import LaunchBsub, LaunchSubprocess
-import pphelper #import HelperUtils
-import pplogger #import Logger
+from pplaunch import LaunchBsub, LaunchSubprocess
+from pphelper import HelperUtils
+from pplogger import Logger
 
 import re
 import logging
@@ -39,14 +39,11 @@ def submit():
 		logger.info( "processing file #%d/#%d: %s" % (counter, len(files), pheno) )
 		user_snps_file = filename # full path
 		output_dir = path_output_sub+"/"+pheno
-		pphelper.HelperUtils.mkdirs(output_dir)
-
-		command_shell = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type ld --distance_cutoff 0.5 match --N_sample_sets {N} --ld_buddy_cutoff {ld_buddy_cutoff} --max_freq_deviation {freq} --max_distance_deviation {dist} --max_genes_count_deviation {gene_count} --max_ld_buddy_count_deviation {ld_buddy_count} --exclude_input_SNPs".format(program=script2call, snplist=filename, outputdir=output_dir, N=N_sample_sets, ld_buddy_cutoff=ld_buddy_cutoff, freq=freq, dist=dist, gene_count=gene_count, ld_buddy_count=ld_buddy_count)
-		processes.append( pplaunch.LaunchSubprocess(cmd=command_shell, path_stdout=path_stdout, logger=logger, jobname=pheno) ) #
-		
-		#processes.append( pplaunch.LaunchBsub(cmd=cmd, queue_name=queue_name, mem=mem, jobname=jobname, projectname='snpsnp', path_stdout=log_dir, file_output=None, no_output=False, email=email, email_status_notification=email_status_notification, email_report=email_report, logger=logger) ) #
-		
-
+		HelperUtils.mkdirs(output_dir)
+		command_shell = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type ld --distance_cutoff 0.5 match --N_sample_sets {N} --max_freq_deviation {freq} --max_distance_deviation {dist} --max_genes_count_deviation {gene_count}".format(program=script2call, snplist=filename, outputdir=output_dir, N=N_sample_sets, freq=freq, dist=dist, gene_count=gene_count)
+		#command_seq = "--user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type ld --distance_cutoff 0.5 match --N_sample_sets {N} --max_freq_deviation {freq} --max_distance_deviation {dist} --max_genes_count_deviation {gene_count}".format(snplist=filename, outputdir=output_dir, N=1000, freq=5, dist=20, gene_count=20)
+		#print command_shell
+		processes.append( LaunchSubprocess(cmd=command_shell, path_stdout=path_stdout, logger=logger, jobname=pheno) ) #
 		#time.sleep(1)
 		#p.run_Log(file_output=pheno+'.txt') # writes stdout and stdout to "file_output" file in PATH path_stdout. NO WAITING since output goes to file
 
@@ -56,7 +53,8 @@ def submit():
 
 
 ################ Constants ############
-script2call = "/cvar/jhlab/snpsnap/snpsnap/snpsnap_query.py"
+script2call = "/home/unix/ptimshel/git/snpsnap/snpsnap_query.py" # Updated path
+current_script_name = os.path.basename(__file__).replace('.py','')
 
 
 path_snplist = "/cvar/jhlab/snpsnap/data/input_lists/gwascatalog_140201_listsBIGbim"
@@ -64,35 +62,25 @@ path_snplist = "/cvar/jhlab/snpsnap/data/input_lists/gwascatalog_140201_listsBIG
 #path_snplist = "/home/projects/tp/childrens/snpsnap/data/gwas/gwascatalog_140201_lists"
 
 #path_output_main = "/home/projects/tp/childrens/snpsnap/data/query/gwascatalog"
-path_output_main = "/cvar/jhlab/snpsnap/data/query/gwascatalog_production_v1"
+path_output_main = "/cvar/jhlab/snpsnap/data/query/gwascatalog"
 
 path_output_sub = path_output_main + "/subprocess_output"
-pphelper.HelperUtils.mkdirs(path_output_sub)
+HelperUtils.mkdirs(path_output_sub)
 path_stdout = path_output_main + "/subprocess_stdout"
-pphelper.HelperUtils.mkdirs(path_stdout)
+HelperUtils.mkdirs(path_stdout)
 
-
-###################################### SETUP logging ######################################
-current_script_name = os.path.basename(__file__).replace('.py','')
-log_dir = path_output_main #OBS VARIABLE
-logger = pplogger.Logger(name=current_script_name, log_dir=log_dir, log_format=1, enabled=True).get()
-def handleException(excType, excValue, traceback, logger=logger):
-	logger.error("Logging an uncaught exception", exc_info=(excType, excValue, traceback))
-#### TURN THIS ON OR OFF: must correspond to enabled='True'/'False'
-sys.excepthook = handleException
-logger.info( "INSTANTIATION NOTE: placeholder" )
-###########################################################################################
-
-
+## Setup-logger
+#logger = Logger(__name__, path_stdout).get() # gives __name__ == main
+logger = Logger(current_script_name, path_stdout).get()
+#logger.setLevel(logging.WARNING)
+logger.setLevel(logging.INFO)
 
 ## NEXT: run 10000.5.20.20
 ## arguments
 N_sample_sets=10000
-ld_buddy_cutoff=0.5
 freq=5
-dist=50
-gene_count=50
-ld_buddy_count=50
+dist=20
+gene_count=20
 
 processes = submit()
 
@@ -103,7 +91,7 @@ for p in processes:
 
 pattern = re.compile(r"Found (\d+) out of (\d+) SNPs in data base", flags=re.IGNORECASE)
 #Found 25 out of 25 SNPs in data base
-gwas_filename = path_output_main+'/subprocess_gwastable.{N}.{freq}.{dist}.{gene_count}.{ld_buddy_count}.tab'.format(N=N_sample_sets, freq=freq, dist=dist, gene_count=gene_count, ld_buddy_count=ld_buddy_count)
+gwas_filename = path_output_main+'/subprocess_gwastable.{N}.{freq}.{dist}.{gene_count}.tab'.format(N=N_sample_sets, freq=freq, dist=dist, gene_count=gene_count)
 with open(gwas_filename, 'w') as f_gwastable: 
 	with open(path_output_main+'/subprocess_snps_found_in_db.tab', 'w') as f_not_found: 
 		for p in processes:
@@ -116,8 +104,7 @@ with open(gwas_filename, 'w') as f_gwastable:
 					row = "{jobname}\t{found}\t{input}".format(jobname=p.jobname, found=found, input=n_input_snps)
 					logger.info(row)
 					f_not_found.write(row+"\n")
-				#if "# rating_insufficient" in line:
-				if "# insufficient_rating" in line:
+				if "# rating_insufficient" in line:
 					row = "{}\t{}".format(p.jobname, lines[i+1]) # next line
 					logger.info(row)
 					f_gwastable.write(row+"\n")

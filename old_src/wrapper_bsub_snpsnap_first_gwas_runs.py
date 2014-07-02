@@ -8,9 +8,10 @@ import datetime
 import time
 import argparse
 
-import pplaunch #import LaunchBsub, LaunchSubprocess
-import pphelper #import HelperUtils
-import pplogger #import Logger
+#from plaunch import LaunchBsub, LaunchSubprocess, HelperUtils
+from pplaunch import LaunchBsub, LaunchSubprocess
+from pphelper import HelperUtils
+from pplogger import Logger
 
 import re
 import subprocess
@@ -41,15 +42,12 @@ def submit():
 		logger.info( "processing file #%d/#%d: %s" % (counter, len(files), pheno) )
 		user_snps_file = filename # full path
 		output_dir = path_output_sub+"/"+pheno
-		pphelper.HelperUtils.mkdirs(output_dir)
+		HelperUtils.mkdirs(output_dir)
 		#TODO: consider the potential problems with 'use' environment
 		#TODO: reuse Python-2.7 && bsub [...]
 			# Put this inside LaunchBsub!!
-		cmd = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type ld --distance_cutoff 0.5 match --N_sample_sets {N} --ld_buddy_cutoff {ld_buddy_cutoff} --max_freq_deviation {freq} --max_distance_deviation {dist} --max_genes_count_deviation {gene_count} --max_ld_buddy_count_deviation {ld_buddy_count} --exclude_input_SNPs".format(program=script2call, snplist=filename, outputdir=output_dir, N=N_sample_sets, ld_buddy_cutoff=ld_buddy_cutoff, freq=freq, dist=dist, gene_count=gene_count, ld_buddy_count=ld_buddy_count)
-
-		processes.append( pplaunch.LaunchBsub(cmd=cmd, queue_name=queue_name, mem=mem, jobname=pheno, projectname='snpsnp', path_stdout=path_stdout, file_output=pheno+'.txt', no_output=False, email=email, email_status_notification=email_status_notification, email_report=email_report, logger=logger) ) #
-
-		#processes.append( pplaunch.LaunchBsub(cmd=command_shell, queue_name=queue_name, walltime=walltime, mem=mem, jobname=pheno, projectname='snpsnp', path_stdout=path_stdout, file_output=pheno+'.txt', no_output=False, email=email, logger=logger) ) #
+		command_shell = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type ld --distance_cutoff 0.5 match --N_sample_sets {N} --max_freq_deviation {freq} --max_distance_deviation {dist} --max_genes_count_deviation {gene_count}".format(program=script2call, snplist=filename, outputdir=output_dir, N=10000, freq=1, dist=5, gene_count=5)
+		processes.append( LaunchBsub(cmd=command_shell, queue_name=queue_name, walltime=walltime, mem=mem, jobname=pheno, projectname='snpsnp', path_stdout=path_stdout, file_output=pheno+'.txt', no_output=False, email=email, logger=logger) ) #
 	for p in processes:
 		p.run()
 		time.sleep(args.pause)
@@ -66,10 +64,10 @@ def check_jobs(processes, logger):
 
 	if args.multiprocess:
 		logger.info( "Running report_status_multiprocess " )
-		pplaunch.LaunchBsub.report_status_multiprocess(list_of_pids, logger) # MULTIPROCESS
+		LaunchBsub.report_status_multiprocess(list_of_pids, logger) # MULTIPROCESS
 	else:
 		logger.info( "Running report_status" )
-		pplaunch.LaunchBsub.report_status(list_of_pids, logger) # NO MULTIPROCESS
+		LaunchBsub.report_status(list_of_pids, logger) # NO MULTIPROCESS
 
 
 
@@ -100,49 +98,37 @@ def LogArguments():
 
 
 ###################################### Global params ######################################
-#queue_name = "bhour" # [bhour, bweek] priority
-queue_name = "priority" # [bhour, bweek] priority
-# priority: This queue has a per-user limit of 10 running jobs, and a run time limit of three days.
-mem="4" # gb
-email='pascal.timshel@gmail.com' # [use an email address 'pascal.timshel@gmail.com' or 'False'/'None']
-email_status_notification=True # [True or False]
-email_report=False # # [True or False]
+queue_name = "hour" # [bhour, bweek] priority
+#queue_name = "priority" # [bhour, bweek] priority
+walltime="59" # hh:mmm, e.g. [24:00=1day | 10:00=10hrs | 120=2hrs | 1:0=1hrs
+mem="1" # gb
+#email='pascal.timshel@gmail.com'
+email=False
 
-
-script2call = "/cvar/jhlab/snpsnap/snpsnap/snpsnap_query.py"
-
+script2call = "/home/unix/ptimshel/git/snpsnap/snpsnap_query.py" # Updated path
+current_script_name = os.path.basename(__file__).replace('.py','')
 
 path_snplist = "/cvar/jhlab/snpsnap/data/input_lists/gwascatalog_140201_listsBIGbim"
-path_output_main = "/cvar/jhlab/snpsnap/data/query/gwascatalog_production_v1/bsub"
+path_output_main = "/cvar/jhlab/snpsnap/data/query/gwascatalog"
 
-
-path_output_sub = path_output_main + "/bsub_output"
-pphelper.HelperUtils.mkdirs(path_output_sub)
-path_stdout = path_output_main + "/bsub_stdout"
-pphelper.HelperUtils.mkdirs(path_stdout)
+path_output_sub = path_output_main + "/output"
+HelperUtils.mkdirs(path_output_sub)
+path_stdout = path_output_main + "/stdout"
+HelperUtils.mkdirs(path_stdout)
 
 ###################################### ARGUMENTS ######################################
 args = ParseArguments()
 
-###################################### SETUP logging ######################################
-current_script_name = os.path.basename(__file__).replace('.py','')
-log_dir = path_output_main #OBS VARIABLE
-logger = pplogger.Logger(name=current_script_name, log_dir=log_dir, log_format=1, enabled=True).get()
-def handleException(excType, excValue, traceback, logger=logger):
-	logger.error("Logging an uncaught exception", exc_info=(excType, excValue, traceback))
-#### TURN THIS ON OR OFF: must correspond to enabled='True'/'False'
-sys.excepthook = handleException
-logger.info( "INSTANTIATION NOTE: placeholder" )
-###########################################################################################
+###################################### LOGGER ######################################
+## Setup-logger
+#logger = Logger(__name__, path_stdout).get() # gives __name__ == main
+logger = Logger(current_script_name, path_stdout).get()
+#loglevel = getattr(logging, args.logger_lvl.upper(), logging.INFO) # returns some numeric value
+loglevel = getattr(logging, args.logger_lvl.upper()) # returns some numeric value
+logger.setLevel(loglevel)
+#logger.setLevel(logging.INFO)
+#logger.setLevel(logging.WARNING)
 
-## NEXT: run 10000.5.20.20
-## arguments
-N_sample_sets=10000
-ld_buddy_cutoff=0.5
-freq=5
-dist=50
-gene_count=50
-ld_buddy_count=50
 
 ###################################### RUN FUNCTIONS ######################################
 # NOW RUN FUNCTIONS

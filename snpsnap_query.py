@@ -21,7 +21,7 @@ import time
 
 #from queue import QueueJob,ShellUtils,ArgparseAdditionalUtils
 
-#import memory_profiler # USE THIS FOR MEMORY PROFILING
+#from memory_profiler import profile # USE THIS FOR MEMORY PROFILING - DOES NOT WORK ON VM SNPSNAP (MODULE NOT INSTALLED) 
 #import profilehooks #  USE THIS FOR TIMING PROFILING
 #import timeit
 #import cProfile #or profile
@@ -139,6 +139,7 @@ def read_user_snps(user_snps_file):
 # 	print "DONE: lookup_user_snps %s s (%s min)" % (elapsed_time, elapsed_time/60)
 # 	return user_snps_df
 
+#@profile
 def lookup_user_snps_iter(file_db, user_snps):
 	logger.info( "START: lookup_user_snps_iter" )
 	start_time = time.time()
@@ -198,7 +199,7 @@ def write_user_snps_stats(path_output, df):
 	user_snps_stats_file = path_output+"/input_snps.tab"
 	df.to_csv(user_snps_stats_file, sep='\t', header=True, index=True,  mode='w')
 
-#@memory_profiler.profile
+#@profile
 def read_collection(file_collection):
 	"""Function that reads tab seperated gzip collection file"""
 	# Columns in COLLECTION:
@@ -358,7 +359,7 @@ def few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps):
 	
 
 
-
+#@profile
 def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff, exclude_input_SNPs, max_freq_deviation, max_distance_deviation, max_genes_count_deviation, max_ld_buddy_count_deviation):
 	status_obj.update_status('match', 'running')
 	
@@ -500,6 +501,7 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff,
 	#if df_snps_few_matches is not None: 
 		# few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps)
 
+#@profile
 def write_set_file(path_output, df_collection):
 	#snpsnap_set_file.tab
 	#snpsnap_collection.tab

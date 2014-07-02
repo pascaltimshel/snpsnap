@@ -299,12 +299,14 @@ class Processor(object):
 			command_shell = self.cmd_annotate # HACK
 			self.processes['annotate']['call'] = command_shell
 			with open(os.devnull, "w") as fnull: # same as open('/dev/null', 'w')
-				#p = subprocess.Popen(command_shell, stdout = fnull, stderr = subprocess.STDOUT, shell=True) 
-				p = subprocess.Popen(command_shell, stdout = subprocess.PIPE, stderr = subprocess.STDOUT, shell=True) # ONLY FOR DEBUGGING!!!
+				p = subprocess.Popen(command_shell, stdout = fnull, stderr = subprocess.STDOUT, shell=True) 
 				self.processes['annotate']['process_obj'] = p
-				(stdoutdata, stderrdata) = p.communicate()
-				logger.info( "annotate STDOUT: %s" % stdoutdata )
-				logger.info( "annotate STDERR: %s" % stderrdata )
+				
+				# ONLY FOR DEBUGGING!!!
+				#p = subprocess.Popen(command_shell, stdout = subprocess.PIPE, stderr = subprocess.STDOUT, shell=True)
+				#(stdoutdata, stderrdata) = p.communicate()
+				#logger.info( "annotate STDOUT: %s" % stdoutdata )
+				#logger.info( "annotate STDERR: %s" % stderrdata )
 				#SIGKILL	9	Exit	Killed
 
 
