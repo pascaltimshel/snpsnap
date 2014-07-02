@@ -196,7 +196,8 @@ def df2collection(df, file_collection, file_dup, no_compression):
 	# INPUT=Data Frame (note LD_buddies already removed)
 		# - NUMBER OF COLUMNS (including index) = 23
 	# OUTPUT=Collection tab file
-		# - NUMBER OF COLUMNS (including index) = 20
+		# - NUMBER OF COLUMNS (including index) = 21
+		# - columns removed here: 2 (snp_chr and snp_position)
 		# - test it with: 
 			#- perl -ane '$c = split("\t"); print "$c\n"; last' ld0.5_collection.tab
 			# gives 21

@@ -203,16 +203,6 @@ def write_user_snps_stats(path_output, df):
 def read_collection(file_collection):
 	"""Function that reads tab seperated gzip collection file"""
 	# Columns in COLLECTION:
-	#0 snpID 
-	#1 rsID 
-	#2 freq_bin 
-	#3 gene_count
-	#4 dist_to_nearest_gene 
-	#5=loci_upstream
-	#6=loci_downstream
-	#7 ID_nearest_gene 
-	#8 ID_in_matched_locus
-
 	#1=snpID
 	#2=freq_bin
 	#3=gene_count
@@ -229,7 +219,9 @@ def read_collection(file_collection):
 	#....
 	#21=friends_ld00
 
-	# NUMBER OF COLUMNS = 24 - *** check this
+	# NUMBER OF COLUMNS = 21 - this is validated 07/02/2014
+
+
 	logger.info( "START: reading CSV file PRIM..." )
 	start_time = time.time()
 	#f_tab = gzip.open(file_collection, 'rb') #Before June 2014 - compressed file
