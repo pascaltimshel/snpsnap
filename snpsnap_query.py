@@ -208,10 +208,28 @@ def read_collection(file_collection):
 	#2 freq_bin 
 	#3 gene_count
 	#4 dist_to_nearest_gene 
-	#5=loci_upstream #NEW
-	#6=loci_downstream #NEW
+	#5=loci_upstream
+	#6=loci_downstream
 	#7 ID_nearest_gene 
 	#8 ID_in_matched_locus
+
+	#1=snpID
+	#2=freq_bin
+	#3=gene_count
+	#4=dist_nearest_gene_snpsnap
+	#5=dist_nearest_gene
+	#6=dist_nearest_gene_located_within
+	#7=loci_upstream
+	#8=loci_downstream
+	#9=ID_nearest_gene_snpsnap
+	#10=ID_nearest_gene
+	#11=ID_nearest_gene_located_within
+	#12=ID_genes_in_matched_locus
+	#13=friends_ld01
+	#....
+	#21=friends_ld00
+
+	# NUMBER OF COLUMNS = 24 - *** check this
 	logger.info( "START: reading CSV file PRIM..." )
 	start_time = time.time()
 	#f_tab = gzip.open(file_collection, 'rb') #Before June 2014 - compressed file
@@ -287,8 +305,24 @@ def few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps):
 	# 1) check that the criteria for scale and lim lengths is ok
 	# 2) function does ONLY support 5 scores ATM
 	# 3) IMPORTANT: limits may have to be reversed for it to work. See the function code..
-	insufficient_rating = few_matches_score(insufficient_matches_pct, [0,1,5,10,25,100], insufficient_scale) #low_is_good
-	match_size_rating = few_matches_score(match_size_median_pct, [100,75,50,30,15,0][::-1], match_size_scale) #low_is_bad
+
+
+
+	### production_v1 | from GWAS catalog, N=10000.freq=5.gene_density=50.gene_dist=50.ld_buddy_count=50
+	# .id					q_insuf	q_size	quantile_id
+	# 10000.5.50.50.50	16.97	27.77	20%
+	# 10000.5.50.50.50	22.44	38.40	40%
+	# 10000.5.50.50.50	26.35	45.30	60%
+	# 10000.5.50.50.50	31.03	61.19	80%
+	# 10000.5.50.50.50	41.67	72.02	100%
+
+	#insufficient_quantile = [0,1,5,10,25,100] # self selected quantiles
+	#match_size_quantile = [100,75,50,30,15,0][::-1] # self selected quantiles
+	insufficient_quantile = [0, 16.97, 22.44, 26.35, 31.03, 100] # production_v1 | from GWAS catalog, N=10000.freq=5.gene_density=50.gene_dist=50.ld_buddy_count=50
+	match_size_quantile = [0, 27.77, 38.40, 45.30, 61.19, 100] # production_v1 | from GWAS catalog, N=10000.freq=5.gene_density=50.gene_dist=50.ld_buddy_count=50
+
+	insufficient_rating = few_matches_score(insufficient_matches_pct, insufficient_quantile, insufficient_scale) #low_is_good
+	match_size_rating = few_matches_score(match_size_median_pct, match_size_quantile, match_size_scale) #low_is_bad
 
 	#TODO: print scale_order (pass as argument to function)
 	# print_str_insufficient_rating = "Rating 'number of few matches' = '{rating:s}' ({pct:.4g}%, {count:d} few_matches out of {total:d} valid input SNPs)".format(rating=insufficient_rating, 
@@ -590,8 +624,6 @@ def ParseArguments():
 	arg_parser.add_argument("--distance_cutoff", help="r2, or kb distance", required=True)
 
 	# NEW: options
-	#arg_parser.add_argument("--status_file", help="Bool (switch, takes no value after argument); if set then logging is ENABLED.", action='store_true')
-	#arg_parser.add_argument("--status_file", help="If set, a json file will be written. Value should be the a filepath.")
 	arg_parser.add_argument("--web", help="If set, the program will run in web mode. VALUE should be the a filepath to output (temporary) file - usually this will be the session_id. The web mode activates: 1) creating a status_obj and writing it to json file; 2) ENABLE writing a json report file;")
 	arg_parser.add_argument("--NoLogger", help="Bool (switch, takes no value after argument); if set then logging is DISAPLED. Logfile will be placed in outputdir.", action='store_true')
 
@@ -600,7 +632,7 @@ def ParseArguments():
 	arg_parser_match.add_argument("--N_sample_sets", type=int, help="Number of matched SNPs to retrieve", required=True) # 1000 - "Permutations?" TODO: change name to --n_random_snp_sets or --N
 	arg_parser_match.add_argument("--ld_buddy_cutoff", type=float, help="Choose which ld to use for the ld_buddy_count property, e.g 0.1, 0.2, .., 0.9", required=True, choices=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
 	arg_parser_match.add_argument("--exclude_input_SNPs", help="Bool (switch, takes no value after argument); if set then all valid input SNPs are excluded from the matched SNPs. Default is false", action='store_true')
-	#TODO: add argument that describes if ABSOLUTE of PERCENTAGE deviation should be used
+	#TODO: add argument that describes if ABSOLUTE or PERCENTAGE deviation should be used?
 	arg_parser_match.add_argument("--max_freq_deviation", type=int, help="Maximal PERCENTAGE POINT deviation of SNP MAF bin [MAF +/- deviation]", required=True) # default=5
 	arg_parser_match.add_argument("--max_distance_deviation", type=int, help="Maximal PERCENTAGE deviation of distance to nearest gene [distance +/- %%deviation])", required=True) # default=5
 	#TODO: CHECK THAT max_distance_deviation > 1 %

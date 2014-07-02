@@ -172,11 +172,11 @@ def join_dfs(df_ld_buddy, df_combined_tab, path_output):
 @profile
 def df2collection(df, file_collection, file_dup, no_compression):
 	""" df is the merged df """
-	## NEW JUNE 2014
-	#1=rsID
+	## COLUMNS IN DATA FRAME - version JUNE 2014, production_v1
+	#1=rsID ---> NOTE=this is index in the unmodified Data Frame | ACTION:index will be changed inplace (with set_index), thus effectively removing the rsID index | WHERE=df2collection()
 	#2=freq_bin
-	#3=snp_chr ** ----> WILL BE REMOVED
-	#4=snp_position ** ----> WILL BE REMOVED
+	#3=snp_chr ** ----> ACTION=WILL BE REMOVED | WHERE=df2collection()
+	#4=snp_position ** ----> ACTION=WILL BE REMOVED | WHERE=df2collection()
 	#5=gene_count
 	#6=dist_nearest_gene_snpsnap
 	#7=dist_nearest_gene
@@ -186,17 +186,25 @@ def df2collection(df, file_collection, file_dup, no_compression):
 	#11=ID_nearest_gene_snpsnap
 	#12=ID_nearest_gene
 	#13=ID_nearest_gene_located_within
-	#14=LD_boddies ** ----> WILL BE REMOVED
-	#15=ID_genes_in_matched_locus
+	#x=LD_boddies ** ----> ACTION=REMOVED | WHERE=drop_cols_combined_tabs()
+	#14=ID_genes_in_matched_locus
 
-	#16=ld_buddy_count_0.1 ** ----> RENAMED!
-	#17=ld_buddy_count_0.2 ** ----> RENAMED!
+	#15=ld_buddy_count_0.1 ** ----> ACTION=RENAMED | WHERE=read_ld_buddy_count()
 	#....
-	#23=ld_buddy_count_0.8 ** ----> RENAMED!
-	#24=ld_buddy_count_0.9 ** ----> RENAMED!
+	#23=ld_buddy_count_0.9 ** ----> ACTION=RENAMED | WHERE=read_ld_buddy_count()
 
-	# NUMBER OF COLUMNS = 24 - *** check this
+	# INPUT=Data Frame (note LD_buddies already removed)
+		# - NUMBER OF COLUMNS (including index) = 23
+	# OUTPUT=Collection tab file
+		# - NUMBER OF COLUMNS (including index) = 20
+		# - test it with: 
+			#- perl -ane '$c = split("\t"); print "$c\n"; last' ld0.5_collection.tab
+			# gives 21
 
+	## CONSIDER: using df.reset_index() (the inverse operation to set_index)
+		# 1) df.reset_index()  # <-- no arguments. This transfers the index values into the DataFrame’s columns and sets a simple integer index.
+		# 2) df.set_index('snpID', inplace=True)
+		# 3) reorder column order to place 'rsID' as the 1. column (since 'snpID' is now the index)
 
 	logger.info( "START: mapping snpID strings..." )
 	start_time = time.time()
@@ -205,7 +213,7 @@ def df2collection(df, file_collection, file_dup, no_compression):
 	logger.info( "END: manipulating snpID in %s s (%s min)" % (elapsed_time, elapsed_time/60) )
 
 	logger.info( "Setting index on DataFrame and dropping columns 'snp_chr', 'snp_position'" )
-	df.set_index('snpID', inplace=True)
+	df.set_index('snpID', inplace=True) # by default 'drop=True' ---> deletes columns to be used as the new index. That is, deletes the 'snpID' column
 	df.drop(['snp_chr', 'snp_position'], axis=1, inplace=True) # Deletes unnecessary columns
 
 
