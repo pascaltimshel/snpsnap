@@ -22,20 +22,32 @@ import pdb
 
 
 def report_bacct(pid, jobname):
-	keep = ''
+	pattern_accounting_info = re.compile(r"CPU_T\s+WAIT\s+TURNAROUND\s+STATUS\s+HOG_FACTOR\s+MEM\s+SWAP", flags=re.IGNORECASE)
+	keep = 'no_regex_match_found:check_src_code'
 	call = "bacct -l %s" % pid
 	try:
 		out = subprocess.check_output(call, shell=True)
 	except subprocess.CalledProcessError as e:
 		emsg = e
-		print "%s" %e
+		print "%s" % e 	### TODO: change this to a log statement! (requires parsing of a logger).
+						### BUT BE CAREFUL: it may not work because the arguments MUST be pickable
 	else:
+	# Accounting information about this job:
+	#      CPU_T     WAIT     TURNAROUND   STATUS     HOG_FACTOR    MEM    SWAP
+	#      35.24       31             80     done         0.4404    99M    483M
+
+	# If queue='priority' is used then an extra line is possibly added:
+	# Accounting information about this job:
+	#      Share group charged </ptimshel>
+	#      CPU_T     WAIT     TURNAROUND   STATUS     HOG_FACTOR    MEM    SWAP
+	#   27089.57     4288          30632     done         0.8844   189M    576M
 		lines = out.splitlines()
 		for (i, line) in enumerate(lines):
 			line = line.strip()
-			if 'Accounting information about this job:' in line:
-				header = lines[i+1].split()
-				values = lines[i+2].split()
+			match = pattern_accounting_info.search(line)
+			if match:
+				header = lines[i].split()
+				values = lines[i+1].split()
 				combined = map("=".join, zip(header, values)) #List_C = ['{} {}'.format(x,y) for x,y in zip(List_A,List_B)]
 				keep = "|".join(combined)
 				break
@@ -212,7 +224,8 @@ class LaunchBsub(object):
 
 	@staticmethod
 	def _report_bacct(pid, jobname, logger):
-		keep = ''
+		pattern_accounting_info = re.compile(r"CPU_T\s+WAIT\s+TURNAROUND\s+STATUS\s+HOG_FACTOR\s+MEM\s+SWAP", flags=re.IGNORECASE)
+		keep = 'no_regex_match_found:check_src_code'
 		call = "bacct -l %s" % pid
 		try:
 			out = subprocess.check_output(call, shell=True)
@@ -223,19 +236,23 @@ class LaunchBsub(object):
 		# Accounting information about this job:
 		#      CPU_T     WAIT     TURNAROUND   STATUS     HOG_FACTOR    MEM    SWAP
 		#      35.24       31             80     done         0.4404    99M    483M
+
+		# If queue='priority' is used then an extra line is possibly added:
+		# Accounting information about this job:
+		#      Share group charged </ptimshel>
+		#      CPU_T     WAIT     TURNAROUND   STATUS     HOG_FACTOR    MEM    SWAP
+		#   27089.57     4288          30632     done         0.8844   189M    576M
 			lines = out.splitlines()
-			#logger.info( "called: %s" % call )
-			#logger.info( "got out:\n%s" % out )
 			for (i, line) in enumerate(lines):
 				line = line.strip()
-				if 'Accounting information about this job:' in line:
-					header = lines[i+1].split()
-					values = lines[i+2].split()
+				match = pattern_accounting_info.search(line)
+				if match:
+					header = lines[i].split()
+					values = lines[i+1].split()
 					#NB: len(header) must be equal to len(values) for zip() to work?
 					combined = map("=".join, zip(header, values)) #List_C = ['{} {}'.format(x,y) for x,y in zip(List_A,List_B)]
 					keep = "|".join(combined)
 					break
-			#cols = keep.split()
 		keep = "{pid}|{name}|{status_line}".format(pid=pid, name=jobname, status_line=keep)
 		return keep
 
@@ -425,8 +442,6 @@ class LaunchBsub(object):
 			logger.critical("No jobs to list")
 
 
-#6840302 6840303 6840304 6840306 6840307 6840309 6840310 6840312 6840313 6840315
-
 	def check_status(self):
 		""" Function to check status of jobs """
 		pass
@@ -452,45 +467,90 @@ class LaunchBsub(object):
 		# 6769505 ptimshel DONE  bhour      copper      node1355    F-cell_distribution May 14 21:47
 		# 6769586 ptimshel DONE  bhour      copper      node1372    Primary_biliary_cirrhosis May 14 21:47
 
-		# long gone...
-		#6754631 6754629
-		#6754630 done
 
-		#6769626 6769629 6769631 6769636
+		###################################### SAMPLE OUTPUT from bacct ######################################
+		# bacct -l 1013033ptimshel@copper:/cvar/jhlab/snpsnap/snpsnap> bacct -l 1013033
+
+
+		# Accounting information about jobs that are:
+		#   - submitted by all users.
+		#   - accounted on all projects.
+		#   - completed normally or exited
+		#   - executed on all hosts.
+		#   - submitted to all queues.
+		#   - accounted on all service classes.
+		# ------------------------------------------------------------------------------
+
+		# Job <1013033>, Job Name <Height>, User <ptimshel>, Project <snpsnp>, Mail <pasc
+		#                      al.timshel@gmail.com>, Status <DONE>, Queue <priority>, Co
+		#                      mmand <python /cvar/jhlab/snpsnap/snpsnap/snpsnap_query.py
+		#                       --user_snps_file /cvar/jhlab/snpsnap/data/input_lists/gwa
+		#                      scatalog_140201_listsBIGbim/Height.txt --output_dir /cvar/
+		#                      jhlab/snpsnap/data/query/gwascatalog_production_v1/bsub/bs
+		#                      ub_output/Height --distance_type ld --distance_cutoff 0.5
+		#                      match --N_sample_sets 10000 --ld_buddy_cutoff 0.5 --max_fr
+		#                      eq_deviation 5 --max_distance_deviation 50 --max_genes_cou
+		#                      nt_deviation 50 --max_ld_buddy_count_deviation 50 --exclud
+		#                      e_input_SNPs>, Share group charged </ptimshel>
+		# Tue Jul  1 23:34:24: Submitted from host <node1386>, CWD </cvar/jhlab/snpsnap/s
+		#                      npsnap>, Output File </cvar/jhlab/snpsnap/data/query/gwasc
+		#                      atalog_production_v1/bsub/bsub_stdout/Height.txt>;
+		# Wed Jul  2 00:45:52: Dispatched to <node1417>;
+		# Wed Jul  2 08:04:56: Completed <done>.
 
 		# Accounting information about this job:
+		#      Share group charged </ptimshel>
 		#      CPU_T     WAIT     TURNAROUND   STATUS     HOG_FACTOR    MEM    SWAP
-		#      35.24       31             80     done         0.4404    99M    483M
-
-
-		# Wed May 14 19:38:20: Dispatched to <node1370>;
-		# Wed May 14 19:39:23: Completed <exit>; TERM_RUNLIMIT: job killed after reaching
-		#                       LSF run time limit.
-
-		# Accounting information about this job:
-		#      CPU_T     WAIT     TURNAROUND   STATUS     HOG_FACTOR    MEM    SWAP
-		#      43.94       30             93     exit         0.4724    90M    478M
+		#   27089.57     4288          30632     done         0.8844   189M    576M
 		# ------------------------------------------------------------------------------
 
 		# SUMMARY:      ( time unit: second )
-		#  Total number of done jobs:       0      Total number of exited jobs:     1
-		#  Total CPU time consumed:      43.9      Average CPU time consumed:    43.9
-		#  Maximum CPU time of a job:    43.9      Minimum CPU time of a job:    43.9
-		#  Total wait time in queues:    30.0
-		#  Average wait time in queue:   30.0
-		#  Maximum wait time in queue:   30.0      Minimum wait time in queue:   30.0
-		#  Average turnaround time:        93 (seconds/job)
-		#  Maximum turnaround time:        93      Minimum turnaround time:        93
-		#  Average hog factor of a job:  0.47 ( cpu time / turnaround time )
-		#  Maximum hog factor of a job:  0.47      Minimum hog factor of a job:  0.47
+		#  Total number of done jobs:       1      Total number of exited jobs:     0
+		#  Total CPU time consumed:   27089.6      Average CPU time consumed: 27089.6
+		#  Maximum CPU time of a job: 27089.6      Minimum CPU time of a job: 27089.6
+		#  Total wait time in queues:  4288.0
+		#  Average wait time in queue: 4288.0
+		#  Maximum wait time in queue: 4288.0      Minimum wait time in queue: 4288.0
+		#  Average turnaround time:     30632 (seconds/job)
+		#  Maximum turnaround time:     30632      Minimum turnaround time:     30632
+		#  Average hog factor of a job:  0.88 ( cpu time / turnaround time )
+		#  Maximum hog factor of a job:  0.88      Minimum hog factor of a job:  0.88
+
+		# ptimshel@copper:/cvar/jhlab/snpsnap/snpsnap>
+		#################################################################################
+
+
+####### OLD FUNCTION - using "if 'Accounting information about this job:' in line" - replaced 07/02/2014
+####### MAY BE DELETED
+# def report_bacct(pid, jobname):
+# 	keep = ''
+# 	call = "bacct -l %s" % pid
+# 	try:
+# 		out = subprocess.check_output(call, shell=True)
+# 	except subprocess.CalledProcessError as e:
+# 		emsg = e
+# 		print "%s" % e 	### TODO: change this to a log statement! (requires parsing of a logger).
+# 						### BUT BE CAREFUL: it may not work because the arguments MUST be pickable
+# 	else:
+# 		lines = out.splitlines()
+# 		for (i, line) in enumerate(lines):
+# 			line = line.strip()
+# 			if 'Accounting information about this job:' in line:
+# 				header = lines[i+1].split()
+# 				values = lines[i+2].split()
+# 				combined = map("=".join, zip(header, values)) #List_C = ['{} {}'.format(x,y) for x,y in zip(List_A,List_B)]
+# 				keep = "|".join(combined)
+# 				break
+# 	keep = "{pid}|{name}|{status_line}".format(pid=pid, name=jobname, status_line=keep)
+# 	return keep
+
+
+
 
 
 
 
 class LaunchSubprocess(object):
-	#LP_time_stamp = datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H.%M.%S') # date/time string e.g. 2012-12-15_01:21:05
-	#LP_logname = 'LP_' + script_name + '_' + LP.LP_time_stamp + '.txt'
-	
 	def __init__(self, cmd, path_stdout=os.getcwd(), logger=False, jobname='NoJobName'): #file_output=os.path.join(os.getcwd(), __name__+'.tmp.log'
 		self.path_stdout = HelperUtils.check_if_writable(path_stdout)
 		if logger: #TODO: check that logger is of class Logger?

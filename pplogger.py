@@ -106,6 +106,7 @@ class Logger(object):
 		logger = logging.getLogger( self.name )
 		noop = logging.NullHandler()
 		logger.addHandler(noop)
+		self.file_name = 'NullLogger' # setting instance attribute so it always exists
 		return logger
 
 
@@ -123,8 +124,10 @@ class Logger(object):
 	
 
 	def log_mark_of_initiation(self):
-		initiation_string = "########################## Initiated Logger() instance - {time} ##########################".format( time=pphelper.HelperUtils.gen_timestamp() )
+		initiation_string = "########################## Initiated Logger '{name}' instance - {time} ##########################".format( name=self.name, time=pphelper.HelperUtils.gen_timestamp() )
+		filename_string = "Log file can be found at: {path}".format(path=self.file_name)
 		self.logger.critical( initiation_string )
+		self.logger.critical( filename_string )
 
 
 	def get(self):
