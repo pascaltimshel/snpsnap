@@ -11,15 +11,6 @@ import pplogger #import Logger
 
 import re
 import logging
-#current_script_name = os.path.basename(__file__).replace('.py','')
-#logging.getLogger('').addHandler(logging.NullHandler())
-#logger = logging.getLogger() # This includes the submodule (launch_subprocess) logger too
-#logger.setLevel(logging.ERROR)
-#logger.disabled = True
-
-#handler = logging.StreamHandler()
-#handler.setFormatter(logging.Formatter('%(asctime)s %(levelname)s %(name)s: BLABLABLASSD %(message)s'))
-#logger.addHandler(handler)
 
 
 import pdb
@@ -44,14 +35,11 @@ def submit():
 		command_shell = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type ld --distance_cutoff 0.5 match --N_sample_sets {N} --ld_buddy_cutoff {ld_buddy_cutoff} --max_freq_deviation {freq} --max_distance_deviation {dist} --max_genes_count_deviation {gene_count} --max_ld_buddy_count_deviation {ld_buddy_count} --exclude_input_SNPs".format(program=script2call, snplist=filename, outputdir=output_dir, N=N_sample_sets, ld_buddy_cutoff=ld_buddy_cutoff, freq=freq, dist=dist, gene_count=gene_count, ld_buddy_count=ld_buddy_count)
 		processes.append( pplaunch.LaunchSubprocess(cmd=command_shell, path_stdout=path_stdout, logger=logger, jobname=pheno) ) #
 		
-		#processes.append( pplaunch.LaunchBsub(cmd=cmd, queue_name=queue_name, mem=mem, jobname=jobname, projectname='snpsnp', path_stdout=log_dir, file_output=None, no_output=False, email=email, email_status_notification=email_status_notification, email_report=email_report, logger=logger) ) #
-		
-
 		#time.sleep(1)
 		#p.run_Log(file_output=pheno+'.txt') # writes stdout and stdout to "file_output" file in PATH path_stdout. NO WAITING since output goes to file
 
 	for p in processes:
-		p.run_Pipe()
+		p.run_Pipe() # NOTE THAT: the path_stdout is unused when using p.run_Pipe()
 	return processes
 
 
@@ -60,15 +48,11 @@ script2call = "/cvar/jhlab/snpsnap/snpsnap/snpsnap_query.py"
 
 
 path_snplist = "/cvar/jhlab/snpsnap/data/input_lists/gwascatalog_140201_listsBIGbim"
-#path_snplist = "/home/projects/tp/childrens/snpsnap/data/gwas/gwascatalog_140201_listsBIGbim"
-#path_snplist = "/home/projects/tp/childrens/snpsnap/data/gwas/gwascatalog_140201_lists"
-
-#path_output_main = "/home/projects/tp/childrens/snpsnap/data/query/gwascatalog"
-path_output_main = "/cvar/jhlab/snpsnap/data/query/gwascatalog_production_v1"
+path_output_main = "/cvar/jhlab/snpsnap/data/query/gwascatalog_production_v1/subprocess"
 
 path_output_sub = path_output_main + "/subprocess_output"
 pphelper.HelperUtils.mkdirs(path_output_sub)
-path_stdout = path_output_main + "/subprocess_stdout"
+path_stdout = path_output_main + "/subprocess_stdout" # path_stdout is unused when using p.run_Pipe()
 pphelper.HelperUtils.mkdirs(path_stdout)
 
 
@@ -123,6 +107,7 @@ with open(gwas_filename, 'w') as f_gwastable:
 					f_gwastable.write(row+"\n")
 
 
+logger.info("########## CHECKING RETURN CODES ##############")
 for p in processes:
 	p.process_check_returncode()
 

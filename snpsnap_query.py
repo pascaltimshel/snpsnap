@@ -269,8 +269,6 @@ def few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps):
 		df_snps_few_matches.to_csv(user_snps_few_matches_file, sep='\t', index=True, header=True, index_label='snpID', mode='w') 
 	############################################
 	
-	#user_snps_few_matches_report = path_output+"/snps_report.txt" # 06/12/2014: NO LONGER NEEDED. We do not write out file
-	
 	insufficient_matches_pct = ( len(df_snps_few_matches)/float(N_snps) )*100
 
 	if len(df_snps_few_matches) == 0: # NO few_matches found
@@ -333,6 +331,7 @@ def few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps):
 	logger.info( "######################################" )
 
 	#### UNCOMMENTED 06/12/2014 - Pascal. Reason: 
+	#user_snps_few_matches_report = path_output+"/snps_report.txt" # 06/12/2014: NO LONGER NEEDED. We do not write out file
 	# with open(user_snps_few_matches_report, 'w') as f:
 	# 	f.write(write_str_insufficient_rating+'\n')
 	# 	f.write(write_str_score_match_size+'\n')
