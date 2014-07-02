@@ -16,8 +16,8 @@ snpsnap_header = """
 <html lang="en">
 <head>
 	<!-- ############################ SPECIAL FOR BOOTFACE ######################### -->
-	<BASE href="http://snpsnap.broadinstitute.org/mpg/snpsnap/">
-
+	<!-- <BASE href="http://snpsnap.broadinstitute.org/mpg/snpsnap/"> -->
+	<BASE href="http://www.broadinstitute.org/mpg/snpsnap/">
 	<!-- ################################################################################### -->
 
 	<title>SNPsnap</title>
