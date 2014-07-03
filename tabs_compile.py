@@ -173,7 +173,10 @@ def join_dfs(df_ld_buddy, df_combined_tab, path_output):
 def df2collection(df, file_collection, file_dup, no_compression):
 	""" df is the merged df """
 	## COLUMNS IN DATA FRAME - version JUNE 2014, production_v1
-	#1=rsID ---> NOTE=this is index in the unmodified Data Frame | ACTION:index will be changed inplace (with set_index), thus effectively removing the rsID index | WHERE=df2collection()
+	#1=snpID ---> 
+	#1=rsID  
+		# ---> BEFORE: NOTE=this is index in the unmodified Data Frame | ACTION:index will be changed inplace (with set_index), thus effectively removing the rsID index | WHERE=df2collection()
+		# ---> UNtested. Added 03/07/2014: the rsID will be a column. The new Output collection file will then have 22 columns
 	#2=freq_bin
 	#3=snp_chr ** ----> ACTION=WILL BE REMOVED | WHERE=df2collection()
 	#4=snp_position ** ----> ACTION=WILL BE REMOVED | WHERE=df2collection()
@@ -203,8 +206,8 @@ def df2collection(df, file_collection, file_dup, no_compression):
 			# gives 21
 
 	## CONSIDER: using df.reset_index() (the inverse operation to set_index)
-		# 1) df.reset_index()  # <-- no arguments. This transfers the index values into the DataFrame’s columns and sets a simple integer index.
-		# 2) df.set_index('snpID', inplace=True)
+		# 1) df.reset_index(inplace=True)  # <-- This transfers the index values into the DataFrame’s columns and sets a simple integer index.
+		# 2) df.set_index('snpID', inplace=True) # <--- or consider using append=True to make two indexes
 		# 3) reorder column order to place 'rsID' as the 1. column (since 'snpID' is now the index)
 
 	logger.info( "START: mapping snpID strings..." )
@@ -214,6 +217,8 @@ def df2collection(df, file_collection, file_dup, no_compression):
 	logger.info( "END: manipulating snpID in %s s (%s min)" % (elapsed_time, elapsed_time/60) )
 
 	logger.info( "Setting index on DataFrame and dropping columns 'snp_chr', 'snp_position'" )
+	df.reset_index(inplace=True) # UNtested. Added 03/07/2014. This will 'free' the rsID index and use it as a column. The column will be placed as the FIRST COLUMN (tested)
+	### ^^^ OBS: please check that the index is in fact something useful like rsID because it will be added as a column to the data frame (because drop=False by default)
 	df.set_index('snpID', inplace=True) # by default 'drop=True' ---> deletes columns to be used as the new index. That is, deletes the 'snpID' column
 	df.drop(['snp_chr', 'snp_position'], axis=1, inplace=True) # Deletes unnecessary columns
 
@@ -259,8 +264,8 @@ def df2collection(df, file_collection, file_dup, no_compression):
 # NO SPLITTING INTO prim and meta
 @profile
 def collection2dataframe(file_collection, no_compression):
-	#friends_ld09
-	col_string = "snpID freq_bin gene_count dist_nearest_gene_snpsnap friends_ld01 friends_ld02 friends_ld03 friends_ld04 friends_ld05 friends_ld06 friends_ld07 friends_ld08 friends_ld09"
+	#col_string = "snpID freq_bin gene_count dist_nearest_gene_snpsnap friends_ld01 friends_ld02 friends_ld03 friends_ld04 friends_ld05 friends_ld06 friends_ld07 friends_ld08 friends_ld09"
+	col_string = "snpID rsID freq_bin gene_count dist_nearest_gene_snpsnap friends_ld01 friends_ld02 friends_ld03 friends_ld04 friends_ld05 friends_ld06 friends_ld07 friends_ld08 friends_ld09" #UNtested. Added 03/07/2014. 
 	cols2read = col_string.split()
 	logger.info( "Will read the following columns from the collection: %s" % col_string )
 
