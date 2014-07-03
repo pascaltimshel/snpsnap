@@ -78,19 +78,36 @@ fmt2 <- function(x){
   format( round(x, digits = 2), nsmall=2 )
 }
 
+### Initializing plot list
+plots <- list()  # new empty list
+
 #### INSUFFICIENT PLOT
-p <- ggplot(df.quantile, aes(x=.id, y=q_insuf, color=.id, label=quantile_id)) + geom_point()
+p <- ggplot(df.quantile, aes(x=.id, y=q_insuf, label=quantile_id)) + geom_point()
 p <- p + geom_text(hjust=-0.25) # hjust - (default: 0.5)
 p <- p + geom_text(aes(label=fmt2(q_insuf)),hjust=1.25, vjust=0.5)
 p <- p + labs(title="Insufficient quantiles", x='param', y='%')
 p  
-
+plots[["q_insuf"]] <- p
 
 #### MATCH SIZE PLOT
-p <- ggplot(df.quantile, aes(x=.id, y=q_size, color=.id, label=quantile_id)) + geom_point()
+p <- ggplot(df.quantile, aes(x=.id, y=q_size, label=quantile_id)) + geom_point()
 p <- p + geom_text(hjust=-0.25) # hjust - (default: 0.5)
 p <- p + geom_text(aes(label=fmt2(q_size)),hjust=1.25, vjust=0.5)
 p <- p + labs(title="Match size", x='param', y='%')
+p  
+plots[["q_size"]] <- p
+
+## Make multiplot
+multiplot(plotlist = plots, cols=2)
+
+################ COMBINING the two quantiles plots #############
+
+df.quantile.melt <- melt(df.quantile, id.vars=c('quantile_id'), measure.vars=c('q_insuf','q_size'))
+
+p <- ggplot(df.quantile.melt, aes(x=variable, y=value, label=quantile_id)) + geom_point()
+p <- p + geom_text(hjust=-0.25) # hjust - (default: 0.5)
+p <- p + geom_text(aes(label=fmt2(value)),hjust=1.25, vjust=0.5)
+p <- p + labs(title="Scoring of 63 GWAS catalog SNPs lists", x='Score Measure', y='%')
 p  
 
 
