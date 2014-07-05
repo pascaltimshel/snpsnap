@@ -91,10 +91,10 @@ def LogArguments():
 
 
 ###################################### Global params ######################################
-#queue_name = "bhour" # [bhour, bweek] priority
-queue_name = "priority" # [bhour, bweek] priority
+queue_name = "bhour" # [bhour, bweek] priority
+#queue_name = "priority" # [bhour, bweek] priority
 # priority: This queue has a per-user limit of 10 running jobs, and a run time limit of three days.
-mem="25" # gb
+mem="15" # gb # 25 gb used and I know this worked! (12 GB max mem + 12 GB max SWAP)
 email='pascal.timshel@gmail.com' # [use an email address 'pascal.timshel@gmail.com' or 'False'/'None']
 email_status_notification=True # [True or False]
 email_report=False # # [True or False]
@@ -108,7 +108,8 @@ args = ParseArguments()
 
 ###################################### SETUP logging ######################################
 current_script_name = os.path.basename(__file__).replace('.py','')
-log_dir = "/cvar/jhlab/snpsnap/snpsnap/logs_bsub_tabs_compile_priority" #OBS VARIABLE
+#log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/logs_bsub_tabs_compile_priority" #OBS VARIABLE
+log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/logs_bsub_tabs_compile_priority" #OBS VARIABLE
 logger = pplogger.Logger(name=current_script_name, log_dir=log_dir, log_format=1, enabled=True).get()
 def handleException(excType, excValue, traceback, logger=logger):
 	logger.error("Logging an uncaught exception", exc_info=(excType, excValue, traceback))
@@ -132,7 +133,8 @@ param_dict_meta = {'ld':param_list_ld, 'kb':param_list_kb}
 ##############################################################################
 
 input_dir_base = "/cvar/jhlab/snpsnap/data/step2/1KG_snpsnap_production_v1"
-output_dir_base = "/cvar/jhlab/snpsnap/data/step3/1KG_snpsnap_production_v1_priority"
+#output_dir_base = "/cvar/jhlab/snpsnap/data/step3/1KG_snpsnap_production_v1_priority"
+output_dir_base = "/cvar/jhlab/snpsnap/data/step3/1KG_snpsnap_production_v1_bhour"
 
 if not os.path.exists(output_dir_base):
 	logger.warning( "UPS: output path %s does not exist. Fix it! Exiting..." % output_dir_base )

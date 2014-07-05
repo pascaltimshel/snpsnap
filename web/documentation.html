@@ -53,13 +53,13 @@
 	</ul>
 </div>
 
-
-<div class="jumbotron">
-	<h1>Coming soon!</h1>
-	<p class="lead">Thank you for the patience</p>
-	<p class="text-muted">The paper describing SNPsnap is submitted</p>
-</div>
-
+SNPsnap uses genotype data from the 1000 Genomes Project (Abecasis et al., 2012) phase 1 (268 samples from the CEU, GBR and TSI populations):
+<ul>
+  <li >Minor allele frequency: SNPs are partitioned into minor allele frequency bins of 1-2, 2-3, ..., 49-50% strata</li>
+  <li >LD buddies: the number of “buddy” (or "proxy") SNPs in LD at various thresholds. SNPsnap currently offer LD buddy counts for thresholds using r&#178 > 0.1, 0.2, ..., 0.9</li></li>
+  <li >Distance to nearest gene: the distance to the nearest 5’ start site using Ensembl gene coordinates (Flicek et al., 2014). If the SNP is within a gene, the distance to that gene’s start site is used. </li></li>
+  <li >Gene density: the number of genes in loci around the SNP, using LD (r&#178 > 0.1, 0.2, ..., 0.9) and physical distance (100, 200, ..., 1000 kb) to define loci. </li>
+</ul>
 
  <!-- ############## FOOTER ################### -->
 <div class="footer">

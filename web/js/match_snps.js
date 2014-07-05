@@ -100,7 +100,7 @@ $(document).ready(function(){
 				required: true,
 				digits: true,
 				min: 1,
-				max: 10000
+				max: 20000
 			},
 			email_address: {
 				required: true,

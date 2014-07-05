@@ -259,11 +259,11 @@ class LaunchBsub(object):
 
 	@staticmethod
 	def report_status(pids, logger): #LB_List_Of_Instances
-		sleep_time = 40 # seconds
+		sleep_time = 60 # seconds
 		incomplete = copy.deepcopy(pids)
-		finished = []
-		failed = []
-		done = []
+		finished = [] # list will contain 'report_line''s from _report_bacct
+		failed = [] # list will contain 'report_line''s from _report_bacct
+		done = [] # list will contain 'report_line''s from _report_bacct
 
 		waiting = []
 		running = []
@@ -298,6 +298,7 @@ class LaunchBsub(object):
 					report_line = LaunchBsub._report_bacct(tmp_pid, tmp_jobname, logger)
 					elapsed_time = time.time() - t1
 					logger.info( "_report_bacct runtime: %s s (%s min)" % ( elapsed_time, elapsed_time/float(60) ) )
+					logger.info( "return from _report_bacct: %s" % report_line ) # logging out report line
 					incomplete.remove(tmp_pid)
 					finished.append(report_line)
 					failed.append(report_line)
@@ -312,6 +313,7 @@ class LaunchBsub(object):
 					report_line = LaunchBsub._report_bacct(tmp_pid, tmp_jobname, logger)
 					elapsed_time = time.time() - t1
 					logger.info( "_report_bacct runtime: %s s (%s min)" % ( elapsed_time, elapsed_time/float(60) ) )
+					logger.info( "return from _report_bacct: %s" % report_line ) # logging out report line
 					incomplete.remove(tmp_pid)
 					finished.append(report_line)
 					done.append(report_line)
@@ -355,7 +357,7 @@ class LaunchBsub(object):
 
 	@staticmethod
 	def report_status_multiprocess(pids, logger): #LB_List_Of_Instances
-		sleep_time = 20 # seconds
+		sleep_time = 60 # seconds
 		incomplete = copy.deepcopy(pids)
 		finished = [] # all jobs that are not runninng or pending - jobs that are either "exit" or "done"
 		failed = [] # exit status
@@ -413,9 +415,8 @@ class LaunchBsub(object):
 				for i in range(n_processes):
 					#apply_async(func[, args[, kwds[, callback]]])
 					(tmp_pid, tmp_jobname, logger) = pids2check[i]
-					#pdb.set_trace()
 					#logger.info( "i is %d" % ( i ) )
-					pool.apply_async(report_bacct, args=(tmp_pid, tmp_jobname), callback=finished.append)
+					pool.apply_async(report_bacct, args=(tmp_pid, tmp_jobname), callback=finished.append) # OBS: cannot parse logger since it is NOT a pickable object!
 				pool.close()
 				pool.join()
 				elapsed_time = time.time() - t1

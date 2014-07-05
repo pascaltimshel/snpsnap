@@ -1,5 +1,6 @@
 #!/usr/bin/env python2.7
 
+
 ### On SNPsnap
 #!/bin/env python
 #source /opt/rh/python27/enable
@@ -141,14 +142,17 @@ def read_user_snps(user_snps_file):
 
 #@profile
 def lookup_user_snps_iter(file_db, user_snps):
+	""" This function will query the user_snps (type list) against the data base index """
 	logger.info( "START: lookup_user_snps_iter" )
 	start_time = time.time()
 	store = pd.HDFStore(file_db, 'r')
 	list_of_df = []
 	#user_snps_df = pd.DataFrame() # APPEND VERSION - WORKS, but NO control of column order. Consider: pd.DataFrame(columns=colnames)
 	for item in user_snps:
-	#for item in user_snps.keys():
 		df = store.select('dummy', "index=['%s']" % item) # Remember to quote the string!
+		## ^^ df will be an empty DataFrame if there is no SNP with the quired index (NOTE that this is not the same as indexing in a pandas data frame: here a KeyError will be thrown if the index does not exists)
+		## ^^ nothing happens when appending/concatenating empty DataFrames
+
 		#TODO: check length of df. MUST BE EXACTLY ONE!!! ****
 		#TODO: immediately write out snps/items with wrong len(df)?
 		list_of_df.append(df)
@@ -161,23 +165,46 @@ def lookup_user_snps_iter(file_db, user_snps):
 	return user_snps_df
 
 
-def write_snps_not_in_db(path_output, user_snps, df):
-	user_snps_not_found = path_output+"/input_snps_not_found.tab"
 
-	logger.info( "START: doing write_snps_not_in_db" )
+def exclude_snps(path_output, user_snps, df):
+	user_snps_excluded = path_output+"/input_snps_excluded.tab"
+	logger.info( "START: doing exclude_snps, that is SNPs that will be excluded" )
 	start_time = time.time()
-	snps_not_in_db = []
+
+	snps_excluded = {}
+	n_snps_not_in_db = 0 # counter for snps not found in data base - USED IN report_news 
 	for snp in user_snps:
-	#for snp in user_snps.keys():
 		if not (df.index == snp).any():
-			snps_not_in_db.append(snp)
-	if snps_not_in_db: # if non-empty
-		logger.warning( "{} SNPs not found in data base:\n{}".format( len(snps_not_in_db), "\n".join(snps_not_in_db)) )
+			snps_excluded[snp] = "SNP_not_found_in_data_base"
+			n_snps_not_in_db += 1
+	logger.warning( "{} SNPs not found in data base:\n{}".format( n_snps_not_in_db, "\n".join(snps_excluded.keys()) ) ) # OBS: more SNPs may be added to snps_excluded in the exclude_HLA_SNPs step
+	logger.info( "Found %d out of the %d user input SNPs in data base" % (len(df.index), len(user_snps)) )
+
+	if exclude_HLA_SNPs: # global boolean variable, True or False
+		snps_in_HLA = [] # this list will be used to drop input SNPs fra the DataFrame (df) mapping to HLA
+		for snp in user_snps: # OBS: we are looping twice over user_snps. I choose this to improve readability
+			#NOTE: SNPs that will be excluded because they map to HLA may alreay exists in snps_excluded because they where not found in the data base.
+			# OBS: you need to be careful what operations you perform on the user_snps - prepare for the most crazy input. Thus use 'try except' when doing operations on them
+			# BONUS: we also do not overwrite their 'reason' for exclusion this way
+			if snp not in snps_excluded: # WE ARE NOW SURE THAT THE SNP EXISTS IN OUR DATA-BASE: this is a quality mark/control
+				split_list = snp.split(":")
+				(snp_chr, snp_position) = ( int(split_list[0]), int(split_list[1]) ) # OBS: remember to convert to int!
+				# ^^ if the user input is e.g. 'Q&*)@^)@*$&Y_' or 'blabla' a ValueError will be raised if trying to convert to int
+				if snp_chr == 6: # exclude SNPs in the HLA region 6:25000000-6:35000000
+					if 25000000 <= snp_position <= 35000000:
+						snps_excluded[snp] = "SNP_in_HLA_region"
+						snps_in_HLA.append(snp) # appending to list for exclusion
+		logger.warning( "{} SNPs mapping to HLA region:\n{}".format( len(snps_in_HLA), "\n".join(snps_in_HLA) ) ) # OBS: more SNPs may be added to snps_excluded in the exclude_HLA_SNPs step
+		logger.warning( "Excluding the SNPs mapping to HLA region...")
+		df.drop(snps_in_HLA, axis=0, inplace=True) # inplace dropping index mapping to HLA
+
+	if snps_excluded: # if non-empty
+		logger.warning( "{} SNPs in total not found or excluded because they map to HLA region".format(len(snps_excluded)) )
 		# WRITING SNPs not found to FILE
-		with open(user_snps_not_found, 'w') as f:
-			for snp in snps_not_in_db:
-				f.write(snp+"\n")
-	logger.info( "Found %d out of %d SNPs in data base" % (len(df.index), len(user_snps)) )
+		with open(user_snps_excluded, 'w') as f:
+			for snp in sorted(snps_excluded, key=snps_excluded.get): # sort be the dict value (here snps_excluded[snp]='reason')
+				f.write(snp+"\t"+snps_excluded[snp]+"\n")
+
 	# print "*** Warning: Number of unique snpIDs (index) found: %d" % len(np.unique(df.index.values))
 	# bool_duplicates = pd.Series(df.index).duplicated().values # returns true for duplicates
 	# df_duplicate = df.ix[bool_duplicates]
@@ -186,22 +213,30 @@ def write_snps_not_in_db(path_output, user_snps, df):
 	# print "Pandas data frame with index of duplicate:"
 	# print df.ix[idx_duplicate]
 	elapsed_time = time.time() - start_time
-	logger.info( "END: write_snps_not_in_db in %s s (%s min)" % (elapsed_time, elapsed_time/60) )
+	logger.info( "END: exclude_snps in %s s (%s min)" % (elapsed_time, elapsed_time/60) )
 
 	if report_obj.enabled:
 		report_news = 	{	"unique_user_snps":len(user_snps),
-							"snps_not_found_in_data_base":len(snps_not_in_db)
+							"snps_in_total_excluded":len(snps_excluded),
+							"n_snps_not_in_db":n_snps_not_in_db,
+							"n_snps_in_HLA":len(snps_in_HLA)
 							}
 		report_obj.report['input'].update(report_news)
 
+	### RETURNING DataFrame
+	#Note: if exclude_HLA_SNPs is enabled, then the DataFrame (df) will be a modified version of the one parsed to this function
+	return df 
 
-def write_user_snps_stats(path_output, df):
-	user_snps_stats_file = path_output+"/input_snps.tab"
-	df.to_csv(user_snps_stats_file, sep='\t', header=True, index=True,  mode='w')
+# NOT IN USE SINCE 07/03/2014 - MAY BE OUTCOMMENTED/DELETED
+# def write_user_snps_stats(path_output, df):
+# 	user_snps_stats_file = path_output+"/input_snps.tab"
+# 	df.to_csv(user_snps_stats_file, sep='\t', header=True, index=True,  mode='w')
 
 #@profile
 def read_collection(file_collection):
 	"""Function that reads tab seperated gzip collection file"""
+
+	# OBS: 07/03/2014: UNtested code added in tabs_compile.py for adding rsID as the second column (after snpID)
 	# Columns in COLLECTION:
 	#1=snpID
 	#2=freq_bin
@@ -432,7 +467,7 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff,
 		ld_buddy_count_low = np.repeat(ld_buddy_count, n_attempts)*(1-delta_ld_buddy_count)
 		ld_buddy_count_high = np.repeat(ld_buddy_count, n_attempts)*(1+delta_ld_buddy_count)
 
-
+		logger.info( "SNP #%d/%d: ID starting query in data base" % (i+1, N_snps) )
 		match_ID_old = None # placeholder for a Numpy array
 		match_ID = None # placeholder for a Numpy array
 		for attempt in xrange(n_attempts):
@@ -461,27 +496,50 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff,
 		status_obj.update_pct('match', (i+1)/float(N_snps)*100)
 		# #######################################################################################
 
-		start_time = time.time() # START: timing how long the intersection step takes...
-		match_ID = match_ID.index # IMPORTANT: converting data frame to index
+		### IMPORTANT: converting DataFrame to Index
+		match_ID = match_ID.index # IMPORTANT: converting data frame to index. We use the pandas Index.intersection method. (it could also be used in a DataFrame)
+		## ^^ type(match_ID) ---> <class 'pandas.core.index.Index'>
+
+		#start_time = time.time() # START: timing how long the intersection step takes... # FOR DEBUGGING
 		if exclude_input_SNPs:
-			#logger.info( 'type(match_ID):%s' % type(match_ID) ) #<class 'pandas.core.index.Index'>
 			set_intersect = match_ID.intersection(df.index) # returns Index. finding intersection between indexes in matched SNPs and user SNPs
-			logger.warning( "Found %s SNPs in intersection between matched SNPs and input SNPs." % len(set_intersect) )
 			list_of_intersecting_SNPs = set_intersect.tolist()
-			logger.warning( "List of intersection set: [%s]" % " ".join(list_of_intersecting_SNPs) )
-			logger.warning( "SNPs will be excluded" )
-			logger.warning( "Length of match_ID BEFORE dropping: %s" % len(match_ID) )
-			#match_ID = match_ID.drop(df.index, axis=0) # or inplace=True
-			match_ID = match_ID.drop(set_intersect) # returns nex Index with passed list of labels deleted.
-													# OBS: all indexes you wish to drop must exist in match_ID. If not, the following exception will be thrown: ValueError: labels ['9:5453460'....] not contained in axis
-		logger.warning( "Length of match_ID AFTER dropping: %s" % len(match_ID) )
-		
+			if len(list_of_intersecting_SNPs) > 1: # we only want to see the logger warning if more than the SNP itself is in the intersection
+				logger.warning( "Found %s SNPs in intersection between matched SNPs and input SNPs." % len(list_of_intersecting_SNPs) )
+				logger.warning( "List of intersection set: [%s]" % " ".join(list_of_intersecting_SNPs) )
+				logger.warning( "SNPs will be excluded" )
+			#logger.warning( "Length of match_ID BEFORE dropping: %s" % len(match_ID) ) # FOR DEBUGGING
+			match_ID = match_ID.drop(set_intersect) # returns nex Index with passed list of labels deleted. (no inplace argument). takes array-like argument
+													# **OBS: all indexes you wish to drop must exist in match_ID. If not, the following exception will be thrown: ValueError: labels ['9:5453460'....] not contained in axis
+			#logger.warning( "Length of match_ID AFTER dropping: %s" % len(match_ID) ) # FOR DEBUGGING
+			#elapsed_time = time.time() - start_time # FOR DEBUGGING
+			#logger.info( "Run time of exclude_input_SNPs step: %s s" % elapsed_time ) # FOR DEBUGGING
+
+
+		### PERFORMACE test of 'exclude_HLA_SNPs'
+		## - WITH SPLIT + IF --> 100 loops, best of 3: 3.68 ms per loop  
+		## - NO SPLIT --> 100 loops, best of 3: 2.15 ms per loop
+		## Ratio: 3.68/2.15 = 1.71 times SLOWER using the exclude_HLA_SNPs option
+		if exclude_HLA_SNPs: # global boolean variable, True or False
+			snps_to_exclude = []
+			for snpID in match_ID: # type(snpID) --> <type 'str'>. OBS: this is the first time I iterate directly over the index values. THIS SHOULD BE AN FAIRLY EFFICIENT WAY OF LOOPING OVER THE INDEX
+				split_list = snpID.split(":")
+				(snp_chr, snp_position) = ( int(split_list[0]), int(split_list[1]) ) # OBS: remember to convert to int!
+				if snp_chr == 6: # exclude SNPs in the HLA region 6:25000000-6:35000000
+					if 25000000 <= snp_position <= 35000000:
+						#logger.warning( "%s: found SNP to be excluded" % snpID )
+						snps_to_exclude.append(snpID)
+			if snps_to_exclude: # enter if block if list is non-empty
+				logger.warning( "Found %s SNPs in HLA region that will be excluded" % len(snps_to_exclude) )
+				logger.warning( "List of SNPs mapping to HLA region [%s]" % " ".join(snps_to_exclude) )
+				#logger.warning( "Length of match_ID BEFORE dropping: %s" % len(match_ID) ) # FOR DEBUGGING
+				match_ID = match_ID.drop(snps_to_exclude) # returns nex Index with passed list of labels deleted. (no inplace argument). takes array-like argument
+				#logger.warning( "Length of match_ID AFTER dropping: %s" % len(match_ID) ) # FOR DEBUGGING
+
+
+		### IMPORTANT: Converting Index to Numpy array
 		match_ID = match_ID.values # IMPORTANT: transforming data frame into numpy array. This is needed because we used numpy functions like np.setdiff1d
 		#^^ we need to convert to numpy regime to be able to sample properly (e.g. use np.random.choice). [Potential alternative solution: the random module could maybe be used in combination with pandas indexing]
-		elapsed_time = time.time() - start_time
-		logger.info( "run time of exclusion step:%s s (%s min)" % (elapsed_time, elapsed_time/60) )
-
-
 
 		# Unfortunately, we cannot create the 'df_snps_few_matches' DataFrame before we know the columns in df
 		if df_snps_few_matches is None: # if true, create DataFrame with correct ordering of columns
@@ -489,6 +547,12 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff,
 			cols = np.append(df.columns.values, 'n_matches')
 			df_snps_few_matches= pd.DataFrame(columns=cols) #df.columns is a Index object
 
+		# ####### Exception if no matches - THIS MAY BE DELETED ########### 
+		# 2014-07-03 10:27:11     WARNING *** Found SNP with too few matches; n_matches=0. Using sampling with replacement to get enough samples ***
+		# File "/cvar/jhlab/snpsnap/snpsnap/snpsnap_query.py", line 503, in query_similar_snps
+		# match_ID_final = np.random.choice(match_ID, size=N_sample_sets, replace=True, p=None)
+		# ValueError: a must be non-empty
+		match_ID_final = None # initializing value. TODO: initialize to a sensible value
 		if len(match_ID) < N_sample_sets:
 			logger.warning( "*** Found SNP with too few matches; n_matches=%s. Using sampling with replacement to get enough samples ***" % len(match_ID) )
 			# if df_snps_few_matches is None: # if true, create DataFrame with correct ordering of columns
@@ -499,8 +563,12 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff,
 			row_query['n_matches'] = len(match_ID)
 			df_snps_few_matches = df_snps_few_matches.append(row_query) # select row (df.ix[i]) --> gives Series object
 
-			# Sample snpIDs uniformly from the matches we have at hand until we have enough samples.
-			match_ID_final = np.random.choice(match_ID, size=N_sample_sets, replace=True, p=None)
+			if len(match_ID) == 0: # we have zero matches
+				# Replicate INPUT SNP until we have enough samples ===> generates N_sample_sets identical values
+				match_ID_final = np.random.choice([query_snpID], size=N_sample_sets, replace=True, p=None) #Same as replicating array/list: could use numpy.tile()
+			else:
+				# Sample snpIDs uniformly from the matches we have at hand until we have enough samples.
+				match_ID_final = np.random.choice(match_ID, size=N_sample_sets, replace=True, p=None)
 		else:
 			match_ID_uniq_new = np.setdiff1d(match_ID, match_ID_old, assume_unique=True) #Return the sorted, unique values in ar1 that are not in ar2
 			n_elements_to_fill = N_sample_sets - len(match_ID_old)
@@ -566,9 +634,11 @@ def write_set_file(path_output, df_collection):
 		df_container = pd.DataFrame(set_idx, columns=['set']) # SEMI IMPORTANT: new data frame + setting name of column
 		df_container.ix[:,'input_snp'] = parrent_snp # creating new column with identical elements
 
-		df_match = df_collection.ix[match_snps.values] # IMPORTANT: fetching snps from collection
+		# TODO 07/03/2014: make a 'try except' block - BUT this is slow.... SEE: http://stackoverflow.com/questions/23643479/pandas-try-df-locx-vs-x-in-df-index
+			#try: return df.loc[id_val] except KeyError: return constant_val
+		df_match = df_collection.ix[match_snps.values] # IMPORTANT: fetching snps from collection. OBS: we rely on that all SNPs exists in the collection data frame. 
 		df_match.index.name = df_collection.index.name # Copy index name, e.g. df_match.index.name = 'snpID'
-		df_match.reset_index(inplace=True) # 'freeing' snpID index. Index is now 0,1,2... 
+		df_match.reset_index(inplace=True) # 'freeing' snpID index. Since drop=False by default, the 'snpID' becomes a column now. Index is now 0,1,2...  
 
 		df_final = pd.concat([df_container, df_match], axis=1) # Concatenating: notice ORDER of data frames.
 		df_final.set_index('set',inplace=True) # SEMI important: setting index. THEN YOU MUST PRINT index and index_label
@@ -583,12 +653,23 @@ def write_set_file(path_output, df_collection):
 
 
 
+###################################### CHECK of INPUT arguments ######################################
+def check_max_distance_deviation(value):
+	ivalue = int(value)
+	if not ivalue >= 1: # max_distance_deviation >= 1
+		 raise argparse.ArgumentTypeError("max_distance_deviation argument must be larger or equal to one. Received argument value of %s " % value)
+	return ivalue
 
-
+def check_N_sample_sets(value):
+	ivalue = int(value)
+	if not ivalue >= 1: # N_sample_sets >= 1. This is because things goes wrong (there will be no matches) if exclude self is enabled
+		 raise argparse.ArgumentTypeError("N_sample_sets argument must be larger or equal to one. Received argument value of %s " % value)
+	return ivalue
 
 def ParseArguments():
 	""" Handles program parameters and returns an argument class containing 
 	all parameters """
+	#REMEMBER: argparse uses 'default=None' by default. Thus the NameSpace will have None values for optional arguments not specified
 	#TODO: check input variable types!
 	# check for integers ans strings
 	# check for distance and distance cutoff value: ONLY CERTAIN VALUES ALLOWED
@@ -613,22 +694,23 @@ def ParseArguments():
 	# cutoff_chices = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]+[100, 200, 300, 400, 500, 600, 700, 800, 900, 1000] # or range(100,1100,100)
 	# arg_parser.add_argument("--distance_cutoff", help="r2, or kb distance", type=float, required=True, choices=cutoff_chices)
 	### Distance cutoff - no choices specified
-	arg_parser.add_argument("--distance_cutoff", help="r2, or kb distance", required=True)
+	arg_parser.add_argument("--distance_cutoff", help="r2, or kb distance (e.g. 0.5 for ld distance_type or 1000 for kb distance_type", required=True)
 
 	# NEW: options
+	arg_parser.add_argument("--exclude_HLA_SNPs", help="Bool (switch, takes no value after argument); if set then all matched SNPs mapping to the region 6:25000000-6:35000000 (6:25mb-6:35mb) will be excluded. Input SNPs mapping to this region will be excluded and written to the 'input_snps_excluded' file. (NOTE: enabling this option reduces the speed of SNPsnap). Default is false", action='store_true')
 	arg_parser.add_argument("--web", help="If set, the program will run in web mode. VALUE should be the a filepath to output (temporary) file - usually this will be the session_id. The web mode activates: 1) creating a status_obj and writing it to json file; 2) ENABLE writing a json report file;")
 	arg_parser.add_argument("--NoLogger", help="Bool (switch, takes no value after argument); if set then logging is DISAPLED. Logfile will be placed in outputdir.", action='store_true')
 
 
 	### MATCH arguments
-	arg_parser_match.add_argument("--N_sample_sets", type=int, help="Number of matched SNPs to retrieve", required=True) # 1000 - "Permutations?" TODO: change name to --n_random_snp_sets or --N
+	arg_parser_match.add_argument("--N_sample_sets", type=check_N_sample_sets, help="Number of matched SNPs to retrieve", required=True) # 1000 - "Permutations?" TODO: change name to --n_random_snp_sets or --N
 	arg_parser_match.add_argument("--ld_buddy_cutoff", type=float, help="Choose which ld to use for the ld_buddy_count property, e.g 0.1, 0.2, .., 0.9", required=True, choices=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
 	arg_parser_match.add_argument("--exclude_input_SNPs", help="Bool (switch, takes no value after argument); if set then all valid input SNPs are excluded from the matched SNPs. Default is false", action='store_true')
 	#TODO: add argument that describes if ABSOLUTE or PERCENTAGE deviation should be used?
 	arg_parser_match.add_argument("--max_freq_deviation", type=int, help="Maximal PERCENTAGE POINT deviation of SNP MAF bin [MAF +/- deviation]", required=True) # default=5
 	arg_parser_match.add_argument("--max_distance_deviation", type=int, help="Maximal PERCENTAGE deviation of distance to nearest gene [distance +/- %%deviation])", required=True) # default=5
 	#TODO: CHECK THAT max_distance_deviation > 1 %
-	arg_parser_match.add_argument("--max_genes_count_deviation", type=int, help="Maximal PERCENTAGE deviation of genes in locus [gene_density +/- %%deviation]", required=True) # default=5
+	arg_parser_match.add_argument("--max_genes_count_deviation", type=check_max_distance_deviation, help="Maximal PERCENTAGE deviation of genes in locus [gene_density +/- %%deviation]", required=True) # default=5
 	arg_parser_match.add_argument("--max_ld_buddy_count_deviation", type=int, help="Maximal PERCENTAGE deviation of genes in locus [ld_buddy_count +/- %%deviation]", required=True) # default=5
 	arg_parser_match.add_argument("--set_file", help="Bool (switch, takes no value after argument); if set then write out set files to rand_set..gz. Default is false", action='store_true')
 
@@ -678,9 +760,11 @@ def run_match(path_data, path_output, prefix, user_snps_file, N_sample_sets, ld_
 	file_collection = locate_collection_file(path_data, prefix) # Locate DB files. TODO: make function more robust
 	user_snps = read_user_snps(user_snps_file) # Read input SNPs. Return list
 	user_snps_df = lookup_user_snps_iter(file_db, user_snps) # Query DB, return DF
-	write_snps_not_in_db(path_output, user_snps, user_snps_df) # Report number of matches to DB (print STDOUT and file)
+	user_snps_df = exclude_snps(path_output, user_snps, user_snps_df) # Report number of matches to DB and drop SNPs mapping to HLA region
 	
-	write_user_snps_stats(path_output, user_snps_df) # write stats file (no meta annotation)
+	# OUTCOMMENTED 07/03/2014
+	#write_user_snps_stats(path_output, user_snps_df) # write stats file (no meta annotation)
+	
 	query_similar_snps(file_db, path_output, user_snps_df, N_sample_sets, ld_buddy_cutoff, exclude_input_SNPs, max_freq_deviation, max_distance_deviation, max_genes_count_deviation, max_ld_buddy_count_deviation)
 
 	### STATUS
@@ -700,7 +784,7 @@ def run_annotate(path_data, path_output, prefix, user_snps_file):
 	file_collection = locate_collection_file(path_data, prefix) # Locate DB files. TODO: make function more robust
 	user_snps = read_user_snps(user_snps_file) # Read input SNPs. Return list
 	user_snps_df = lookup_user_snps_iter(file_db, user_snps) # Query DB, return DF
-	write_snps_not_in_db(path_output, user_snps, user_snps_df) # Report number of matches to DB (print STDOUT and file)
+	user_snps_df = exclude_snps(path_output, user_snps, user_snps_df) # Report number of matches to DB and drop SNPs mapping to HLA region
 	
 	status_obj.update_status('annotate', 'running')
 	status_obj.update_pct('annotate', float(20) )
@@ -821,30 +905,30 @@ def main():
 	#path_data = os.path.abspath("/Users/pascaltimshel/snpsnap/data/step3") ## OSX - HARD CODED PATH!!
 	#path_data = os.path.abspath("/cvar/jhlab/snpsnap/data/step3/ld0.5") ## BROAD - HARD CODED PATH - BEFORE June 2014 (before production_v1)!!
 	
-	path_data = os.path.abspath("/cvar/jhlab/snpsnap/data/step3/1KG_snpsnap_production_v1") ## BROAD - version: production_v1
+	path_data = os.path.abspath("/cvar/jhlab/snpsnap/data/step3/1KG_snpsnap_production_v1_bhour") ## BROAD - version: production_v1
 	#path_data = os.path.abspath("/cvar/jhlab/snpsnap/data/step3/1KG_snpsnap_production_v1_single_ld") ## SINGLE LD BROAD - version: production_v1
 	prefix = args.distance_type + args.distance_cutoff
 	path_output = os.path.abspath(args.output_dir)
 
 	user_snps_file = args.user_snps_file
 
+	################## GLOBAL ARGUMENTS ##################
+	global exclude_HLA_SNPs
+	exclude_HLA_SNPs = args.exclude_HLA_SNPs # exclude_HLA_SNPs with either be True or False since 'store_true' is used
+	#####################################################
+	report_news =	{'exclude_HLA_SNPs':args.exclude_HLA_SNPs} # could also use just exclude_HLA_SNPs
+	report_obj.report['options'].update(report_news)
 
+	### OBS: loci_definition could possibly be moved into the 'if args.subcommand == "match":' block - they are only used by "match"
 	report_news =	{'distance_type':args.distance_type,
 					'distance_cutoff':args.distance_cutoff
 					}
 	report_obj.report['loci_definition'].update(report_news)
 
 
-
 	start_time = time.time()
 	## Run appropriate subfunction
 	if args.subcommand == "match":
-		# ###################################### STATUSBAR ######################################
-		# if status_obj is not None:
-		# 	status_obj.update_status('match', 'initialyzing')
-		# 	status_obj.update_status('set_file', 'initialyzing')
-		# #######################################################################################
-		
 		max_freq_deviation = args.max_freq_deviation
 		max_distance_deviation = args.max_distance_deviation
 		max_genes_count_deviation = args.max_genes_count_deviation
@@ -873,8 +957,6 @@ def main():
 		run_annotate(path_data, path_output, prefix, user_snps_file)
 		## Remember: if annotate is called we should not create a report.
 		## This is due to the fact that annotate is never called "stand-alone" from the web serive
-		# if report_obj.enabled:
-		# 	report_obj.report = {"annotate":elapsed_time}
 	else:
 		logger.error( "Error in command line arguments - raising exception" )
 		raise Exception( "ERROR: command line arguments not passed correctly. Fix source code!" )

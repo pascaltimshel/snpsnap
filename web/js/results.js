@@ -37,6 +37,32 @@ $(document).ready(function(){
 	if (true) {
 		var progresspump = setInterval(function(){
 		$.ajax({
+			url:"app/parse_returncode.py",
+			data: data_parse_cgi, // only the session_id is used
+			dataType: "text",
+			success: function(res){
+				var returncode = Number(res)
+				// console.log(returncode)
+				// console.log(typeof returncode)
+				if (returncode != 0) {
+					// MATCH
+					$("#progress_bar_match").hide();
+					$("#row_progress_match .text-info").removeClass('text-info').addClass('text-danger').html('ERROR');
+					$("#row_progress_match .error_description").append( "<p class=text-danger>Job could not be completed due to internal error</p>");
+					// SET_FILE
+					$("#progress_bar_set_file").hide();
+					$("#row_progress_set_file .text-info").removeClass('text-info').addClass('text-danger').html('ERROR');
+					$("#row_progress_set_file .error_description").append( "<p class=text-danger>Job could not be completed due to internal error</p>");
+					//ANNOTATE					
+					$("#progress_bar_annotate").hide();
+					$("#row_progress_annotate .text-info").removeClass('text-info').addClass('text-danger').html('ERROR');
+					$("#row_progress_annotate .error_description").append( "<p class=text-danger>Job could not be completed due to internal error</p>");
+
+					clearInterval(progresspump); // STOP all ajax calls
+				}
+			}
+		})
+		$.ajax({
 			url:"app/status_json.py",
 			data: data_parse_cgi, 
 			dataType: "json",

@@ -250,7 +250,7 @@
 		<div class="col-xs-3">
 			<div class="input-group">
 				<span class="input-group-addon">&plusmn;</span>
-				<input type="text" class="form-control" name="max_genes_count_deviation" id="max_genes_count_deviation" value="25" size="5">
+				<input type="text" class="form-control" name="max_genes_count_deviation" id="max_genes_count_deviation" value="50" size="5">
 				<span class="input-group-addon" data-toggle="tooltip" title="relative deviation from query SNP; e.g. if maximal deviation is set to 20% and the query SNP has 'Gene Density'=10 SNPsnap will match in the 'Gene Density' range [8; 12]">%</span>
 			</div>
 		</div>
@@ -267,7 +267,7 @@
 		<div class="col-xs-3">
 			<div class="input-group">
 				<span class="input-group-addon">&plusmn;</span>
-				<input type="text" class="form-control" name="max_distance_deviation" id="max_distance_deviation" value="25" size="5">
+				<input type="text" class="form-control" name="max_distance_deviation" id="max_distance_deviation" value="50" size="5">
 				<span class="input-group-addon" data-toggle="tooltip" title="relative deviation from query SNP; e.g. if maximal deviation is set to 20% and the query SNP has 'Distance to Nearest Gene'=100 kb SNPsnap will match in the 'Distance to Nearest Gene' range [80; 120] kb">%</span>
 			</div>
 		</div>
@@ -284,7 +284,7 @@
 		<div class="col-xs-3">
 			<div class="input-group">
 				<span class="input-group-addon">&plusmn;</span>
-				<input type="text" class="form-control" name="max_ld_buddy_count_deviation" id="max_ld_buddy_count_deviation" value="25" size="5">
+				<input type="text" class="form-control" name="max_ld_buddy_count_deviation" id="max_ld_buddy_count_deviation" value="50" size="5">
 				<span class="input-group-addon" data-toggle="tooltip" title="relative deviation from query SNP; e.g. if maximal deviation is set to 20% and the query SNP has 'LD buddies'=100 SNPsnap will match in the 'LD buddies' range [80; 120]">%</span>
 			</div>
 		</div>
@@ -320,14 +320,14 @@
 <!-- ############# OPTIONS ############## -->
 <fieldset>
 	<legend class="margin_bottom5">Output Options</legend>
-	<!-- Number of matching SNP sets -->
 	<div class="input_box"> <!-- START input box -->
+	<!-- Number of matching SNP sets -->
 	<div class="form-group">
 		<div class="col-xs-5 text-right">
 			<label for="N_sample_sets" class="control-label">Requested number of matched SNPs</label>
 		</div>
 		<div class="col-xs-2">
-			<input type="text" class="form-control" name="N_sample_sets" id="N_sample_sets" value="1000" data-toggle="tooltip" title="Note that specifying a large value in this field (e.g. > 5000) will make your matching prone to many insufficient matches. See the documentation for details">
+			<input type="text" class="form-control" name="N_sample_sets" id="N_sample_sets" value="10000" data-toggle="tooltip" title="Note that specifying a large value in this field (e.g. > 5000) will make your matching prone to many insufficient matches. See the documentation for details">
 		</div>
 		<div class="col-xs-5 error_msg_place">
 			<!-- PLACE HOLDER FOR VALIDATION ERROR MESSAGE -->
@@ -356,41 +356,54 @@
 		</div>
 	</div> -->
 
-	<!-- EXCLUDE INPUT SNPs -->
-	<div class="form-group">
-		<div class="col-xs-offset-5 col-xs-5">
-			<div class="checkbox">
-				<label>
-					<input type="checkbox" name="exclude_input_SNPs" id="exclude_input_SNPs" checked="checked"> Exclude input SNPs
-				</label>
-				<p class="help-block">This will exclude all input SNPs from the matched SNPs. We recommend using this setting.</p>
-			</div>
-		</div>
-	</div>
-
 	<!-- SET_FILE -->
 	<div class="form-group">
 		<div class="col-xs-5">
 			<div class="checkbox">
 				<label>
 					<!-- NOTE: the value="true" could be used. Python CGI will receive a checked checkbox as 'on' -->
-					<input type="checkbox" name="set_file" id="set_file"> Annotate matched SNPs
+					<input type="checkbox" name="set_file" id="set_file" data-toggle="tooltip" title="This will generate a file with annotated matched SNPs"> Annotate matched SNPs*
 				</label>
-				<p class="help-block">This will generate a file with annotated matched SNPs*</p>
+				<!-- <p class="help-block">This will generate a file with annotated matched SNPs*</p> -->
 			</div>
 		</div>
 		<!-- ANNOTATE Input SNPs -->
 		<div class="col-xs-5">
 			<div class="checkbox">
 				<label class="control-label">
-					<input type="checkbox" name="annotate" id="annotate"> Annotate input SNPs
+					<input type="checkbox" name="annotate" id="annotate" data-toggle="tooltip" title="This will generate a file with annotated input SNPs"> Annotate input SNPs*
 				</label>
-				<p class="help-block">This will generate a file with annotated input SNPs*</p>
+				<!-- <p class="help-block">This will generate a file with annotated input SNPs*</p> -->
 			</div>
 		</div>
 	</div>
 	</div> <!-- END input box -->
 	<p class="text-muted">*See <a href="documentation.html">documentation</a> for what genetic attributes SNPsnap currently uses for SNP annotation</p> 
+</fieldset>
+
+<!-- ############# EXCLUSIONS ############## -->
+<fieldset>
+	<legend class="margin_bottom5">SNP Exclusions</legend>
+	<div class="input_box"> <!-- START input box -->
+	<!-- EXCLUDE INPUT SNPs -->
+	<div class="form-group">
+		<div class="col-xs-5">
+			<div class="checkbox">
+				<label>
+					<input type="checkbox" name="exclude_input_SNPs" id="exclude_input_SNPs" checked="checked" data-toggle="tooltip" title="This will exclude all input SNPs from the matched SNPs. We recommend using this setting."> Exclude input SNPs in matched SNPs
+				</label>
+				<!-- <p class="help-block">This will exclude all input SNPs from the matched SNPs. We recommend using this setting.</p> -->
+			</div>
+		</div>
+		<div class="col-xs-5">
+			<div class="checkbox">
+				<label>
+					<input type="checkbox" name="exclude_HLA_SNPs" id="exclude_HLA_SNPs" checked="checked" data-toggle="tooltip" title="This will exclude all input SNPs mapping in the HLA region (chr 6 25Mb-35Mb; i.e. SNP with coordinates 6:25000000-6:35000000 ). We recommend using this setting."> Exclude HLA SNPs
+				</label>
+			</div>
+		</div>
+	</div>
+	</div> <!-- END input box -->
 </fieldset>
 
 
@@ -419,7 +432,7 @@
 			<label for="email_address" class="control-label">Email</label>
 		</div>
 		<div class="col-xs-4">
-			<input type="email" class="form-control" name="email_address" id="email_address" value="pascal.timshel@gmail.com">
+			<input type="email" class="form-control" name="email_address" id="email_address" placeholder="user@mydomain.com">
 		</div>
 		<div class="col-xs-4 error_msg_place">
 			<!-- PLACE HOLDER FOR VALIDATION ERROR MESSAGE -->

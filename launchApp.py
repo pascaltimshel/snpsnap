@@ -44,6 +44,7 @@ class Processor(object):
 		
 		self.path_session_output = '/local/data/web_results'+'/'+self.session_id
 		self.path_web_tmp_output = '/local/data/web_tmp'
+		self.file_returncodes = "{base}/{sid}_{type}.{ext}".format(base=self.path_web_tmp_output, sid=self.session_id, type='returncodes', ext='json')
 		self.link_result = "http://snpsnap.broadinstitute.org/mpg/snpsnap/results/{session_id}/{prefix}_{job}.zip".format(session_id=self.session_id, prefix='SNPsnap', job=self.job_name)
 
 		self.summary = {}
@@ -171,6 +172,38 @@ class Processor(object):
 
 
 
+	def send_crash_email(self):
+		fromaddr = "snpsnap@broadinstitute.org"
+		toaddr = self.email_address
+
+		msg = MIMEMultipart('alternative')
+		msg['Subject'] = "SNPsnap job could not complete: %s" % self.job_name
+		msg['From'] = fromaddr
+		msg['To'] = toaddr
+
+		text = "Your job {job} could not be completed due to an internal error.\n We apologize for the inconvenience\n--SNPsnap Team".format(job=self.job_name)
+		html = """
+		<html>
+		  <head></head>
+		  <body>
+		    <h2>Your job {job} could not be completed due to an internal error.</h2> <br/>
+		    We apologize for the inconvenience.<br/>
+		    <p><i>SNPsnap Team</i></p>
+		  </body>
+		</html>
+		""".format( job=self.job_name)
+
+		part1 = MIMEText(text, 'plain')
+		part2 = MIMEText(html, 'html')
+		msg.attach(part1)
+		msg.attach(part2)
+
+		server = smtplib.SMTP('localhost')
+		text = msg.as_string()
+		server.sendmail(fromaddr, toaddr, text)
+		server.quit()
+
+
 	def send_email(self):
 		""" Function to send out email """
 		fromaddr = "snpsnap@broadinstitute.org"
@@ -197,7 +230,7 @@ class Processor(object):
 
 		#<a href="{link}">link</a>
 		# Create the body of the message (a plain-text and an HTML version).
-		text = "Your job {job} has finished.\n Details should be available at:\n{link}\n--SNPsnap Team".format(job=self.session_id, link=self.link_result)
+		text = "Your job {job} has finished.\n Details should be available at:\n{link}\n--SNPsnap Team".format(job=self.job_name, link=self.link_result)
 		html = """
 		<html>
 		  <head></head>
@@ -326,14 +359,25 @@ class Processor(object):
 			self.processes[call_type]['pid'] = p.pid
 			logger.info( "call_type=%s, waiting for PID=%s" % (call_type, p.pid) )
 			p.wait() # this will also enable us to get the return code of the process
+			self.processes[call_type]['returncode'] = p.returncode # saving return code
 
+		## generating dict to contain return codes to be written to json file
+		return_code_dict = {} # keys in dict will be 'match' and 'annotate'
+		return_code_error_flag = False # if this flag is set to true, then send_crash_email() and return from this function
 		for call_type in self.processes:
 			p = self.processes[call_type]['process_obj']
-			self.processes[call_type]['returncode'] = p.returncode # not nessesary to save value in dict...
 			logger.info( "call_type=%s, return code for PID=%s: %s" % (call_type, p.pid, p.returncode) )
+			return_code_dict[call_type] = p.returncode
+			if p.returncode != 0:
+				return_code_error_flag = True
+		## WRITE return code file
+		with open(self.file_returncodes, 'w') as f:
+			json.dump(return_code_dict, f)
 
-
-		##TODO: raise Exception if return code is non-zero
+		if return_code_error_flag:
+			logger.critical( "return_code_error_flag is set - will call send_crash_email and return" )
+			send_crash_email(self)
+			return # IMPORTANT
 
 		### Now all is done:
 		logger.info( "read_report will be called" )

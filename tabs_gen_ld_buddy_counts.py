@@ -184,7 +184,9 @@ def create_ld_buddy_counts():
 
 
 	# concatenate data frames horizontally
-	merged = pd.concat(df_list, axis=1, join='outer') # ---> row indexes will be unioned and sorted.
+	merged = pd.concat(df_list, axis=1, join='outer') 	# ---> row indexes will be unioned and sorted.
+														# ***OBS***: index name is NOT kept using 'outer' - I found out about this the hard way
+	merged.index.name = df_index_list[0].index.name # ADDED 07/04/2014 - **UNTESTED** - COPYING the index name from the first df in the df_list to fix that index_label is lost using join='outer'
 	merged.to_csv(outfile_ld_buddy+"_join_outer", sep='\t', header=True, index=True, index_label=None) # index_label=None ==> use index names from df
 	logger.info( 'JOIN_OUTER: len of data frame: %s' % len(merged) )
 
@@ -198,8 +200,8 @@ def create_ld_buddy_counts():
 
 	start_time = time.time()
 	logger.info( 'JOIN_INDEX: start concat and writing csv' )
-	merged = pd.concat(df_list, axis=1, join_axes=[df_index_list[0]])
-	merged.to_csv(outfile_ld_buddy+"_join_index", sep='\t', header=True, index=True, index_label=None) # index_label=None ==> use index names from df
+	merged = pd.concat(df_list, axis=1, join_axes=[df_index_list[0]]) # index name is kept this way
+	merged.to_csv(outfile_ld_buddy+"_join_index", sep='\t', header=True, index=True, index_label=None) 	# index_label=None ==> use index names from df
 	elapsed_time = time.time()-start_time
 	logger.info( "DONE | elapsed time: %s min" % (elapsed_time/60, ) )
 	logger.info( 'JOIN_INDEX: len of data frame: %s' % len(merged) )

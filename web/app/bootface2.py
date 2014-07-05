@@ -100,7 +100,8 @@ def run():
 	# Import modules for CGI handling 
 	import cgi, cgitb
 
-	cgitb.enable()
+	### OBS - displed this as a part of finalization 07/04/2014 ####
+	#cgitb.enable()
 
 	import os
 	import time # potential
@@ -194,11 +195,6 @@ def run():
 		    </tr>
 		    <tr>
 		      <td></td>
-		      <td>Exclude input SNPs in matched SNPs</td>
-		      <td>{exclude_input_SNPs}</td>
-		    </tr>
-		    <tr>
-		      <td></td>
 		      <td>Annotate matched SNPs</td>
 		      <td>{set_file}</td>
 		    </tr>
@@ -206,6 +202,16 @@ def run():
 		      <td></td>
 		      <td>Annotate input SNPs</td>
 		      <td>{annotate}</td>
+		    </tr>
+		    <tr>
+		      <th>SNP Exclusions</th>
+		      <td>Exclude input SNPs in matched SNPs</td>
+		      <td>{exclude_input_SNPs}</td>
+		    </tr>
+		    <tr>
+		      <td></td>
+		      <td>Exclude HLA SNPs</td>
+		      <td>{exclude_HLA_SNPs}</td>
 		    </tr>
 		    <tr>
 		      <th>Session information</th>
@@ -228,9 +234,10 @@ def run():
 					max_distance_deviation=max_distance_deviation, 
 					max_ld_buddy_count_deviation=max_ld_buddy_count_deviation,
 					N_sample_sets=N_sample_sets,
-					exclude_input_SNPs='yes' if exclude_input_SNPs else 'no',
 					set_file='yes' if set_file else 'no',
 					annotate='yes' if annotate else 'no',
+					exclude_input_SNPs='yes' if exclude_input_SNPs else 'no',
+					exclude_HLA_SNPs='yes' if exclude_HLA_SNPs else 'no',
 					job_name=job_name,
 					session_id=session_id
 					)
@@ -295,27 +302,35 @@ def run():
 	# INFO: type "checkbox" and "radio": will have value 'on' for selected checkbox elements without value attributes
 	# REF: http://www.eskimo.com/~scs/cclass/handouts/cgi.html
 	exclude_input_SNPs = form.getvalue('exclude_input_SNPs', '') # value will be 'on' if parsed (and no value attribute is specified)
+	exclude_HLA_SNPs = form.getvalue('exclude_HLA_SNPs', '') # value will be 'on' if parsed (and no value attribute is specified)
+	
 	annotate = form.getvalue('annotate', '') # value will be 'on' if parsed (and no value attribute is specified)
 	set_file = form.getvalue('set_file', '') # value will be 'on' if parsed (and no value attribute is specified)
 
-	cmd_annotate = '' # OBS: important that default value evaluates to false in Bool context
-	cmd_match = ''
-	script2call = "/cvar/jhlab/snpsnap/snpsnap/snpsnap_query.py"
-	if annotate:
-		cmd_annotate = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type {distance_type} --distance_cutoff {distance_cutoff} --web {file_prefix_web_tmp} annotate".format(program=script2call, snplist=file_snplist, outputdir=path_session_output, distance_type=distance_type, distance_cutoff=distance_cutoff, file_prefix_web_tmp=file_prefix_web_tmp)
 
-	if set_file and exclude_input_SNPs:
-		cmd_match = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type {distance_type} --distance_cutoff {distance_cutoff} --web {file_prefix_web_tmp} match --N_sample_sets {N_sample_sets} --ld_buddy_cutoff {ld_buddy_cutoff} --max_freq_deviation {max_freq_deviation} --max_distance_deviation {max_distance_deviation} --max_genes_count_deviation {max_genes_count_deviation} --max_ld_buddy_count_deviation {max_ld_buddy_count_deviation} --exclude_input_SNPs --set_file".format(program=script2call, snplist=file_snplist, outputdir=path_session_output, distance_type=distance_type, distance_cutoff=distance_cutoff, file_prefix_web_tmp=file_prefix_web_tmp,\
-																																																																													N_sample_sets=N_sample_sets, ld_buddy_cutoff=ld_buddy_cutoff, max_freq_deviation=max_freq_deviation, max_distance_deviation=max_distance_deviation, max_genes_count_deviation=max_genes_count_deviation, max_ld_buddy_count_deviation=max_ld_buddy_count_deviation)
-	elif set_file:
-		cmd_match = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type {distance_type} --distance_cutoff {distance_cutoff} --web {file_prefix_web_tmp} match --N_sample_sets {N_sample_sets} --ld_buddy_cutoff {ld_buddy_cutoff} --max_freq_deviation {max_freq_deviation} --max_distance_deviation {max_distance_deviation} --max_genes_count_deviation {max_genes_count_deviation} --max_ld_buddy_count_deviation {max_ld_buddy_count_deviation} --set_file".format(program=script2call, snplist=file_snplist, outputdir=path_session_output, distance_type=distance_type, distance_cutoff=distance_cutoff, file_prefix_web_tmp=file_prefix_web_tmp,\
-																																																																													N_sample_sets=N_sample_sets, ld_buddy_cutoff=ld_buddy_cutoff, max_freq_deviation=max_freq_deviation, max_distance_deviation=max_distance_deviation, max_genes_count_deviation=max_genes_count_deviation, max_ld_buddy_count_deviation=max_ld_buddy_count_deviation)
-	elif exclude_input_SNPs: 
-		cmd_match = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type {distance_type} --distance_cutoff {distance_cutoff} --web {file_prefix_web_tmp} match --N_sample_sets {N_sample_sets} --ld_buddy_cutoff {ld_buddy_cutoff} --max_freq_deviation {max_freq_deviation} --max_distance_deviation {max_distance_deviation} --max_genes_count_deviation {max_genes_count_deviation} --max_ld_buddy_count_deviation {max_ld_buddy_count_deviation} --exclude_input_SNPs".format(program=script2call, snplist=file_snplist, outputdir=path_session_output, distance_type=distance_type, distance_cutoff=distance_cutoff, file_prefix_web_tmp=file_prefix_web_tmp,\
-																																																																														N_sample_sets=N_sample_sets, ld_buddy_cutoff=ld_buddy_cutoff, max_freq_deviation=max_freq_deviation, max_distance_deviation=max_distance_deviation, max_genes_count_deviation=max_genes_count_deviation, max_ld_buddy_count_deviation=max_ld_buddy_count_deviation)
-	else: 
-		cmd_match = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type {distance_type} --distance_cutoff {distance_cutoff} --web {file_prefix_web_tmp} match --N_sample_sets {N_sample_sets} --ld_buddy_cutoff {ld_buddy_cutoff} --max_freq_deviation {max_freq_deviation} --max_distance_deviation {max_distance_deviation} --max_genes_count_deviation {max_genes_count_deviation} --max_ld_buddy_count_deviation {max_ld_buddy_count_deviation}".format(program=script2call, snplist=file_snplist, outputdir=path_session_output, distance_type=distance_type, distance_cutoff=distance_cutoff, file_prefix_web_tmp=file_prefix_web_tmp, \
-																																																																														N_sample_sets=N_sample_sets, ld_buddy_cutoff=ld_buddy_cutoff, max_freq_deviation=max_freq_deviation, max_distance_deviation=max_distance_deviation, max_genes_count_deviation=max_genes_count_deviation, max_ld_buddy_count_deviation=max_ld_buddy_count_deviation)
+	script2call = "/cvar/jhlab/snpsnap/snpsnap/snpsnap_query.py"	
+	## this is the base for all the sub options that can be added to SNPsnap
+	cmd_base = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type {distance_type} --distance_cutoff {distance_cutoff} --web {file_prefix_web_tmp}".format(program=script2call, snplist=file_snplist, outputdir=path_session_output, distance_type=distance_type, distance_cutoff=distance_cutoff, file_prefix_web_tmp=file_prefix_web_tmp)
+	##### Adding more stuff to cmd_base ####
+	if exclude_HLA_SNPs:
+		option = "--exclude_HLA_SNPs"
+		cmd_base = "{base} {addon}".format(base=cmd_base, addon=option) # or #cmd_base = " ".join([cmd_base, option])
+	## REMEMBER: cmd_base is modfied 'globally', so all addon's MUST be true for the rest of commands
+
+	####### ANNOTATE COMMAND #######
+	cmd_annotate = '' # OBS: important that default value evaluates to false in Bool context
+	if annotate:
+		subcommand = "annotate"
+		cmd_annotate = "{base} {addon}".format(base=cmd_base, addon=subcommand)
+
+	####### MATCH COMMAND #######
+	cmd_match = "{base} match --N_sample_sets {N_sample_sets} --ld_buddy_cutoff {ld_buddy_cutoff} --max_freq_deviation {max_freq_deviation} --max_distance_deviation {max_distance_deviation} --max_genes_count_deviation {max_genes_count_deviation} --max_ld_buddy_count_deviation {max_ld_buddy_count_deviation}".format(base=cmd_base, N_sample_sets=N_sample_sets, ld_buddy_cutoff=ld_buddy_cutoff, max_freq_deviation=max_freq_deviation, max_distance_deviation=max_distance_deviation, max_genes_count_deviation=max_genes_count_deviation, max_ld_buddy_count_deviation=max_ld_buddy_count_deviation)
+	if set_file:
+		option = "--set_file"
+		cmd_match = "{base} {addon}".format(base=cmd_match, addon=option)
+	if exclude_input_SNPs: 
+		option = "--exclude_input_SNPs"
+		cmd_match = "{base} {addon}".format(base=cmd_match, addon=option)
 
 
 	###################### FORK'ING ##################################
@@ -421,13 +436,14 @@ def run():
 
 	str_bar_match = """
 	<div class='row' id='row_progress_match'>
-		<div class='col-xs-1'>
-			<p class="text-primary"><strong>Match</strong></p>
+		<div class='col-xs-3'>
+			<p class="text-primary"><strong>Matching SNPs</strong></p>
 		</div>
 		<div class='col-xs-2'>
 			<p class="text-info"></p>
 		</div>
-		<div class='col-xs-9'>
+		<div class='col-xs-7'>
+			<div class='error_description'></div> <!-- PLACEHOLDER FOR AN ERROR Message -->
 			<div class='progress progress-striped active' id='progress_bar_match'>
 				<div class='progress-bar' style='width: 0%'></div>
 			</div>
@@ -437,13 +453,14 @@ def run():
 
 	str_bar_set_file = """
 	<div class='row' id='row_progress_set_file'>
-		<div class='col-xs-1'>
-			<p class="text-primary"><strong>Set_file</strong></p>
+		<div class='col-xs-3'>
+			<p class="text-primary"><strong>Annotating Matched SNPs</strong></p>
 		</div>
 		<div class='col-xs-2'>
 			<p class="text-info"></p>
 		</div>
-		<div class='col-xs-9'>
+		<div class='col-xs-7'>
+			<div class='error_description'></div> <!-- PLACEHOLDER FOR AN ERROR Message -->
 			<div class='progress progress-striped active' id='progress_bar_set_file'>
 				<div class='progress-bar' style='width: 0%'></div>
 			</div>
@@ -454,13 +471,14 @@ def run():
 
 	str_bar_annotate = """
 	<div class='row' id='row_progress_annotate'>
-		<div class='col-xs-1'>
-			<p class="text-primary"><strong>Annotate</strong></p>
+		<div class='col-xs-3'>
+			<p class="text-primary"><strong>Annotating Inputs SNPs</strong></p>
 		</div>
 		<div class='col-xs-2'>
 			<p class="text-info"></p>
 		</div>
-		<div class='col-xs-9'>
+		<div class='col-xs-7'>
+			<div class='error_description'></div> <!-- PLACEHOLDER FOR AN ERROR Message -->
 			<div class='progress progress-striped active' id='progress_bar_annotate'>
 				<div class='progress-bar' style='width: 0%'></div>
 			</div>

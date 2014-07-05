@@ -27,14 +27,14 @@ from memory_profiler import profile
 
 import pplogger
 
-@profile
+#@profile
 def read_ld_buddy_count():
 	""" This function has all parameters hardcoded - no arguments is parsed to the function. 
 	NOTE: this function RENAMES the column"""
-	#ld_buddy_file = "/cvar/jhlab/snpsnap/data/ld_buddy_counts/1KG_snpsnap_production_v1/test_tabs_compile/ld_buddy_count.tab_join_outer_head500" # TEST CASE - this is sorted and will not work for test case
-	#ld_buddy_file = "/cvar/jhlab/snpsnap/data/ld_buddy_counts/1KG_snpsnap_production_v1/test_tabs_compile/ld_buddy_count.tab_join_index_head500" # TEST CASE - 
+	#ld_buddy_file = "/cvar/jhlab/snpsnap/data/ld_buddy_counts/1KG_snpsnap_production_v1/test_tabs_compile/ld_buddy_count.tab_join_outer_head500" # TEST CASE - this is sorted and will not work for test case. It is sorted so all all the first indexes are 10:100115849...
+	#ld_buddy_file = "/cvar/jhlab/snpsnap/data/ld_buddy_counts/1KG_snpsnap_production_v1/test_tabs_compile/ld_buddy_count.tab_join_index_head500" # TEST CASE - USE THIS. Index are aligned. It works (only rsIDs in index)
 
-	ld_buddy_file = "/cvar/jhlab/snpsnap/data/ld_buddy_counts/1KG_snpsnap_production_v1/complete/ld_buddy_count.tab_join_outer" # USE THIS this file is sorted
+	ld_buddy_file = "/cvar/jhlab/snpsnap/data/ld_buddy_counts/1KG_snpsnap_production_v1/complete/ld_buddy_count.tab_join_outer" # USE THIS this file is sorted (gives same result every time)
 	#ld_buddy_file = "/cvar/jhlab/snpsnap/data/ld_buddy_counts/1KG_snpsnap_production_v1/complete/ld_buddy_count.tab_join_index" # alternatively this could be used...
 	# NB: this files have rsID as 'index'
 
@@ -68,7 +68,7 @@ def read_ld_buddy_count():
 
 	return df_ld_buddy
 
-@profile
+#@profile
 def read_combined_tab(file_combined):
 	logger.info( "START: reading combined tab file..." )
 	start_time = time.time()
@@ -79,7 +79,7 @@ def read_combined_tab(file_combined):
 
 	return df_combined_tab
 
-@profile
+#@profile
 def drop_cols_combined_tabs(df_combined_tab):
 	""" This function will drop columns that have no further use. NB 'snp_chr', 'snp_position' are dropped later because they are needed for forming the snpID index """
 	#7=dist_nearest_gene
@@ -93,7 +93,7 @@ def drop_cols_combined_tabs(df_combined_tab):
 
 	return df_combined_tab
 
-@profile
+#@profile
 def join_dfs(df_ld_buddy, df_combined_tab, path_output):
 	logger.info( 'Running join_dfs' )
 
@@ -131,7 +131,10 @@ def join_dfs(df_ld_buddy, df_combined_tab, path_output):
 	start_time = time.time()
 	logger.info( 'JOIN_OUTER: start concat and writing csv' )
 	df_merged = pd.concat(df_list, axis=1, join='outer') # ---> row indexes will be unioned and sorted.
-	#df_merged.to_csv(outfile_ld_buddy+"_join_outer", sep='\t', header=True, index=True, index_label=None) # index_label=None ==> use index names from df
+														# ***OBS***: index name is NOT kept using 'outer' - I found out about this the hard way
+	df_merged.index.name = df_list[0].index.name # ADDED 07/04/2014 - COPYING the index name from the first df in the df_list to fix that index_label is lost using join='outer'
+	# alternative approach which DOES NOT loose the index name: df_merged.to_csv(outfile_ld_buddy+"_join_outer", sep='\t', header=True, index=True, index_label=None) # index_label=None ==> use index names from df
+
 	elapsed_time = time.time()-start_time
 	logger.info( "DONE | elapsed time: %s min" % (elapsed_time/60, ) )
 	logger.info( 'JOIN_OUTER: len of data frame: %s' % len(df_merged) )
@@ -169,7 +172,7 @@ def join_dfs(df_ld_buddy, df_combined_tab, path_output):
 ## Will use DataFrame string manipulation to make correct collection
 ## Will REMOVE rows with duplicates
 ## Write DataFrame to CVS
-@profile
+#@profile
 def df2collection(df, file_collection, file_dup, no_compression):
 	""" df is the merged df """
 	## COLUMNS IN DATA FRAME - version JUNE 2014, production_v1
@@ -206,7 +209,7 @@ def df2collection(df, file_collection, file_dup, no_compression):
 			# gives 21
 
 	## CONSIDER: using df.reset_index() (the inverse operation to set_index)
-		# 1) df.reset_index(inplace=True)  # <-- This transfers the index values into the DataFrame’s columns and sets a simple integer index.
+		# 1) df.reset_index(inplace=True)  # <-- This transfers the index values into the DataFrame's columns and sets a simple integer index.
 		# 2) df.set_index('snpID', inplace=True) # <--- or consider using append=True to make two indexes
 		# 3) reorder column order to place 'rsID' as the 1. column (since 'snpID' is now the index)
 
@@ -217,7 +220,7 @@ def df2collection(df, file_collection, file_dup, no_compression):
 	logger.info( "END: manipulating snpID in %s s (%s min)" % (elapsed_time, elapsed_time/60) )
 
 	logger.info( "Setting index on DataFrame and dropping columns 'snp_chr', 'snp_position'" )
-	df.reset_index(inplace=True) # UNtested. Added 03/07/2014. This will 'free' the rsID index and use it as a column. The column will be placed as the FIRST COLUMN (tested)
+	df.reset_index(inplace=True) # UNTESTED. Added 03/07/2014. This will 'free' the rsID index and use it as a column. The column will be placed as the FIRST COLUMN (tested)
 	### ^^^ OBS: please check that the index is in fact something useful like rsID because it will be added as a column to the data frame (because drop=False by default)
 	df.set_index('snpID', inplace=True) # by default 'drop=True' ---> deletes columns to be used as the new index. That is, deletes the 'snpID' column
 	df.drop(['snp_chr', 'snp_position'], axis=1, inplace=True) # Deletes unnecessary columns
@@ -262,7 +265,7 @@ def df2collection(df, file_collection, file_dup, no_compression):
 # CSV contains header!
 # UPDATED HEADER!
 # NO SPLITTING INTO prim and meta
-@profile
+#@profile
 def collection2dataframe(file_collection, no_compression):
 	#col_string = "snpID freq_bin gene_count dist_nearest_gene_snpsnap friends_ld01 friends_ld02 friends_ld03 friends_ld04 friends_ld05 friends_ld06 friends_ld07 friends_ld08 friends_ld09"
 	col_string = "snpID rsID freq_bin gene_count dist_nearest_gene_snpsnap friends_ld01 friends_ld02 friends_ld03 friends_ld04 friends_ld05 friends_ld06 friends_ld07 friends_ld08 friends_ld09" #UNtested. Added 03/07/2014. 
@@ -284,9 +287,10 @@ def collection2dataframe(file_collection, no_compression):
 	return df_prim
 
 
-@profile
+#@profile
 def dataframe_prim2hdf(file_hdf5, dataframe):
-	store = pd.HDFStore(file_hdf5, 'w', complevel=9, complib='blosc') # TEST OF COMPRESSION, 05/01/2014
+	#store = pd.HDFStore(file_hdf5, 'w', complevel=9, complib='blosc') # 
+	store = pd.HDFStore(file_hdf5, 'w') # NO COMPRESSION
 	start_time = time.time()
 	logger.info( "START: Writing to HDF5 file: %s" % file_hdf5 )
 	
