@@ -1,7 +1,5 @@
 #!/usr/bin/env python2.7
 
-sdfsdf
-
 ### On SNPsnap
 #!/bin/env python
 #source /opt/rh/python27/enable

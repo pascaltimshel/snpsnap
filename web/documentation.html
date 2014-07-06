@@ -53,7 +53,6 @@
 	</ul>
 </div>
 
-<p>
 	<h2>Methodology</h2>
 
 	<h3>Aim</h3>
@@ -69,7 +68,7 @@
 	<h3>Genetic properties used to sample random but matched SNPs</h3>
 	<ul>
 	  <li ><strong>Minor allele frequency</strong>: SNPs are partitioned into minor allele frequency bins of 1-2, 2-3, ..., 49-50% strata.</li>
-	  <li ><strong>LD buddies</strong>: the number of “buddy” (or "proxy") SNPs in LD at various thresholds. SNPsnap currently offer LD buddy counts for thresholds using r&#178 > 0.1, 0.2, ..., 0.9</li>9.<li>
+	  <li ><strong>LD buddies</strong>: the number of “buddy” (or "proxy") SNPs in LD at various thresholds. SNPsnap currently offer LD buddy counts for thresholds using r&#178 > 0.1, 0.2, ..., 0.9</li>
 	  <li ><strong>Distance to nearest gene</strong>: the distance to the nearest 5’ start site using Ensembl gene coordinates (Flicek et al., 2014). If the SNP is within a gene, the distance to that gene’s start site is used. </li>
 	  <li ><strong>Gene density</strong>: the number of genes in loci around the SNP, using LD (r&#178 > 0.1, 0.2, ..., 0.9) and physical distance (100, 200, ..., 1000 kb) to define loci. </li>
 	</ul>
@@ -80,9 +79,32 @@
 			<img class="img-responsive" src="img/documentation/Figure_1.png">
 		</div>
 	</div>
-</p>
 
-<p>
+	The SNPsnap algorithm identifies matched SNPs as follows:
+	<dl class="dl-horizontal">
+		<dt><strong>step 1</strong></dt>
+		<dd>In five uniformly spaced increments, increase the allowable deviation for each of the genetic properties, ending with the prespecified maximum allowable deviation. For each increment, identify matching SNPs, defined as SNPs with genetic properties within the allowable deviations. </dd>
+		<dt><strong>step 2</strong></dt>
+		<dd>If there are at least as many matching SNPs as requested, sample without replacement the requested number of SNPs from the matching SNPs and proceed to <strong>step 5</strong>. </dd>
+		<dt><strong>step 3</strong></dt>
+		<dd>If the number of matching SNPs is less than number of requested SNPs, increment the allowable deviation and return to <strong>step 1</strong>; if the maximum allowable deviation has been reached, proceed to <strong>step 4</strong>. </dd>
+		<dt><strong>step 4</strong></dt>
+		<dd>Sample with replacement from the matched SNPs identified in <strong>step 1</strong>.</dd>
+		<dt><strong>step 5</strong></dt>
+		<dd>Proceed to next query SNP.</dd>
+	</dl>
+	Incrementing the allowable deviation of the genetic properties insures that the best matching SNPs is always used.<br>
+	This allows for setting the allowable deviation high and still get the best matching SNPs. 
+
+<!-- 	<ol>
+		<li>In five uniformly spaced increments, increase the allowable deviation for each of the properties, ending with the prespecified maximum allowable deviation. For each increment, identify matching SNPs, defined as SNPs with genetic properties within the allowable deviations. </li>
+		<li>If there are at least as many matching SNPs as requested, sample without replacement the requested number of SNPs from the matching SNPs and proceed to <strong>step 5</strong>. </li>
+		<li>If the number of matching SNPs is less than number of requested SNPs, increment the allowable deviation and return to <strong>step 1</strong>; if the maximum allowable deviation has been reached, proceed to <strong>step 4</strong>. </li>
+		<li>Sample with replacement from the matched SNPs identified in <strong>step 1</strong>.</li>
+		<li>Proceed to next query SNP.</li>
+	</ol>
+ -->
+
 	<h2>Webserver</h2>
 
 	<h3>User input</h3>
@@ -97,8 +119,8 @@
 	</ul>
 	For each score, an ordinal scoring variable (“very poor”, “poor”, “ok”, “good”, “very good”; see example below) is reported to the user.
 	<div class="row">
-		<div class="col-xs-offset-1 col-xs-10">
-			<img class="img-responsive" src="img/rating/rating_ok.png">
+		<div class="col-xs-offset-2 col-xs-8">
+			<img class="img-responsive" src="img/rating_v2/rating_ok.png">
 		</div>
 	</div>
 	SNPsnap uses genome-wide significant loci from 63 traits and diseases from the GWAS Catalog (Hindorff et al., 2009) as a reference to the scoring system.
@@ -115,40 +137,162 @@
 	</ul>
 	
 	<h3><a name="annotations" style="text-decoration: none; color: black;">SNP Annotations</a></h3>
+	<h5><span class="code_files">input_snps_annotated.tab</span></h5>
 	SNPsnap currently supports the following annotations of SNPs:<br>
-	<ul>
-	
-	<li>set</li>
-	<li>input_snp</li>
-	<li>snpID	</li>
-	<li>rsID	</li>
-	<li>freq_bin	</li>
-	<li>gene_count	</li>
-	<li>dist_nearest_gene_snpsnap	</li>
-	<li>dist_nearest_gene	</li>
-	<li>dist_nearest_gene_located_within	</li>
-	<li>loci_upstream	</li>
-	<li>loci_downstream	<br></li>
-	<li>ID_nearest_gene_snpsnap	</li>
-	<li>ID_nearest_gene	</li>
-	<li>ID_nearest_gene_located_within	</li>
-	<li>ID_genes_in_matched_locus	</li>
-	<li>friends_ld01	</li>
-	<li>friends_ld02	</li>
-	<li>friends_ld03	</li>
-	<li>friends_ld04	</li>
-	<li>friends_ld05	</li>
-	<li>friends_ld06	</li>
-	<li>friends_ld07	</li>
-	<li>friends_ld08	</li>
-	<li>friends_ld09 </li>
-	</ul>
-	<!--<div class="code_output">
-	</div>
-	-->
+	<table class='table table-hover'>
+		<thead>
+			<tr>
+				<th class="col-xs-1"><p class="text-left" style='font-size:115%;'>#</p></th>
+				<th class="col-xs-3"><p class="text-left" style='font-size:115%;'>Column Name</p></th>
+				<th class="col-xs-8"><p class="text-left" style='font-size:115%;'>Column Description</p></th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<th>1</th>
+				<td class="code_column">snpID</td>
+				<td>chromosomal coordinates of the SNP</td>
+			</tr>
+			<tr>
+				<th>2</th>
+				<td class="code_column">rsID</td>
+				<td>rs-number of the SNP (note that in some cases the rs-number is identical to the chromosomal coordinate)</td>
+			</tr>
+			<tr>
+				<th>3</th>
+				<td class="code_column">freq_bin</td>
+				<td>frequency bin of the SNP using 1-2, 2-3, ..., 49-50% strata</td>
+			</tr>
+			<tr>
+				<th>4</th>
+				<td class="code_column">gene_count</td>
+				<td>the number of genes in the locus, that is the gene density</td>
+			</tr>
+			<tr>
+				<th>5</th>
+				<td class="code_column">dist_nearest_gene_snpsnap</td>
+				<td>distance to the start site of nearest gene the SNP is located within. If this distance is not defined (<code>"inf"</code>), the distance to the start site of nearest gene is used. That is, <span class="code_column">dist_nearest_gene_snpsnap</span> is equal to either <span class="code_column">dist_nearest_gene</span> or <span class="code_column">dist_nearest_gene_located_within</span>. Distance is in base pairs</td>
+			</tr>
+			<tr>
+				<th>6</th>
+				<td class="code_column">dist_nearest_gene</td>
+				<td>distance to the start site of nearest gene. Distance is in base pairs</td>
+			</tr>
+			<tr>
+				<th>7</th>
+				<td class="code_column">dist_nearest_gene_located_within</td>
+				<td>distance to the start site of nearest gene the SNP is located within. Distance is in base pairs. If the SNP is not located within any genes the distance is <code>"inf"</code></td>
+			</tr>
+			<tr>
+				<th>8</th>
+				<td class="code_column">loci_upstream</td>
+				<td>upstream locus boundary (that is the 5' end of the locus boundary)</td>
+			</tr>
+			<tr>
+				<th>9</th>
+				<td class="code_column">loci_downstream</td>
+				<td>downstream locus boundary (that is the 3' end of the locus boundary)</td>
+			</tr>
+			<tr>
+				<th>10</th>
+				<td class="code_column">ID_nearest_gene_snpsnap</td>
+				<td><code>Ensembl Gene ID</code> for the gene used in the calculation of <span class="code_column">dist_nearest_gene_snpsnap</span></td>
+			</tr>
+			<tr>
+				<th>11</th>
+				<td class="code_column">ID_nearest_gene</td>
+				<td><code>Ensembl Gene ID</code> for the gene used in the calculation of <span class="code_column">dist_nearest_gene</span></td>
+			</tr>
+			<tr>
+				<th>12</th>
+				<td class="code_column">ID_nearest_gene_located_within</td>
+				<td><code>Ensembl Gene ID</code> for the gene used in the calculation of <span class="code_column">dist_nearest_gene_located_within</span></td>
+			</tr>
+			<tr>
+				<th>13</th>
+				<td class="code_column">ID_genes_in_matched_locus</td>
+				<td><code>Ensembl Gene ID</code> of genes overlaping with the locus boundaries</td>
+			</tr>
+			<tr>
+				<th>14</th>
+				<td class="code_column">friends_ld01</td>
+				<td>number of LD buddies using cutoff r&#178 > 0.1</td>
+			</tr>
+			<tr>
+				<th>15</th>
+				<td class="code_column">friends_ld02</td>
+				<td>number of LD buddies using cutoff r&#178 > 0.2</td>
+			</tr>
+			<tr>
+				<th>16</th>
+				<td class="code_column">friends_ld03</td>
+				<td>number of LD buddies using cutoff r&#178 > 0.3</td>
+			</tr>
+			<tr>
+				<th>17</th>
+				<td class="code_column">friends_ld04</td>
+				<td>number of LD buddies using cutoff r&#178 > 0.4</td>
+			</tr>
+			<tr>
+				<th>18</th>
+				<td class="code_column">friends_ld05</td>
+				<td>number of LD buddies using cutoff r&#178 > 0.5</td>
+			</tr>
+			<tr>
+				<th>19</th>
+				<td class="code_column">friends_ld06</td>
+				<td>number of LD buddies using cutoff r&#178 > 0.6</td>
+			</tr>
+			<tr>
+				<th>20</th>
+				<td class="code_column">friends_ld07</td>
+				<td>number of LD buddies using cutoff r&#178 > 0.7</td>
+			</tr>
+			<tr>
+				<th>21</th>
+				<td class="code_column">friends_ld08</td>
+				<td>number of LD buddies using cutoff r&#178 > 0.8</td>
+			</tr>
+			<tr>
+				<th>22</th>
+				<td class="code_column">friends_ld09</td>
+				<td>number of LD buddies using cutoff r&#178 > 0.9</td>
+			</tr>
+		</tbody>
+	</table>
 
-</p>
-	
+
+
+
+	<h5><span class="code_files">matched_snps_annotated.tab</span></h5> 
+	This file contains the same columns as described above but annotating the matched SNP.<br>
+	In addition to the file contains the following two leading columns:<br>
+	<table class='table table-hover'>
+		<thead>
+			<tr>
+				<th class="col-xs-1"><p class="text-left" style='font-size:115%;'>#</p></th>
+				<th class="col-xs-3"><p class="text-left" style='font-size:115%;'>column name</p></th>
+				<th class="col-xs-8"><p class="text-left" style='font-size:115%;'>column description</p></th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<th>1</th>
+				<td class="code_column">set</td>
+				<td>index of the matched SNP group. The number of set index is equal to the number of required matched SNPs</td>
+			</tr>
+			<tr>
+				<th>2</th>
+				<td class="code_column">input_snp</td>
+				<td>the chromosomal coordinates for the input SNPs that were matched</td>
+			</tr>
+			<tr>
+				<th>3...24</th>
+				<td>...</td>
+				<td>... same as for  <span class="code_files">input_snps_annotated.tab</span> but annotation is for the matched SNP</td>
+			</tr>
+
+
 <!--
 <h2>7. FAQ</h2>
 <ul>
@@ -174,3 +318,46 @@ If no matching SNPs are found, SNPsnap will replicate the input SNP to form a fu
 
 </body>
 </html>
+
+
+
+
+
+	<!--<div class="code_output">
+	</div>
+	-->
+
+
+
+<!-- ################ LIST LIKE STRUCTURE -->
+<!-- 	<ol>
+		<li>snpID: chromosomal coordinates of the SNP</li>
+		<li>rsID: rs-number of the SNP (note that in some cases the rs-number is identical to the chromosomal coordinate) </li>
+		<li>freq_bin: the frequency bin of SNP (1-2, 2-3, ..., 49-50% strata)</li>
+		<li>gene_count: an alias for gene density; the number of genes in the locus</li>
+		<li>dist_nearest_gene_snpsnap: distance to the start site of nearest gene the SNP is located within. If this distance is not defined (<code>"inf"</code>), the distance to the start site of nearest gene is used. That is, <code>dist_nearest_gene_snpsnap</code> is equal to either <code>dist_nearest_gene</code> or <code>dist_nearest_gene_located_within</code>. Distance is in base pairs</li>
+		<li>dist_nearest_gene: distance to the start site of nearest gene. Distance is in base pairs</li>
+		<li>dist_nearest_gene_located_within: distance to the start site of nearest gene the SNP is located within. Distance is in base pairs. If the SNP is not located within any genes the distance is <code>"inf"</code></li>
+		<li>loci_upstream: upstream locus boundary (that is the 5' end of the locus boundary)</li>
+		<li>loci_downstream: downstream locus boundary (that is the 3' end of the locus boundary)</li>
+		<li>ID_nearest_gene_snpsnap: <code>Ensembl Gene ID</code> for the gene used in the calculation of <code>dist_nearest_gene_snpsnap</code></li>
+		<li>ID_nearest_gene	<code>Ensembl Gene ID</code> for the gene used in the calculation of <code>dist_nearest_gene</code></li>
+		<li>ID_nearest_gene_located_within	<code>Ensembl Gene ID</code> for the gene used in the calculation of <code>dist_nearest_gene_located_within</code></li>
+		<li>ID_genes_in_matched_locus: <code>Ensembl Gene ID</code> of genes overlaping with the locus boundaries</li>
+		<li>friends_ld01: number of LD buddies using cutoff r&#178 > 0.1</li>
+		<li>friends_ld02: number of LD buddies using cutoff r&#178 > 0.2</li>
+		<li>friends_ld03: number of LD buddies using cutoff r&#178 > 0.3</li>
+		<li>friends_ld04: number of LD buddies using cutoff r&#178 > 0.4</li>
+		<li>friends_ld05: number of LD buddies using cutoff r&#178 > 0.5</li>
+		<li>friends_ld06: number of LD buddies using cutoff r&#178 > 0.6</li>
+		<li>friends_ld07: number of LD buddies using cutoff r&#178 > 0.7</li>
+		<li>friends_ld08: number of LD buddies using cutoff r&#178 > 0.8</li>
+		<li>friends_ld09: number of LD buddies using cutoff r&#178 > 0.9</li>
+	</ol> -->
+
+
+<!-- 	<ol>
+		<li>set: index of the matched SNP group. The number of set index is equal to the number of required matched SNPs</li>
+		<li>input_snp: the input that were matched </li>
+		<li>... same as for  <span class="code_files">input_snps_annotated.tab</span> </li>
+	</ol> -->

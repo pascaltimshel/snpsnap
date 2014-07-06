@@ -513,7 +513,7 @@ def run():
 		<div class="panel-heading">
 		  <h4 class="panel-title">
 			<a data-toggle="collapse" data-target="#collapse_report" href="#collapse_report" onClick="return false;">
-			  Report
+			  SNPsnap Matching Report
 			</a>
 		  </h4>
 		</div>

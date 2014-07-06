@@ -49,11 +49,11 @@ try:
 	#insufficient_rating_img = None
 	#match_size_rating_img = None
 	img_path = {
-		'very good': 'img/rating/rating_very_good.png',
-		'good': 'img/rating/rating_good.png',
-		'ok': 'img/rating/rating_ok.png',
-		'poor': 'img/rating/rating_poor.png',
-		'very poor': 'img/rating/rating_very_poor.png',
+		'very good': 'img/rating_v2/rating_very_good.png',
+		'good': 'img/rating_v2/rating_good.png',
+		'ok': 'img/rating_v2/rating_ok.png',
+		'poor': 'img/rating_v2/rating_poor.png',
+		'very poor': 'img/rating_v2/rating_very_poor.png',
 	}
 
 	rating_img = {} # this dict will contain two keys
@@ -66,23 +66,32 @@ try:
 		# 	rating_img[key] = img_path['']
 
 
+	################ GETTING THE ACTUAL VALUES OF THE REPORT ##################
+	numeric_insufficient = int(report_obj['report']['insufficient_matches_pct']) # OBS: converting to int to avoid strangely formatted numbers 
+	numeric_match_size = int(report_obj['report']['match_size_median_pct']) # OBS: converting to int to avoid strangely formatted numbers 
 
+
+	#Description of how to control column width of tables of bootstrap:
+	# --->http://ericsaupe.com/custom-column-widths-in-bootstrap-tables/
 	html2parse = """
 	  <div style='width:100%;'>
 	  <table class='table table-hover'>
 	    <thead>
 	      <tr>
-	        <th><p class="text-danger text-left" style='font-size:125%;'>Evaluation type</p></th>
-	        <th><p class="text-danger text-center" style='font-size:125%;'>Rating</p></th>
+	        <th class="col-xs-3"><p class="text-left" style='font-size:125%;'>SNPsnap score</p></th>
+	        <th class="col-xs-2"><p class="text-left" style='font-size:125%;'>Value</p></th>
+	        <th class="col-xs-7"><p class="text-center" style='font-size:125%;'>Rating</p></th>
 	      </tr>
 	    </thead>
 	    <tbody>
 	      <tr>
-	        <th>Insufficient Matches</th>
+	        <th>Insufficient-matches</th>
+	        <td>{numeric_insufficient}%</td>
 	        <td><img src='{img_insufficient_rating}' class="img-responsive" alt="Responsive image"></td>
 	      </tr>
 	      <tr>
-	        <th>Match Size</th>
+	        <th>Match-size</th>
+	        <td>{numeric_match_size}%</td>
 	        <td><img src='{img_match_size_rating}' class="img-responsive" alt="Responsive image"></td>
 	      </tr>
 	    </tbody>
@@ -93,8 +102,11 @@ try:
 	</div>
 	""".format(
 		img_insufficient_rating=rating_img['insufficient_rating'],
-		img_match_size_rating=rating_img['match_size_rating']
+		numeric_insufficient=numeric_insufficient,
+		img_match_size_rating=rating_img['match_size_rating'],
+		numeric_match_size=numeric_match_size
 		)
+
 
 	print "Content-Type: text/html"
 	print ""
@@ -109,4 +121,35 @@ except Exception as e: # DIRTY: but properly the file(s) does not exists
 	print "Content-Type: text/html"
 	print ""
 	print html2parse
+
+
+	###### BEFORE 07/05/2014: may be deleted ##########
+	# html2parse = """
+	#   <div style='width:100%;'>
+	#   <table class='table table-hover'>
+	#     <thead>
+	#       <tr>
+	#         <th><p class="text-danger text-left" style='font-size:125%;'>Evaluation type</p></th>
+	#         <th><p class="text-danger text-center" style='font-size:125%;'>Rating</p></th>
+	#       </tr>
+	#     </thead>
+	#     <tbody>
+	#       <tr>
+	#         <th>Insufficient Matches</th>
+	#         <td><img src='{img_insufficient_rating}' class="img-responsive" alt="Responsive image"></td>
+	#       </tr>
+	#       <tr>
+	#         <th>Match Size</th>
+	#         <td><img src='{img_match_size_rating}' class="img-responsive" alt="Responsive image"></td>
+	#       </tr>
+	#     </tbody>
+	#   </table>
+
+	# <p class='text-muted'>You may safely ignore the <i>Match Size</i> rating if the <i>Insufficient Matches</i> rating is better than <q>Ok</q>. 
+	# See the <a href='documentation.html'>documentation</a> for more information.</p> 
+	# </div>
+	# """.format(
+	# 	img_insufficient_rating=rating_img['insufficient_rating'],
+	# 	img_match_size_rating=rating_img['match_size_rating']
+	# 	)
 

@@ -127,6 +127,11 @@ h1.allerta {
   border-radius: 3px;
 }
 
+.code_column {
+  color: black;
+  font-family: Monaco, Menlo, Consolas, "Courier New", monospace;
+}
+
 .code_files {
   padding: 2px 4px;
   color: red;
