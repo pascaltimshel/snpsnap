@@ -2,6 +2,14 @@
 /*SNPsnap project font*/
 /*You need to include Google fonts:*/
 /*<link href="http://fonts.googleapis.com/css?family=Crimson+Text" rel="stylesheet" type="text/css">*/
+
+.graybox {
+	background-color: #b0c4de;
+	border-bottom: 1px solid #e5e5e5;
+	padding: 14px 24px;
+	border-radius: 15px;
+}
+
 h1.allerta {
 		font-family: 'Allerta', Helvetica, Arial, sans-serif;
 		font-size: 40px;
@@ -108,6 +116,31 @@ h1.allerta {
   /*Things added by Pascal*/
   min-width: 300px;
   font-size: 14px;
+}
+
+
+.code_output {
+  padding: 2px 4px;
+  color: #d14;
+  white-space: nowrap;
+  font-family: Monaco, Menlo, Consolas, "Courier New", monospace;
+  border-radius: 3px;
+}
+
+.code_files {
+  padding: 2px 4px;
+  color: red;
+  white-space: nowrap;
+  font-family: Monaco, Menlo, Consolas, "Courier New", monospace;
+  border-radius: 3px;
+}
+
+.code_settings {
+  padding: 2px 4px;
+  color: #580000 ;
+  white-space: nowrap;
+  font-family: Monaco, Menlo, Consolas, "Courier New", monospace;
+  border-radius: 3px;
 }
 
 /*############################# Jquery Validator ####################################*/

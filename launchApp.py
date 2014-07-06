@@ -376,7 +376,7 @@ class Processor(object):
 
 		if return_code_error_flag:
 			logger.critical( "return_code_error_flag is set - will call send_crash_email and return" )
-			send_crash_email(self)
+			self.send_crash_email()
 			return # IMPORTANT
 
 		### Now all is done:

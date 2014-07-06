@@ -1,5 +1,6 @@
 #!/usr/bin/env python2.7
 
+sdfsdf
 
 ### On SNPsnap
 #!/bin/env python
@@ -217,9 +218,9 @@ def exclude_snps(path_output, user_snps, df):
 
 	if report_obj.enabled:
 		report_news = 	{	"unique_user_snps":len(user_snps),
-							"snps_in_total_excluded":len(snps_excluded),
-							"n_snps_not_in_db":n_snps_not_in_db,
-							"n_snps_in_HLA":len(snps_in_HLA)
+							"total_user_input_snps_excluded":len(snps_excluded),
+							"snps_not_in_db":n_snps_not_in_db,
+							"snps_mapping_to_HLA":len(snps_in_HLA)
 							}
 		report_obj.report['input'].update(report_news)
 
