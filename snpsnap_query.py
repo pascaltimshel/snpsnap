@@ -21,6 +21,9 @@ import time
 
 #from queue import QueueJob,ShellUtils,ArgparseAdditionalUtils
 
+import logging
+import pplogger
+
 #from memory_profiler import profile # USE THIS FOR MEMORY PROFILING - DOES NOT WORK ON VM SNPSNAP (MODULE NOT INSTALLED) 
 #import profilehooks #  USE THIS FOR TIMING PROFILING
 #import timeit
@@ -170,7 +173,8 @@ def exclude_snps(path_output, user_snps, df):
 	logger.info( "START: doing exclude_snps, that is SNPs that will be excluded" )
 	start_time = time.time()
 
-	snps_excluded = {}
+	snps_excluded = {} # dict will contain all user_snps not used further in SNPsnap (snps_not_in_db and snps_in_HLA)
+	snps_in_HLA = [] # this list will be used to drop input SNPs fra the DataFrame (df) mapping to HLA
 	n_snps_not_in_db = 0 # counter for snps not found in data base - USED IN report_news 
 	for snp in user_snps:
 		if not (df.index == snp).any():
@@ -180,7 +184,6 @@ def exclude_snps(path_output, user_snps, df):
 	logger.info( "Found %d out of the %d user input SNPs in data base" % (len(df.index), len(user_snps)) )
 
 	if exclude_HLA_SNPs: # global boolean variable, True or False
-		snps_in_HLA = [] # this list will be used to drop input SNPs fra the DataFrame (df) mapping to HLA
 		for snp in user_snps: # OBS: we are looping twice over user_snps. I choose this to improve readability
 			#NOTE: SNPs that will be excluded because they map to HLA may alreay exists in snps_excluded because they where not found in the data base.
 			# OBS: you need to be careful what operations you perform on the user_snps - prepare for the most crazy input. Thus use 'try except' when doing operations on them
@@ -665,6 +668,31 @@ def check_N_sample_sets(value):
 		 raise argparse.ArgumentTypeError("N_sample_sets argument must be larger or equal to one. Received argument value of %s " % value)
 	return ivalue
 
+def check_if_path_is_writable(file_path):
+	if not os.access(file_path, os.W_OK):
+		msg="File path: %s is not writable" % file_path
+		raise Exception(msg)
+	else:
+		return os.path.abspath(file_path)
+
+def check_if_file_is_writable(file_path):
+	parrent_dir = os.path.dirname(file_path)
+	if not os.access(parrent_dir, os.W_OK):
+		msg="Parrent directory [%s] to file [%s] is not writable" % (parrent_dir, file_path)
+		raise Exception(msg)
+	else:
+		return os.path.abspath(file_path)
+
+
+
+### I DID NOT FINISH THIS FUNCTION
+# def get_logging_option(value):
+# 	""" This function will check if the logger is disabled by accepting various 'disabling' values.
+# 	If the logger is not disabled, then return the filepath that was given.
+# 	If no value is parsed (i.e. the empty value ''), then use the args.output_dir as the log dir """
+# 	pass
+
+
 def ParseArguments():
 	""" Handles program parameters and returns an argument class containing 
 	all parameters """
@@ -685,7 +713,7 @@ def ParseArguments():
 	#arg_parser_annotate.set_defaults(func=run_match)
 
 	arg_parser.add_argument("--user_snps_file", help="Path to file with user-defined SNPs", required=True) # TODO: make the program read from STDIN via '-'
-	arg_parser.add_argument("--output_dir", help="Directory in which output files, i.e. random SNPs will be written", required=True)
+	arg_parser.add_argument("--output_dir", type=check_if_path_is_writable, help="Directory in which output files, i.e. random SNPs will be written", required=True)
 	#arg_parser.add_argument("--output_dir", type=ArgparseAdditionalUtils.check_if_writable, help="Directory in which output files, i.e. random SNPs will be written", required=True)
 	arg_parser.add_argument("--distance_type", help="ld or kb", required=True, choices=['ld', 'kb'])
 	
@@ -697,8 +725,12 @@ def ParseArguments():
 
 	# NEW: options
 	arg_parser.add_argument("--exclude_HLA_SNPs", help="Bool (switch, takes no value after argument); if set then all matched SNPs mapping to the region 6:25000000-6:35000000 (6:25mb-6:35mb) will be excluded. Input SNPs mapping to this region will be excluded and written to the 'input_snps_excluded' file. (NOTE: enabling this option reduces the speed of SNPsnap). Default is false", action='store_true')
-	arg_parser.add_argument("--web", help="If set, the program will run in web mode. VALUE should be the a filepath to output (temporary) file - usually this will be the session_id. The web mode activates: 1) creating a status_obj and writing it to json file; 2) ENABLE writing a json report file;")
-	arg_parser.add_argument("--NoLogger", help="Bool (switch, takes no value after argument); if set then logging is DISAPLED. Logfile will be placed in outputdir.", action='store_true')
+	arg_parser.add_argument("--web", help="If set, the program will run in web mode. VALUE should be the a filepath to output (temporary) files - usually this will be the session_id. The web mode activates: 1) creating a status_obj and writing it to json file; 2) ENABLE writing a json report file;")
+	arg_parser.add_argument("--NoLogger", help="Bool (switch, takes no value after argument); if set then logging is DISAPLED. Logfile will be placed in output_dir UNLESS log_dir is given", action='store_true')
+	#arg_parser.add_argument("--log_dir", type=check_if_writable, help="DIR to write logfile. Default is to use the args.output_dir. NOTE that if NoLogger is given then log_dir have no function")
+	arg_parser.add_argument("--log_file", type=check_if_file_is_writable, help="Full path and filename of the logfile. Default is to use the args.output_dir as DIR and current_script_name as FILENAME. NOTE that if NoLogger is given then log_file have no function")
+	## NOT FINISH LOGGING OPTION, 07/07/2014
+	#arg_parser.add_argument("--log", type=get_logging_option, help="If set, the program will enable a logger that prints statements to STDOUT and to a file. VALUE should be a full filepath (path and filename) to the log file. DEFAULT if set then logging is DISAPLED. Logfile will be placed in output_dir.")
 
 
 	### MATCH arguments
@@ -722,16 +754,22 @@ def ParseArguments():
 
 def setup_logger(args):
 	""" Function to setup logger """
-	import logging
-	import sys
-	import pplogger
-
 	logger = None
+	snpsnap_log_name = None 
+	snpsnap_log_dir = None
+	current_script_name = os.path.basename(__file__).replace('.py','')
+
+	if args.log_file: # some value has been parsed (and has passed the check_if_writable() check )
+		snpsnap_log_dir = os.path.dirname(args.log_file)
+		snpsnap_log_name = "{file_name_parsed}_{subcommand}".format(file_name_parsed=os.path.basename(args.log_file), subcommand=args.subcommand) # OBS: logger name will be something like 'logger.SESSIONID_match.log'
+	else: # no args.log_file has been parsed, so we use the args.output_dir
+		snpsnap_log_dir = args.output_dir
+		snpsnap_log_name = "{script}_{subcommand}".format(script=current_script_name, subcommand=args.subcommand) # OBS: logger name will be something like 'logger.snpsnap_query_match.log'
+
 	if args.NoLogger:
-		logger = pplogger.Logger(name=current_script_name, log_dir=args.output_dir, log_format=1, enabled=False).get()
+		logger = pplogger.Logger(name='dummy', log_dir='dummy', log_format=1, enabled=False).get()
 	else:
-		current_script_name = os.path.basename(__file__).replace('.py','')
-		logger = pplogger.Logger(name=current_script_name, log_dir=args.output_dir, log_format=1, enabled=True).get() # gives logname --> snapsnap_query.py
+		logger = pplogger.Logger(name=snpsnap_log_name, log_dir=snpsnap_log_dir, log_format=1, enabled=True).get() # gives logname --> snapsnap_query.py
 		logger.setLevel(logging.DEBUG)
 		## This works. Exceptions are written to the log AND printed to sys.stderr
 		## An alternative solution is to make one big "try except" block in main:

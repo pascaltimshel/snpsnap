@@ -287,8 +287,8 @@ def run():
 	job_name = form.getvalue('job_name', '')
 	if job_name == '': # setting 'default' job name
 		job_name = 'no_name'
-	elif len(job_name) >= 50: # only allow up to 50 character long job_name
-		job_name = job_name[:50]
+	elif len(job_name) >= 100: # only allow up to 100 character long job_name
+		job_name = job_name[:100]
 	
 	match_job_name = re.match("^[A-Za-z0-9_]+$", job_name)
 	if match_job_name is None:
@@ -311,11 +311,21 @@ def run():
 	script2call = "/cvar/jhlab/snpsnap/snpsnap/snpsnap_query.py"	
 	## this is the base for all the sub options that can be added to SNPsnap
 	cmd_base = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type {distance_type} --distance_cutoff {distance_cutoff} --web {file_prefix_web_tmp}".format(program=script2call, snplist=file_snplist, outputdir=path_session_output, distance_type=distance_type, distance_cutoff=distance_cutoff, file_prefix_web_tmp=file_prefix_web_tmp)
+	## REMEMBER: cmd_base is modfied 'globally', so all addon's MUST be true for the rest of commands
 	##### Adding more stuff to cmd_base ####
 	if exclude_HLA_SNPs:
 		option = "--exclude_HLA_SNPs"
 		cmd_base = "{base} {addon}".format(base=cmd_base, addon=option) # or #cmd_base = " ".join([cmd_base, option])
-	## REMEMBER: cmd_base is modfied 'globally', so all addon's MUST be true for the rest of commands
+	###### INTERNAL LOGGER SWITCH ###
+	logger = True # 'False' or 'True' ---> log_file will be written to /local/data/web_logs
+	if logger:
+		file_path = "/local/data/web_logs"+"/"+session_id ### OBS - HARD CODED PATH!!
+		option = "--log_file {file_path}".format(file_path=file_path) # OBS: the log filename will be something like 'logger.SESSIONID_match.log' or 'logger.SESSIONID_annotate.log'
+		cmd_base = "{base} {addon}".format(base=cmd_base, addon=option)
+	else:
+		option = "--NoLogger"
+		cmd_base = "{base} {addon}".format(base=cmd_base, addon=option) # or #cmd_base = " ".join([cmd_base, option])
+	#################################
 
 	####### ANNOTATE COMMAND #######
 	cmd_annotate = '' # OBS: important that default value evaluates to false in Bool context

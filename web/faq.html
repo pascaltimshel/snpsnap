@@ -56,10 +56,47 @@
 
 
 <div class="jumbotron">
-	<h1>Coming soon!</h1>
-	<p class="lead">Thank you for the patience</p>
-	<p class="text-muted">Please help us improve this tool: we encourage that all questions and feedback are directed to the <a href="contact.html">SNPsnap team</a></p>
+	<h1>Any Questions?</h1>
+	<!-- <p class="lead"></p> -->
+	<p class="text-muted">We encourage that you direct any questions or feedback to the <a href="contact.html">SNPsnap team</a>. Thank you for helping improving SNPsnap</p>
 </div>
+
+
+<h3>Input</h3>
+<dl class="dl">
+	<dt class="faq_question">Will I be able to use rs-numbers as input SNP identifers?</dt>
+	<dd>No. SNPsnap only accepts chromosomal coordinates (from GRCh37/hg19) as SNP identifiers.</dd>
+</dl>
+
+<h3>Output</h3>
+
+<dl class="dl">
+	<dt class="faq_question">What gene annotations does SNPsnap use for column locus genes like<span class="code_output">ID_genes_in_matched_locus</span>?</dt>
+	<dd>SNPsnap uses the complete set of genes from Ensembl which covers about 48,000 genes.</dd>
+	<dt class="faq_question">Why is there a replicated input SNPs in <span class="code_files">matched_snps.tab</span> even though I enabled <span class="code_settings">Exclude input SNPs in matched SNPs</span>?</dt>
+	<dd>If no matching SNPs are found, SNPsnap will replicate the input SNP to form a full row in <span class="code_files">matched_snps.tab</span>.</dd>
+</dl>
+
+<dl class="dl">
+	<dt class="faq_question"></dt>
+	<dd></dd>
+</dl>
+
+<h3>Getting results files</h3>
+<dl class="dl">
+	<dt class="faq_question">What are the run times for SNPsnap?</dt>
+	<dd>SNPsnap matching takes ~3 seconds per input SNP (matching 500 input SNPs will take ~25 minutes to match). If any annotation option (<span class="code_settings">Annotate matched SNPs</span> or <span class="code_settings">Annotate input SNPs</span>) option is enabled SNPsnap uses an additional ~2 minutes on annotation for the complete set of SNPs.</dd>
+	<dt class="faq_question">For how long are my files saved on the web server?</dt>
+	<dd>The SNPsnap web server stores the result files for 24 hours. After this your result files will be permanently deleted.</dd>
+	<dd></dd>
+</dl>
+
+
+<!-- ####### TEMPLATE ########### -->
+<!-- <dl class="dl">
+	<dt class="faq_question"></dt>
+	<dd></dd>
+</dl> -->
 
 
  <!-- ############## FOOTER ################### -->

@@ -49,11 +49,11 @@ try:
 	#insufficient_rating_img = None
 	#match_size_rating_img = None
 	img_path = {
-		'very good': 'img/rating_v2/rating_very_good.png',
-		'good': 'img/rating_v2/rating_good.png',
-		'ok': 'img/rating_v2/rating_ok.png',
-		'poor': 'img/rating_v2/rating_poor.png',
-		'very poor': 'img/rating_v2/rating_very_poor.png',
+		'very good': 'img/rating_v3/rating_very_good.png',
+		'good': 'img/rating_v3/rating_good.png',
+		'ok': 'img/rating_v3/rating_ok.png',
+		'poor': 'img/rating_v3/rating_poor.png',
+		'very poor': 'img/rating_v3/rating_very_poor.png',
 	}
 
 	rating_img = {} # this dict will contain two keys
@@ -67,8 +67,8 @@ try:
 
 
 	################ GETTING THE ACTUAL VALUES OF THE REPORT ##################
-	numeric_insufficient = int(report_obj['report']['insufficient_matches_pct']) # OBS: converting to int to avoid strangely formatted numbers 
-	numeric_match_size = int(report_obj['report']['match_size_median_pct']) # OBS: converting to int to avoid strangely formatted numbers 
+	fmt_value_insufficient = "{:.2f}".format( report_obj['report']['insufficient_matches_pct'] ) # OBS: formatting number. You can format any number as float, but you cannot format floats as int (e.g. {:d})
+	fmt_value_match_size = "{:.2f}".format( report_obj['report']['match_size_median_pct'] ) # OBS: formatting number. You can format any number as float, but you cannot format floats as int (e.g. {:d})
 
 
 	#Description of how to control column width of tables of bootstrap:
@@ -86,25 +86,25 @@ try:
 	    <tbody>
 	      <tr>
 	        <th>Insufficient-matches</th>
-	        <td>{numeric_insufficient}%</td>
+	        <td>{fmt_value_insufficient}%</td>
 	        <td><img src='{img_insufficient_rating}' class="img-responsive" alt="Responsive image"></td>
 	      </tr>
 	      <tr>
 	        <th>Match-size</th>
-	        <td>{numeric_match_size}%</td>
+	        <td>{fmt_value_match_size}%</td>
 	        <td><img src='{img_match_size_rating}' class="img-responsive" alt="Responsive image"></td>
 	      </tr>
 	    </tbody>
 	  </table>
 
-	<p class='text-muted'>You may safely ignore the <i>Match Size</i> rating if the <i>Insufficient Matches</i> rating is better than <q>Ok</q>. 
+	<p class='text-muted'>You may safely ignore the <i>Match-size</i> rating if the <i>Insufficient-matches</i> rating is better than <q>Ok</q>. 
 	See the <a href='documentation.html'>documentation</a> for more information.</p> 
 	</div>
 	""".format(
 		img_insufficient_rating=rating_img['insufficient_rating'],
-		numeric_insufficient=numeric_insufficient,
+		fmt_value_insufficient=fmt_value_insufficient,
 		img_match_size_rating=rating_img['match_size_rating'],
-		numeric_match_size=numeric_match_size
+		fmt_value_match_size=fmt_value_match_size
 		)
 
 

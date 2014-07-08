@@ -75,6 +75,10 @@ h1.allerta {
 .margin_bottom5 { margin-bottom:5px; }
 .margin_bottom10 { margin-bottom:10px; }
 
+.margin_top0 { margin-top:0px; }
+.margin_top5 { margin-top:5px; }
+.margin_top10 { margin-top:10px; }
+
 /*My own class "copied" from Bootstrap 3 "label" - use this for input labels that are NOT "true" labels*/
 .label_text {
   display: inline-block;
@@ -119,6 +123,60 @@ h1.allerta {
 }
 
 
+/* ########################################## DOCUMENTATION ########################################## */
+
+dt.faq_question {
+  margin-top: 10px;
+  font-style: italic;
+  /*font-weight: bold;*/
+  font-weight: normal;
+}
+
+/* ########################################## DOCUMENTATION ########################################## */
+
+/*.dl-horizontal dd{
+    margin-left: 0;
+    margin-bottom: 1em;
+}
+
+.dl-horizontal dt{
+    margin-left: 0 !important;
+    text-align: left;
+    margin-bottom: 1em;
+    width: auto;
+    padding-right: 1em;
+}*/
+
+
+
+/* This class is intended to use for removing the style from the links in the documentation header */
+a.documentation_header_link {
+  text-decoration: inherit !important;
+  color: inherit !important;
+}
+
+
+
+/*Copied from Bootstrap legend CSS - edited and added text-decoration and color to REMOVE the 'link formatting'*/
+.documentation_header {
+/*  text-decoration: inherit !important;
+  color: inherit !important;*/
+  display: block;
+  width: 100%;
+  padding: 0;
+  margin-bottom: 20px;
+  line-height: inherit;
+  color: #333;
+  border: 0;
+  border-bottom: 2px solid #e5e5e5;
+}
+
+.documentation_important {
+  color: red;
+}
+
+
+/* ??? */
 .code_output {
   padding: 2px 4px;
   color: #d14;
@@ -127,26 +185,29 @@ h1.allerta {
   border-radius: 3px;
 }
 
+/* Used to format columns */
 .code_column {
   color: black;
   font-family: Monaco, Menlo, Consolas, "Courier New", monospace;
 }
 
+/* Used to format output-files */
 .code_files {
   padding: 2px 4px;
-  color: red;
+  color: DarkCyan;
   white-space: nowrap;
   font-family: Monaco, Menlo, Consolas, "Courier New", monospace;
   border-radius: 3px;
 }
 
+/* Used to format SNPsnap user settings. That is, the values entered in the match_snps formula */
 .code_settings {
-  padding: 2px 4px;
-  color: #580000 ;
-  white-space: nowrap;
-  font-family: Monaco, Menlo, Consolas, "Courier New", monospace;
-  border-radius: 3px;
+  padding: 2px 2px;
+  /*color: #580000 ;*/ 
+  color: #3333CC ;
+  /*text-decoration: underline;*/
 }
+
 
 /*############################# Jquery Validator ####################################*/
 /*From: http://stackoverflow.com/questions/14889103/jquery-validation-plugin-display-success-fail-images-next-to-password/14900826#14900826*/

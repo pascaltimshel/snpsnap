@@ -45,7 +45,8 @@ class Processor(object):
 		self.path_session_output = '/local/data/web_results'+'/'+self.session_id
 		self.path_web_tmp_output = '/local/data/web_tmp'
 		self.file_returncodes = "{base}/{sid}_{type}.{ext}".format(base=self.path_web_tmp_output, sid=self.session_id, type='returncodes', ext='json')
-		self.link_result = "http://snpsnap.broadinstitute.org/mpg/snpsnap/results/{session_id}/{prefix}_{job}.zip".format(session_id=self.session_id, prefix='SNPsnap', job=self.job_name)
+		#self.link_result = "http://snpsnap.broadinstitute.org/mpg/snpsnap/results/{session_id}/{prefix}_{job}.zip".format(session_id=self.session_id, prefix='SNPsnap', job=self.job_name) # OLD VERSION, using internal URL
+		self.link_result = "http://www.broadinstitute.org/mpg/snpsnap/results/{session_id}/{prefix}_{job}.zip".format(session_id=self.session_id, prefix='SNPsnap', job=self.job_name)
 
 		self.summary = {}
 
@@ -186,8 +187,9 @@ class Processor(object):
 		<html>
 		  <head></head>
 		  <body>
-		    <h2>Your job {job} could not be completed due to an internal error.</h2> <br/>
-		    We apologize for the inconvenience.<br/>
+		    <h2>Your job {job} could not be completed</h2>
+		    <p>An internal error caused your job to crash. Please re-run the job and report to the SNPsnap team if you keep getting this error message. </p>
+		    <p>We apologize for the inconvenience.</p>
 		    <p><i>SNPsnap Team</i></p>
 		  </body>
 		</html>

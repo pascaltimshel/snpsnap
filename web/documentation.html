@@ -53,22 +53,21 @@
 	</ul>
 </div>
 
-	<h2>Methodology</h2>
+	<h2 class="documentation_header">Methodology</h2>
 
 	<h3>Aim</h3>
 	The SNPsnap webserver enables SNP-based enrichment analysis by providing matched sets of SNPs that can be used to calibrate background expectations. Specifically, SNPsnap efficiently identifies sets of randomly drawn SNPs that are matched to a set of query SNPs based on 
 	<ul>
-	<li>minor allele frequency</li>
-	<li>number of SNPs in linkage disequilibrium (LD buddies)</li>
-	<li>distance to nearest gene</li>
-	<li>gene density.</li>
-	   
+		<li>Minor allele frequency</li>
+		<li>Number of SNPs in linkage disequilibrium (LD buddies)</li>
+		<li>Distance to nearest gene</li>
+		<li>Gene density</li>
 	</ul>
 	
 	<h3>Genetic properties used to sample random but matched SNPs</h3>
 	<ul>
 	  <li ><strong>Minor allele frequency</strong>: SNPs are partitioned into minor allele frequency bins of 1-2, 2-3, ..., 49-50% strata.</li>
-	  <li ><strong>LD buddies</strong>: the number of “buddy” (or "proxy") SNPs in LD at various thresholds. SNPsnap currently offer LD buddy counts for thresholds using r&#178 > 0.1, 0.2, ..., 0.9</li>
+	  <li ><strong>LD buddies</strong>: the number of “buddy” (or "proxy") SNPs in LD at various thresholds. SNPsnap currently offers LD buddy counts for thresholds using r&#178 > 0.1, 0.2, ..., 0.9</li>
 	  <li ><strong>Distance to nearest gene</strong>: the distance to the nearest 5’ start site using Ensembl gene coordinates (Flicek et al., 2014). If the SNP is within a gene, the distance to that gene’s start site is used. </li>
 	  <li ><strong>Gene density</strong>: the number of genes in loci around the SNP, using LD (r&#178 > 0.1, 0.2, ..., 0.9) and physical distance (100, 200, ..., 1000 kb) to define loci. </li>
 	</ul>
@@ -82,19 +81,19 @@
 
 	The SNPsnap algorithm identifies matched SNPs as follows:
 	<dl class="dl-horizontal">
-		<dt><strong>step 1</strong></dt>
+		<dt><strong>Step 1</strong></dt>
 		<dd>In five uniformly spaced increments, increase the allowable deviation for each of the genetic properties, ending with the prespecified maximum allowable deviation. For each increment, identify matching SNPs, defined as SNPs with genetic properties within the allowable deviations. </dd>
-		<dt><strong>step 2</strong></dt>
+		<dt><strong>Step 2</strong></dt>
 		<dd>If there are at least as many matching SNPs as requested, sample without replacement the requested number of SNPs from the matching SNPs and proceed to <strong>step 5</strong>. </dd>
-		<dt><strong>step 3</strong></dt>
+		<dt><strong>Step 3</strong></dt>
 		<dd>If the number of matching SNPs is less than number of requested SNPs, increment the allowable deviation and return to <strong>step 1</strong>; if the maximum allowable deviation has been reached, proceed to <strong>step 4</strong>. </dd>
-		<dt><strong>step 4</strong></dt>
+		<dt><strong>Step 4</strong></dt>
 		<dd>Sample with replacement from the matched SNPs identified in <strong>step 1</strong>.</dd>
-		<dt><strong>step 5</strong></dt>
+		<dt><strong>Step 5</strong></dt>
 		<dd>Proceed to next query SNP.</dd>
 	</dl>
-	Incrementing the allowable deviation of the genetic properties insures that the best matching SNPs is always used.<br>
-	This allows for setting the allowable deviation high and still get the best matching SNPs. 
+	Incrementing the allowable deviation of the genetic properties ensures that the best matching SNPs is always used.<br>
+	This allows for setting a large allowable deviation and still get the best matching SNPs. 
 
 <!-- 	<ol>
 		<li>In five uniformly spaced increments, increase the allowable deviation for each of the properties, ending with the prespecified maximum allowable deviation. For each increment, identify matching SNPs, defined as SNPs with genetic properties within the allowable deviations. </li>
@@ -105,40 +104,65 @@
 	</ol>
  -->
 
-	<h2>Webserver</h2>
+	<h2 class="documentation_header">Webserver</h2>
 
 	<h3>User input</h3>
-	Chromosomal positions of SNPs (not rsIDs), e.g. 3:20145787 for a SNP on chromosome 3 at bp 20,145,787. <div style="color: red;">Use genome build GRCh37/hg19 coordinates.</div>
+	Chromosomal coordinates of SNPs (not rsIDs), e.g. 3:20145787 for a SNP on chromosome 3 at bp 20,145,787. <span class="documentation_important">SNPsnap uses genome build GRCh37/hg19 for SNP coordinates.</span>
 	
 	
 	<h3>SNPsnap score</h3>
 	SNPsnap reports two scores that serve as guidelines for selecting proper matching settings.
 	<ul>
-	  <li ><strong>Insufficient-matches</strong>: the number of SNPs for which SNPsnap is not able to identify the required number of matched SNPs</li>
-	  <li ><strong>Match-size</strong>: median number of SNPs matched for the subset of SNPs with insufficient matches</li>
+	  <li ><strong>Insufficient-matches</strong>: the percentage of input SNPs for which SNPsnap is not able to identify the required number of matched SNPs</li>
+	  <li ><strong>Match-size</strong>: the percentage median number of SNPs matched for the subset of SNPs with insufficient matches</li>
 	</ul>
-	For each score, an ordinal scoring variable (“very poor”, “poor”, “ok”, “good”, “very good”; see example below) is reported to the user.
-	<div class="row">
-		<div class="col-xs-offset-2 col-xs-8">
+	Note that the Match-size score is only relevant to consider if the Insufficient-matches score indicates many insufficient matches.<br>
+	For each score, the score value and an ordinal scoring variable is reported to the user. The below table illustrates an example of the reported SNPsnap score.
+<!-- 	<div class="row">
+		<div class="col-xs-offset-3 col-xs-6">
 			<img class="img-responsive" src="img/rating_v2/rating_ok.png">
 		</div>
-	</div>
-	SNPsnap uses genome-wide significant loci from 63 traits and diseases from the GWAS Catalog (Hindorff et al., 2009) as a reference to the scoring system.
-	
+	</div> -->
+	<table class='table'>
+	  <thead>
+	    <tr>
+	      <th class="col-xs-3"><p class="text-left" style='font-size:110%;'>SNPsnap score</p></th>
+	      <th class="col-xs-2"><p class="text-left" style='font-size:110%;'>Value</p></th>
+	      <th class="col-xs-7"><p class="text-center" style='font-size:110%;'>Rating</p></th>
+	    </tr>
+	  </thead>
+	  <tbody>
+	    <tr>
+	      <th>Insufficient-matches</th>
+	      <td>34.50%</td>
+	      <td><img src='img/rating_v3/rating_very_poor.png' class="img-responsive" alt="Responsive image"></td>
+	    </tr>
+	    <tr>
+	      <th>Match-size</th>
+	      <td>91.83%</td>
+	      <td><img src='img/rating_v3/rating_very_good.png' class="img-responsive" alt="Responsive image"></td>
+	    </tr>
+	  </tbody>
+	</table>
+	SNPsnap uses genome-wide significant loci from 63 traits and diseases from the GWAS Catalog (Hindorff et al., 2009) as a reference for the scoring system.
+	The ordinal scoring variable (“very poor”, “poor”, “ok”, “good”, “very good”) corresponds to the scoring quintiles devrived from SNPsnap scores of the 63 phenotypes. 
+	For example, a 'Insufficient-matches' score 'very good' ranks your SNPsnap query among the top 20% scores observed for the 63 GWAS catalog phenotypes.
 	Note that the scoring metrics will only be valid for similar matching settings as the default SNPsnap matching settings.
 	
 	<h3> Output files</h3>
 	<ul>
 	  <li ><span class="code_files">matched_snps.tab</span>: matrix with input SNPs as rows and matched SNPs as columns</li>
-	  <li ><span class="code_files">input_snps_excluded.tab</span>: first column is input SNP; second column is reason for exclusion, e.g. SNP does not exist in the SNPsnap SNP data base or SNP maps to HLA region (if the setting is enabled)</li>
-	  <li ><span class="code_files">input_snps_annotated.tab</span>: annotation of input SNPs (see <a href="#annotations">SNP Annotations</a> for details)</li>
-	  <li ><span class="code_files">matched_snps_annotated.tab</span>: annotation of matched SNPs (see <a href="#annotations">SNP Annotations</a> for details) </li>
+	  <li ><span class="code_files">input_snps_excluded.tab</span>: first column is input SNP identifier; second column is reason for exclusion, e.g. the SNP does not exist in the SNPsnap SNP data base or the SNP maps to the HLA region (if the <span class="code_settings">Exclude HLA SNPs</span> is enabled)</li>
+	  <li ><span class="code_files">input_snps_annotated.tab</span>: annotation of input SNPs (see <a href="#snp_annotation_input_snps_annotated">SNP Annotations</a> for details)</li>
+	  <li ><span class="code_files">matched_snps_annotated.tab</span>: annotation of matched SNPs (see <a href="#snp_annotation_matched_snps_annotated">SNP Annotations</a> for details) </li>
 	  <li ><span class="code_files">snpsnap_summary.txt</span>: a summery of the input parameters to SNPsnap and the SNPsnap scores</li>
 	</ul>
 	
-	<h3><a name="annotations" style="text-decoration: none; color: black;">SNP Annotations</a></h3>
-	<h5><span class="code_files">input_snps_annotated.tab</span></h5>
-	SNPsnap currently supports the following annotations of SNPs:<br>
+	<!-- style="color: black; text-decoration: none;"  -->
+	<!-- <h3><a class="documentation_header_link" name="annotations">SNP Annotations - </a><span class="code_files">input_snps_annotated.tab</span></h3> -->
+	<h3><a name="snp_annotation_input_snps_annotated" class="documentation_header_link">SNP Annotations - <span class="code_files">input_snps_annotated.tab</span></a></h3>
+	<!-- <h5><span class="code_files">input_snps_annotated.tab</span></h5> -->
+	SNPsnap currently supports the following annotations of SNPs in the file <span class="code_files">input_snps_annotated.tab</span>:<br>
 	<table class='table table-hover'>
 		<thead>
 			<tr>
@@ -151,47 +175,47 @@
 			<tr>
 				<th>1</th>
 				<td class="code_column">snpID</td>
-				<td>chromosomal coordinates of the SNP</td>
+				<td>Chromosomal coordinates of the SNP</td>
 			</tr>
 			<tr>
 				<th>2</th>
 				<td class="code_column">rsID</td>
-				<td>rs-number of the SNP (note that in some cases the rs-number is identical to the chromosomal coordinate)</td>
+				<td>Rs-number of the SNP (note that in some cases the rs-number is identical to the chromosomal coordinate)</td>
 			</tr>
 			<tr>
 				<th>3</th>
 				<td class="code_column">freq_bin</td>
-				<td>frequency bin of the SNP using 1-2, 2-3, ..., 49-50% strata</td>
+				<td>Frequency bin of the SNP using 1-2, 2-3, ..., 49-50% strata</td>
 			</tr>
 			<tr>
 				<th>4</th>
 				<td class="code_column">gene_count</td>
-				<td>the number of genes in the locus, that is the gene density</td>
+				<td>The number of genes in the locus (gene density)</td>
 			</tr>
 			<tr>
 				<th>5</th>
 				<td class="code_column">dist_nearest_gene_snpsnap</td>
-				<td>distance to the start site of nearest gene the SNP is located within. If this distance is not defined (<code>"inf"</code>), the distance to the start site of nearest gene is used. That is, <span class="code_column">dist_nearest_gene_snpsnap</span> is equal to either <span class="code_column">dist_nearest_gene</span> or <span class="code_column">dist_nearest_gene_located_within</span>. Distance is in base pairs</td>
+				<td>Distance to the start site of nearest gene the SNP is located within. If this distance is not defined (<code>"inf"</code>), the distance to the start site of nearest gene is used. That is, <span class="code_column">dist_nearest_gene_snpsnap</span> is equal to either <span class="code_column">dist_nearest_gene</span> or <span class="code_column">dist_nearest_gene_located_within</span>. Distance is in base pairs</td>
 			</tr>
 			<tr>
 				<th>6</th>
 				<td class="code_column">dist_nearest_gene</td>
-				<td>distance to the start site of nearest gene. Distance is in base pairs</td>
+				<td>Distance to the start site of nearest gene. Distance is in base pairs</td>
 			</tr>
 			<tr>
 				<th>7</th>
 				<td class="code_column">dist_nearest_gene_located_within</td>
-				<td>distance to the start site of nearest gene the SNP is located within. Distance is in base pairs. If the SNP is not located within any genes the distance is <code>"inf"</code></td>
+				<td>Distance to the start site of nearest gene the SNP is located within. Distance is in base pairs. If the SNP is not located within any genes the distance is <code>"inf"</code></td>
 			</tr>
 			<tr>
 				<th>8</th>
 				<td class="code_column">loci_upstream</td>
-				<td>upstream locus boundary (that is the 5' end of the locus boundary)</td>
+				<td>Upstream locus boundary</td>
 			</tr>
 			<tr>
 				<th>9</th>
 				<td class="code_column">loci_downstream</td>
-				<td>downstream locus boundary (that is the 3' end of the locus boundary)</td>
+				<td>Downstream locus boundary</td>
 			</tr>
 			<tr>
 				<th>10</th>
@@ -216,57 +240,56 @@
 			<tr>
 				<th>14</th>
 				<td class="code_column">friends_ld01</td>
-				<td>number of LD buddies using cutoff r&#178 > 0.1</td>
+				<td>Number of LD buddies using cutoff r&#178 > 0.1</td>
 			</tr>
 			<tr>
 				<th>15</th>
 				<td class="code_column">friends_ld02</td>
-				<td>number of LD buddies using cutoff r&#178 > 0.2</td>
+				<td>Number of LD buddies using cutoff r&#178 > 0.2</td>
 			</tr>
 			<tr>
 				<th>16</th>
 				<td class="code_column">friends_ld03</td>
-				<td>number of LD buddies using cutoff r&#178 > 0.3</td>
+				<td>Number of LD buddies using cutoff r&#178 > 0.3</td>
 			</tr>
 			<tr>
 				<th>17</th>
 				<td class="code_column">friends_ld04</td>
-				<td>number of LD buddies using cutoff r&#178 > 0.4</td>
+				<td>Number of LD buddies using cutoff r&#178 > 0.4</td>
 			</tr>
 			<tr>
 				<th>18</th>
 				<td class="code_column">friends_ld05</td>
-				<td>number of LD buddies using cutoff r&#178 > 0.5</td>
+				<td>Number of LD buddies using cutoff r&#178 > 0.5</td>
 			</tr>
 			<tr>
 				<th>19</th>
 				<td class="code_column">friends_ld06</td>
-				<td>number of LD buddies using cutoff r&#178 > 0.6</td>
+				<td>Number of LD buddies using cutoff r&#178 > 0.6</td>
 			</tr>
 			<tr>
 				<th>20</th>
 				<td class="code_column">friends_ld07</td>
-				<td>number of LD buddies using cutoff r&#178 > 0.7</td>
+				<td>Number of LD buddies using cutoff r&#178 > 0.7</td>
 			</tr>
 			<tr>
 				<th>21</th>
 				<td class="code_column">friends_ld08</td>
-				<td>number of LD buddies using cutoff r&#178 > 0.8</td>
+				<td>Number of LD buddies using cutoff r&#178 > 0.8</td>
 			</tr>
 			<tr>
 				<th>22</th>
 				<td class="code_column">friends_ld09</td>
-				<td>number of LD buddies using cutoff r&#178 > 0.9</td>
+				<td>Number of LD buddies using cutoff r&#178 > 0.9</td>
 			</tr>
 		</tbody>
 	</table>
 
 
-
-
-	<h5><span class="code_files">matched_snps_annotated.tab</span></h5> 
-	This file contains the same columns as described above but annotating the matched SNP.<br>
-	In addition to the file contains the following two leading columns:<br>
+	<!-- ################ SNP Annotations - matched_snps_annotated.tab ############### -->
+	<h3><a name="snp_annotation_matched_snps_annotated" class="documentation_header_link">SNP Annotations - <span class="code_files">matched_snps_annotated.tab</span></a></h3>
+	The <span class="code_files">matched_snps_annotated.tab</span> file contains the same columns as described for <span class="code_files">input_snps_annotated.tab</span> but annotating the matched SNP.<br>
+	The file contains the following two additional leading columns:<br>
 	<table class='table table-hover'>
 		<thead>
 			<tr>
@@ -279,29 +302,22 @@
 			<tr>
 				<th>1</th>
 				<td class="code_column">set</td>
-				<td>index of the matched SNP group. The number of set index is equal to the number of required matched SNPs</td>
+				<td>Index of the matched SNP group. The number of set index is equal to the number of required matched SNPs</td>
 			</tr>
 			<tr>
 				<th>2</th>
 				<td class="code_column">input_snp</td>
-				<td>the chromosomal coordinates for the input SNPs that were matched</td>
+				<td>The chromosomal coordinates for the input SNPs that were matched</td>
 			</tr>
 			<tr>
 				<th>3...24</th>
 				<td>...</td>
 				<td>... same as for  <span class="code_files">input_snps_annotated.tab</span> but annotation is for the matched SNP</td>
 			</tr>
+		</tbody>
+	</table>
 
 
-<!--
-<h2>7. FAQ</h2>
-<ul>
-  <li ><i>What gene annotations does SNPsnap use for column locus genes like<span class="code_output">ID_genes_in_matched_locus</span>?</i><br>
-  SNPsnap uses the complete set of genes from Ensembl which covers about 48,000 genes </li>
-<i>Why is there a replicated input SNPs in <span class="code_files">matched_snps.tab</span> even though I enabled <span class="code_settings">Exclude Input SNPs</span>?</i><br>  
-If no matching SNPs are found, SNPsnap will replicate the input SNP to form a full row in <span class="code_files">matched_snps.tab</span>.
-</ul>
--->
 
 
  <!-- ############## FOOTER ################### -->

@@ -109,7 +109,7 @@ $(document).ready(function(){
 			job_name: {
 				required: true,
 				minlength: 3,
-				maxlength: 30,
+				maxlength: 100,
 				// regex: "^[a-zA-Z0-9_\-]{3,30}$"  // the {3,30} is a bit redundant given the min and max length
 				regex: "^[a-zA-Z0-9_\-]+$" // consider using this pattern: [\w._\-]+
 			},

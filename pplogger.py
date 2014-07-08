@@ -16,7 +16,7 @@ class Logger(object):
 	current_script_name = os.path.basename(__file__).replace('.py','')
 	logger = Logger(name=current_script_name, log_dir=outputdir, log_format=1, enabled=True).get() """
 	def __init__(self, name='NoLogNameParsed', log_dir=os.getcwd(), log_format=1, enabled=True):
-		self.name = "myroot.%s" % name
+		self.name = "logger.%s" % name
 		self.log_dir = log_dir
 		self.log_format = log_format
 		self.enabled = enabled
