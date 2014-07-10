@@ -405,7 +405,7 @@ def run():
 
 	#print "<p>Your session ID is: %s</p>" % session_id
 	print "<p> An email will be sent to <strong>%s</strong> when the job is completed.</p>" % email_address
-	print """<p class='text-muted'><i>If you browse back you will not be able to retrieve this site again it again.<br>
+	print """<p class='text-muted'><i>If you browse back you will not be able to retrieve this site again.<br>
 	However, you will still receive an email notification about your job completion.
 	</i></p>
 	"""
@@ -444,10 +444,11 @@ def run():
 
 	################## PANEL: PROGRESS ##################
 
+	### class="text-primary"
 	str_bar_match = """
 	<div class='row' id='row_progress_match'>
 		<div class='col-xs-3'>
-			<p class="text-primary"><strong>Matching SNPs</strong></p>
+			<p><strong>Matching SNPs</strong></p>
 		</div>
 		<div class='col-xs-2'>
 			<p class="text-info"></p>
@@ -464,7 +465,7 @@ def run():
 	str_bar_set_file = """
 	<div class='row' id='row_progress_set_file'>
 		<div class='col-xs-3'>
-			<p class="text-primary"><strong>Annotating Matched SNPs</strong></p>
+			<p><strong>Annotating Matched SNPs</strong></p>
 		</div>
 		<div class='col-xs-2'>
 			<p class="text-info"></p>
@@ -482,7 +483,7 @@ def run():
 	str_bar_annotate = """
 	<div class='row' id='row_progress_annotate'>
 		<div class='col-xs-3'>
-			<p class="text-primary"><strong>Annotating Inputs SNPs</strong></p>
+			<p><strong>Annotating Inputs SNPs</strong></p>
 		</div>
 		<div class='col-xs-2'>
 			<p class="text-info"></p>
@@ -523,7 +524,7 @@ def run():
 		<div class="panel-heading">
 		  <h4 class="panel-title">
 			<a data-toggle="collapse" data-target="#collapse_report" href="#collapse_report" onClick="return false;">
-			  SNPsnap Matching Report
+			  SNPsnap Scores
 			</a>
 		  </h4>
 		</div>
@@ -540,24 +541,26 @@ def run():
 	#str_results = "Your job is done!</br>{link}".format(link=link_results) # version1
 	#str_results = "<button type='button' class='btn btn-success'>{link}</button>".format(link=link_results)  # version2 - not complete?
 	#str_results = "<a class='btn btn-success' href='{url}'><i class='icon-download'></i>Download results</a>".format(url=url_results) # version3 - works only for bootstrap 2
-	str_results = "<a href='{url}' class='btn btn-default btn-success'><span class='glyphicon glyphicon-download'></span> Download Results</a>".format(url=url_results) # verison4 - works for bootstrap 3!
+	str_result_botton = "<a href='{url}' class='btn btn-default btn-success'><span class='glyphicon glyphicon-download'></span> Download Results</a>".format(url=url_results) # verison4 - works for bootstrap 3!
 
 	print """
 	  <div class="panel panel-default" id='panel_results'>
 		<div class="panel-heading">
 		  <h4 class="panel-title">
 			<a data-toggle="collapse" data-target="#collapse_results" href="#collapse_results" onClick="return false;">
-			  Results
+			  Download
 			</a>
 		  </h4>
 		</div>
 		<div id="collapse_results" class="panel-collapse collapse in"> 
 		  <div class="panel-body">
 		  {results}
+		  <br>
+		  <p class="text-muted">All files are tab delimited with the .txt file extension and can be directly imported to Excel.</p>
 		  </div>
 		</div>
 	  </div>
-	""".format(results=str_results)
+	""".format(results=str_result_botton)
 
 
 	###################################### PANEL GROUP - END ######################################

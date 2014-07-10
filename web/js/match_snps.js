@@ -1,7 +1,36 @@
+// Function to detect file upload
+// Taken from: http://stackoverflow.com/a/18164555 
+$(document).on('change', '.btn-file :file', function() {
+  var input = $(this),
+	  numFiles = input.get(0).files ? input.get(0).files.length : 1,
+	  label = input.val().replace(/\\/g, '/').replace(/.*\//, '');
+  input.trigger('fileselect', [numFiles, label]);
+});
+
+
+
 $(document).ready(function(){
 	// Activate tooltip
 	$("[data-toggle='tooltip']").tooltip({'placement': 'top'});
 	
+
+	// USER FEEDBACK FOR FILE UPLOAD
+	// Taken from: http://stackoverflow.com/a/18164555 
+	$('.btn-file :file').on('fileselect', function(event, numFiles, label) {
+		// the input variable will be a HTML text element under the input-group class, e.g. <input type="text" class="form-control" readonly>
+		var input = $(this).parents('.input-group').find(':text'),
+			log = numFiles > 1 ? numFiles + ' files selected' : label;
+			// if more than one file is uploaded: log variable will contain the string: e.g. "3 files selected"
+			// if ONE file is uploaded: log variable will contain 'cleaned' filename, e.g. 'sample_10randSNPs.list'
+		
+		if( input.length ) {
+			input.val(log); // Set value of text element. Make sure that the HTML text tag has the 'readonly' attribute so the user cannot edit the text. E.g. <input type="text" class="form-control" readonly>
+		} else {
+			if( log ) alert(log); // Use a warning to inform the user what file has been uploaded
+		}
+		
+	});
+
 	// Jquery function for updating distance_cutoff select (dropdown) based on distance_type
 	$("input[name='distance_type']").change(function() {
 		if ($("input[name='distance_type']:checked").val() == 'ld') {

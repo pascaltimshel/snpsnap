@@ -61,7 +61,7 @@ h1.allerta {
   /*background-color: LightSteelBlue;*/
   border-bottom: 1px solid #e5e5e5;
   padding: 14px 24px;
-  border-radius: 15px;
+  border-radius: 5px;
 }
 
 /*NOT USED YET - This is for adding a red asterisk after required fields*/
@@ -86,6 +86,10 @@ h1.allerta {
   font-weight: bold;
 }
 
+
+/*######### FILE UPLOAD BOTTON #############*/
+/* FROM: http://www.surrealcms.com/blog/whipping-file-inputs-into-shape-with-bootstrap-3*/
+/* Found the above link at: http://stackoverflow.com/a/18164555*/
 .btn-file {
 	position: relative;
 	overflow: hidden;
@@ -106,7 +110,14 @@ h1.allerta {
 	display: block;
 }
 
-/*Overwriting Bootstrap CSS*/
+#text_filename {
+  background-color: white;
+}
+
+/*#################################*/
+
+
+/*Overwriting Bootstrap TOOLTIP CSS*/
 .tooltip-inner {
   max-width: 200px;
   padding: 3px 8px;
@@ -123,13 +134,27 @@ h1.allerta {
 }
 
 
-/* ########################################## DOCUMENTATION ########################################## */
+/* ########################################## FAQ ########################################## */
 
 dt.faq_question {
   margin-top: 10px;
   font-style: italic;
   /*font-weight: bold;*/
   font-weight: normal;
+}
+
+dt.faq_question:before {
+   content: "Q: ";
+   font-weight: bold;
+}
+
+dd.faq_answer {
+  font-weight: normal;
+}
+
+dd.faq_answer:before {
+   content: "A: ";
+   font-weight: bold;
 }
 
 /* ########################################## DOCUMENTATION ########################################## */

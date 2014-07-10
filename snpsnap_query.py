@@ -169,7 +169,7 @@ def lookup_user_snps_iter(file_db, user_snps):
 
 
 def exclude_snps(path_output, user_snps, df):
-	user_snps_excluded = path_output+"/input_snps_excluded.tab"
+	user_snps_excluded = path_output+"/input_snps_excluded.txt"
 	logger.info( "START: doing exclude_snps, that is SNPs that will be excluded" )
 	start_time = time.time()
 
@@ -273,7 +273,7 @@ def read_collection(file_collection):
 def write_user_snps_annotation(path_output, df, df_collection):
 	status_obj.update_status('annotate', 'running')
 
-	user_snps_annotated_file = path_output+"/input_snps_annotated.tab"
+	user_snps_annotated_file = path_output+"/input_snps_annotated.txt"
 	df_user_snp_found_index = df.index # index of (found) user snps
 	df_user_snps_annotated = df_collection.ix[df_user_snp_found_index]
 	df_user_snps_annotated.to_csv(user_snps_annotated_file, sep='\t', header=True, index=True,  mode='w') 
@@ -312,7 +312,7 @@ def few_matches_score(x, lim, scale):
 def few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps):
 	########## Write few_matches - ONLY IF THERE ARE FEW MATCHES ##############
 	if len(df_snps_few_matches) != 0:
-		user_snps_few_matches_file = path_output+"/input_snps_insufficient_matches.tab"
+		user_snps_few_matches_file = path_output+"/input_snps_insufficient_matches.txt"
 		df_snps_few_matches.to_csv(user_snps_few_matches_file, sep='\t', index=True, header=True, index_label='snpID', mode='w') 
 	############################################
 	
@@ -431,7 +431,7 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff,
 	
 	df_snps_few_matches = None
 
-	user_snps_matrix_file = path_output+"/matched_snps.tab"
+	user_snps_matrix_file = path_output+"/matched_snps.txt"
 	if os.path.exists(user_snps_matrix_file): # removing any existing file. REASON: we are appending to matrix_file
 		os.remove(user_snps_matrix_file)
 	f_matrix_out = open(user_snps_matrix_file,'a')
@@ -457,17 +457,17 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff,
 			logger.error( "max_distance_deviation set to %s. Lowest possible max_distance_deviation is 1." % max_distance_deviation )
 			max_distance_deviation = 1
 		delta_dist = np.linspace(1,max_distance_deviation, n_attempts)/float(100) # OBS distance deviation starts at 1 %
-		delta_ld_buddy_count = np.linspace(1,max_ld_buddy_count_deviation, n_attempts)/float(100) # NEW
+		delta_ld_buddy_count = np.linspace(0,max_ld_buddy_count_deviation, n_attempts)/float(100) # NEW
 
 		### Calculating low/high boundaries
 		freq_low = np.repeat(freq, n_attempts) - delta_freq # ABSOLUTE DEVIATION
 		freq_high = np.repeat(freq, n_attempts) + delta_freq # ABSOLUTE DEVIATION
-		gene_count_low = np.repeat(gene_count, n_attempts)*(1-delta_gene_count)
-		gene_count_high = np.repeat(gene_count, n_attempts)*(1+delta_gene_count)
-		dist_low = np.repeat(dist, n_attempts)*(1-delta_dist)
-		dist_high = np.repeat(dist, n_attempts)*(1+delta_dist)
-		ld_buddy_count_low = np.repeat(ld_buddy_count, n_attempts)*(1-delta_ld_buddy_count)
-		ld_buddy_count_high = np.repeat(ld_buddy_count, n_attempts)*(1+delta_ld_buddy_count)
+		gene_count_low = np.rint(np.repeat(gene_count, n_attempts)*(1-delta_gene_count))
+		gene_count_high = np.rint(np.repeat(gene_count, n_attempts)*(1+delta_gene_count))
+		dist_low = np.rint(np.repeat(dist, n_attempts)*(1-delta_dist))
+		dist_high = np.rint(np.repeat(dist, n_attempts)*(1+delta_dist))
+		ld_buddy_count_low = np.rint(np.repeat(ld_buddy_count, n_attempts)*(1-delta_ld_buddy_count))
+		ld_buddy_count_high = np.rint(np.repeat(ld_buddy_count, n_attempts)*(1+delta_ld_buddy_count))
 
 		logger.info( "SNP #%d/%d: ID starting query in data base" % (i+1, N_snps) )
 		match_ID_old = None # placeholder for a Numpy array
@@ -481,7 +481,9 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff,
 			query = "%s & %s & %s & %s" % (query_freq, query_gene_count, query_dist, query_ld_buddy_count)
 			#match_ID = store.select('dummy', query, columns=[]).index.values # return no columns --> only index # USED BEFORE JUNE 30
 			start_time = time.time()
-			match_ID = store.select('dummy', query, columns=[]) # return no columns --> only index 
+			match_ID = store.select('dummy', query, columns=[]) # return no columns --> only index
+			## Permuting/shuffling the rows
+			#df.reindex(index=np.random.permutation(df.index)) # A new object is produced unless the new index is equivalent to the current one and copy=False
 			elapsed_time = time.time() - start_time
 			logger.info( "attempt #%d/%d| SNP %s| Selecting data from store in %s s (%s min)" % (attempt+1, n_attempts, query_snpID, elapsed_time, elapsed_time/60) )
 
@@ -605,8 +607,8 @@ def write_set_file(path_output, df_collection):
 	#snpsnap_matrix_stats.tab
 	#snpsnap_table.tab
 	#snpsnap_set_annotation.tab
-	user_snps_set_file = path_output+"/matched_snps_annotated.tab"
-	matrix_file = path_output+"/matched_snps.tab" #TODO OBS: FIX THIS. the file name should be parsed to the function
+	user_snps_set_file = path_output+"/matched_snps_annotated.txt"
+	matrix_file = path_output+"/matched_snps.txt" #TODO OBS: FIX THIS. the file name should be parsed to the function
 	#TODO: check 'integrity' of df_matrix before reading?
 	# TWO DIFFERENT VERSIONS. None of them set the index explicitly, but rely either on header or pandas naming columns [0,1,2,...] where 0 is giving to the index
 	
@@ -694,8 +696,7 @@ def check_if_file_is_writable(file_path):
 
 
 def ParseArguments():
-	""" Handles program parameters and returns an argument class containing 
-	all parameters """
+	""" Handles program parameters and returns an argument class containing all parameters """
 	#REMEMBER: argparse uses 'default=None' by default. Thus the NameSpace will have None values for optional arguments not specified
 	#TODO: check input variable types!
 	# check for integers ans strings
@@ -942,7 +943,7 @@ def main():
 	#path_data = os.path.abspath("/Users/pascaltimshel/snpsnap/data/step3") ## OSX - HARD CODED PATH!!
 	#path_data = os.path.abspath("/cvar/jhlab/snpsnap/data/step3/ld0.5") ## BROAD - HARD CODED PATH - BEFORE June 2014 (before production_v1)!!
 	
-	path_data = os.path.abspath("/cvar/jhlab/snpsnap/data/step3/1KG_snpsnap_production_v1_bhour") ## BROAD - version: production_v1
+	path_data = os.path.abspath("/cvar/jhlab/snpsnap/data/step3/1KG_snpsnap_production_v1_uncompressed_incl_rsID") ## BROAD - version: production_v1
 	#path_data = os.path.abspath("/cvar/jhlab/snpsnap/data/step3/1KG_snpsnap_production_v1_single_ld") ## SINGLE LD BROAD - version: production_v1
 	prefix = args.distance_type + args.distance_cutoff
 	path_output = os.path.abspath(args.output_dir)

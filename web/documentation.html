@@ -110,7 +110,7 @@
 	Chromosomal coordinates of SNPs (not rsIDs), e.g. 3:20145787 for a SNP on chromosome 3 at bp 20,145,787. <span class="documentation_important">SNPsnap uses genome build GRCh37/hg19 for SNP coordinates.</span>
 	
 	
-	<h3>SNPsnap score</h3>
+	<h3><a name="snpsnap_score" class="documentation_header_link">SNPsnap score</a></h3> <!-- OBS: this link is used in report_html.py. MAKE SURE THAT THE NAMES ARE IN SYNC! -->
 	SNPsnap reports two scores that serve as guidelines for selecting proper matching settings.
 	<ul>
 	  <li ><strong>Insufficient-matches</strong>: the percentage of input SNPs for which SNPsnap is not able to identify the required number of matched SNPs</li>
@@ -151,18 +151,20 @@
 	
 	<h3> Output files</h3>
 	<ul>
-	  <li ><span class="code_files">matched_snps.tab</span>: matrix with input SNPs as rows and matched SNPs as columns</li>
-	  <li ><span class="code_files">input_snps_excluded.tab</span>: first column is input SNP identifier; second column is reason for exclusion, e.g. the SNP does not exist in the SNPsnap SNP data base or the SNP maps to the HLA region (if the <span class="code_settings">Exclude HLA SNPs</span> is enabled)</li>
-	  <li ><span class="code_files">input_snps_annotated.tab</span>: annotation of input SNPs (see <a href="#snp_annotation_input_snps_annotated">SNP Annotations</a> for details)</li>
-	  <li ><span class="code_files">matched_snps_annotated.tab</span>: annotation of matched SNPs (see <a href="#snp_annotation_matched_snps_annotated">SNP Annotations</a> for details) </li>
+	  <li ><span class="code_files">matched_snps.txt</span>: matrix with input SNPs as rows and matched SNPs as columns</li>
+	  <li ><span class="code_files">input_snps_excluded.txt</span>: first column is input SNP identifier; second column is reason for exclusion, e.g. the SNP does not exist in the SNPsnap SNP data base or the SNP maps to the HLA region (if the <span class="code_settings">Exclude HLA SNPs</span> is enabled)</li>
+	  <li ><span class="code_files">input_snps_annotated.txt</span>: annotation of input SNPs (see <a href="#snp_annotation_input_snps_annotated">SNP Annotations</a> for details)</li>
+	  <li ><span class="code_files">matched_snps_annotated.txt</span>: annotation of matched SNPs (see <a href="#snp_annotation_matched_snps_annotated">SNP Annotations</a> for details) </li>
 	  <li ><span class="code_files">snpsnap_summary.txt</span>: a summery of the input parameters to SNPsnap and the SNPsnap scores</li>
 	</ul>
-	
+	<p>All files are tab delimited with the .txt file extension and can be directly imported to Excel.</p>
+
+
 	<!-- style="color: black; text-decoration: none;"  -->
-	<!-- <h3><a class="documentation_header_link" name="annotations">SNP Annotations - </a><span class="code_files">input_snps_annotated.tab</span></h3> -->
-	<h3><a name="snp_annotation_input_snps_annotated" class="documentation_header_link">SNP Annotations - <span class="code_files">input_snps_annotated.tab</span></a></h3>
-	<!-- <h5><span class="code_files">input_snps_annotated.tab</span></h5> -->
-	SNPsnap currently supports the following annotations of SNPs in the file <span class="code_files">input_snps_annotated.tab</span>:<br>
+	<!-- <h3><a class="documentation_header_link" name="annotations">SNP Annotations - </a><span class="code_files">input_snps_annotated.txt</span></h3> -->
+	<h3><a name="snp_annotation_input_snps_annotated" class="documentation_header_link">SNP Annotations - <span class="code_files">input_snps_annotated.txt</span></a></h3>
+	<!-- <h5><span class="code_files">input_snps_annotated.txt</span></h5> -->
+	SNPsnap currently supports the following annotations of SNPs in the file <span class="code_files">input_snps_annotated.txt</span>:<br>
 	<table class='table table-hover'>
 		<thead>
 			<tr>
@@ -230,12 +232,12 @@
 			<tr>
 				<th>12</th>
 				<td class="code_column">ID_nearest_gene_located_within</td>
-				<td><code>Ensembl Gene ID</code> for the gene used in the calculation of <span class="code_column">dist_nearest_gene_located_within</span></td>
+				<td><code>Ensembl Gene ID</code> for the gene used in the calculation of <span class="code_column">dist_nearest_gene_located_within</span>. Note that this column may be <span class="documentation_important">empty</span> if <span class="code_column">dist_nearest_gene_located_within</span> has the value <code>"inf"</code>.</td>
 			</tr>
 			<tr>
 				<th>13</th>
 				<td class="code_column">ID_genes_in_matched_locus</td>
-				<td><code>Ensembl Gene ID</code> of genes overlaping with the locus boundaries</td>
+				<td><code>Ensembl Gene ID</code> of genes overlaping with the locus boundaries. Note that this column may be <span class="documentation_important">empty</span> if <span class="code_column">gene_count</span> has the value <code>"0"</code>.</td>
 			</tr>
 			<tr>
 				<th>14</th>
@@ -286,9 +288,9 @@
 	</table>
 
 
-	<!-- ################ SNP Annotations - matched_snps_annotated.tab ############### -->
-	<h3><a name="snp_annotation_matched_snps_annotated" class="documentation_header_link">SNP Annotations - <span class="code_files">matched_snps_annotated.tab</span></a></h3>
-	The <span class="code_files">matched_snps_annotated.tab</span> file contains the same columns as described for <span class="code_files">input_snps_annotated.tab</span> but annotating the matched SNP.<br>
+	<!-- ################ SNP Annotations - matched_snps_annotated.txt ############### -->
+	<h3><a name="snp_annotation_matched_snps_annotated" class="documentation_header_link">SNP Annotations - <span class="code_files">matched_snps_annotated.txt</span></a></h3>
+	The <span class="code_files">matched_snps_annotated.txt</span> file contains the same columns as described for <span class="code_files">input_snps_annotated.txt</span> but annotating the matched SNP.<br>
 	The file contains the following two additional leading columns:<br>
 	<table class='table table-hover'>
 		<thead>
@@ -312,7 +314,7 @@
 			<tr>
 				<th>3...24</th>
 				<td>...</td>
-				<td>... same as for  <span class="code_files">input_snps_annotated.tab</span> but annotation is for the matched SNP</td>
+				<td>... same as for  <span class="code_files">input_snps_annotated.txt</span> but annotation is for the matched SNP</td>
 			</tr>
 		</tbody>
 	</table>
@@ -375,5 +377,5 @@
 <!-- 	<ol>
 		<li>set: index of the matched SNP group. The number of set index is equal to the number of required matched SNPs</li>
 		<li>input_snp: the input that were matched </li>
-		<li>... same as for  <span class="code_files">input_snps_annotated.tab</span> </li>
+		<li>... same as for  <span class="code_files">input_snps_annotated.txt</span> </li>
 	</ol> -->

@@ -114,9 +114,9 @@ class Processor(object):
 
 		f = open(file_snpsnap_summary, 'w')
 		for category, params in self.report_obj.items():
-			f.write( "#{}#".format(category.upper()) +"\n")
+			f.write( "#{}#".format(category.upper())+"\t"+"\n")
 			for param, value in params.items():
-				f.write( "{} : {}".format(param.upper(), value) +"\n")
+				f.write( "{}\t{}".format(param.upper(), value) +"\n")
 		f.close()
 
 
@@ -143,31 +143,69 @@ class Processor(object):
 
 		# tmp1 = "Rating 'insufficient SNP matches' = '{rating:s}' with scale [{scale:s}]".format(rating=report_obj['insufficient_rating'], scale=report_obj['insufficient_scale_str'] )
 		# tmp2 = "Percent 'insufficient SNP matches' = {pct:.4g}% (low is good; {count:d} 'insufficient SNP matches' out of {total:d} valid input SNPs)".format(pct=report_obj['insufficient_matches_pct'], count=report_obj['insufficient_N'], total=report_obj['N_snps'])
-		# write_str_insufficient_rating = "<p>{}<br/>{}</p>".format(tmp1,tmp2)
+		# write_str_insufficient_rating = "<p>{}<br>{}</p>".format(tmp1,tmp2)
 
 
 		# tmp1 = "Rating 'match size' = '{rating:s}' for SNPs in 'insufficient SNP matches' with scale [{scale:s}]".format(rating=report_obj['match_size_rating'], scale=report_obj['match_size_scale_str'] )
 		# tmp2 = "Relative 'match size' = {pct:.4g}% (high is good; median number of SNPs to sample from in 'insufficient SNP matches' is {median:.6g} compared to {total:d} requested sample sets)".format(pct=report_obj['match_size_median_pct'], median=report_obj['match_size_median'], total=report_obj['N_sample_sets'])
-		# write_str_score_match_size = "<p>{}<br/>{}</p>".format(tmp1,tmp2)
+		# write_str_score_match_size = "<p>{}<br>{}</p>".format(tmp1,tmp2)
 
 		# report_html = write_str_insufficient_rating + write_str_score_match_size
 
+		##### WORKED - replaced 07/10/2014 ########
+		# report_html = """
+		# <table style='width:75%;'>
+		# <tr>
+		#   <th>Evaluation type</th>
+		#   <th>Rating</th> 
+		# </tr>
+		# <tr>
+		#   <td>Insufficient-matches</td>
+		#   <td>{insufficient_rating}</td> 
+		# </tr>
+		# <tr>
+		#   <td>Match-size</td>
+		#   <td>{match_size_rating}</td> 
+		# </tr>
+		# </table>
+		# """.format(insufficient_rating=self.report_obj['report']['insufficient_rating'], match_size_rating=self.report_obj['report']['match_size_rating'])
+
+
+		fmt_value_insufficient = "{:.2f}".format( self.report_obj['report']['insufficient_matches_pct'] ) # OBS: formatting number. You can format any number as float, but you cannot format floats as int (e.g. {:d})
+		fmt_value_match_size = "{:.2f}".format( self.report_obj['report']['match_size_median_pct'] ) # OBS: formatting number. You can format any number as float, but you cannot format floats as int (e.g. {:d})
+
+		insufficient_rating = self.report_obj['report']['insufficient_rating']
+		match_size_rating = self.report_obj['report']['match_size_rating']
+
 		report_html = """
-		<table style='width:50'>
-		<tr>
-		  <th>Evaluation type</th>
-		  <th>Rating</th> 
-		</tr>
-		<tr>
-		  <td>Insufficient Matches</td>
-		  <td>{insufficient_rating}</td> 
-		</tr>
-		<tr>
-		  <td>Match Size</td>
-		  <td>{match_size_rating}</td> 
-		</tr>
-		</table>
-		""".format(insufficient_rating=self.report_obj['report']['insufficient_rating'], match_size_rating=self.report_obj['report']['match_size_rating'])
+		  <table style='width:75%;'>
+		    <thead>
+		      <tr>
+		        <th style="text-align: right;">SNPsnap score</th>
+		        <th style="text-align: right;">Value</th>
+		        <th style="text-align: right;">Rating</th>
+		      </tr>
+		    </thead>
+		    <tbody>
+		      <tr>
+		        <th style="text-align: right;">Insufficient-matches</th>
+		        <td style="text-align: right;">{fmt_value_insufficient}%</td>
+		        <td style="text-align: right;">{insufficient_rating}</td>
+		      </tr>
+		      <tr>
+		        <th style="text-align: right;">Match-size</th>
+		        <td style="text-align: right;">{fmt_value_match_size}%</td>
+		        <td style="text-align: right;">{match_size_rating}</td>
+		      </tr>
+		    </tbody>
+		  </table>
+		""".format(
+			fmt_value_insufficient=fmt_value_insufficient,
+			insufficient_rating=insufficient_rating,
+			fmt_value_match_size=fmt_value_match_size,
+			match_size_rating=match_size_rating
+			)
+
 
 		return report_html
 
@@ -227,7 +265,7 @@ class Processor(object):
 		# for call_type in self.processes:
 		# 	status_report += "<h2>{}</h2>".format(call_type)
 		# 	for k, v in self.processes[call_type].items():
-		# 		status_report += "{}:{}<br/>".format(k, v)
+		# 		status_report += "{}:{}<br>".format(k, v)
 
 
 		#<a href="{link}">link</a>
@@ -237,10 +275,16 @@ class Processor(object):
 		<html>
 		  <head></head>
 		  <body>
-		    <h2>Your job {job} has finished.</h2> <br/>
-		    The result files can be downloaded at: <br/> {link}
+		    <h2>Your job {job} has finished.</h2>
+		    <p>
+		    	The result files can be downloaded at:<br>
+		    	{link}
 		    </p>
-		    <p>{report}</p>
+
+		    <h4>SNPsnap scores</h4>
+		    <p>
+		    	{report}
+		    </p>
 		    </br>
 		    <p><i>SNPsnap Team</i></p>
 		  </body>

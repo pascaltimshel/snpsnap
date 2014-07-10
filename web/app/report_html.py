@@ -70,6 +70,10 @@ try:
 	fmt_value_insufficient = "{:.2f}".format( report_obj['report']['insufficient_matches_pct'] ) # OBS: formatting number. You can format any number as float, but you cannot format floats as int (e.g. {:d})
 	fmt_value_match_size = "{:.2f}".format( report_obj['report']['match_size_median_pct'] ) # OBS: formatting number. You can format any number as float, but you cannot format floats as int (e.g. {:d})
 
+	###### 07/10/2014 - MAY BE DELETED ######
+	# <th class="col-xs-3"><p class="text-left" style='font-size:125%;'>SNPsnap score</p></th>
+	# <th class="col-xs-2"><p class="text-left" style='font-size:125%;'>Value</p></th>
+	# <th class="col-xs-7"><p class="text-center" style='font-size:125%;'>Rating</p></th>
 
 	#Description of how to control column width of tables of bootstrap:
 	# --->http://ericsaupe.com/custom-column-widths-in-bootstrap-tables/
@@ -78,9 +82,9 @@ try:
 	  <table class='table table-hover'>
 	    <thead>
 	      <tr>
-	        <th class="col-xs-3"><p class="text-left" style='font-size:125%;'>SNPsnap score</p></th>
-	        <th class="col-xs-2"><p class="text-left" style='font-size:125%;'>Value</p></th>
-	        <th class="col-xs-7"><p class="text-center" style='font-size:125%;'>Rating</p></th>
+	        <th class="col-xs-3 text-left" style='font-size:125%;'>SNPsnap score</th>
+	        <th class="col-xs-2 text-left" style='font-size:125%;'>Value</th>
+	        <th class="col-xs-7 text-center" style='font-size:125%;'>Rating</th>
 	      </tr>
 	    </thead>
 	    <tbody>
@@ -98,7 +102,7 @@ try:
 	  </table>
 
 	<p class='text-muted'>You may safely ignore the <i>Match-size</i> rating if the <i>Insufficient-matches</i> rating is better than <q>Ok</q>. 
-	See the <a href='documentation.html'>documentation</a> for more information.</p> 
+	See the <a href='documentation.html#snpsnap_score' target='_blank'>documentation</a> for more information.</p> 
 	</div>
 	""".format(
 		img_insufficient_rating=rating_img['insufficient_rating'],

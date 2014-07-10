@@ -88,7 +88,7 @@
 		</div> -->
 		<div class="input_box"> <!-- START input box -->
 		<div class="form-group">
-			<div class="col-xs-4 text-right">
+			<div class="col-xs-2 text-right">
 				<label class="control-label text-right" for="snplist_text">Paste in SNPs</label>
 				<!-- <label class="label_text text-right" for="snplist_text">Paste in SNPs</label> -->
 				<!-- Link under label class -->
@@ -96,7 +96,7 @@
 				<!-- <a id="snp_example_link" href="#" onClick="return false;">load example SNP input</a> -->
 			</div>
 			<!-- <label class="col-xs-4 control-label" for="snplist_text">Paste in SNPs</label> -->
-			<div class="col-xs-5">
+			<div class="col-xs-6">
 				<textarea name="snplist_text" id="snplist_text" class="form-control snp_input_group" rows="5" placeholder="Paste SNP list here..."></textarea>
 			</div> <!-- col -->
 			<div class="col-xs-3 error_msg_place">
@@ -107,17 +107,22 @@
 
 		<!-- OBS: snplist_fileupload validation is linked to snplist_text: validate() crawls up the DOM tree until 'fieldset'-->
 		<div class="form-group">
-			<label class="col-xs-4 control-label" for="snplist_fileupload">File input</label>
-			<div class="col-xs-5">
-				<!-- <input type="file" name="snplist_fileupload" id="snplist_fileupload"> --> 
-				<!-- OBS: input type "file" should not (need not?) have class="form-control" -->
-				<span class="btn btn-default btn-file">
-					Upload file <input type="file" name="snplist_fileupload" id="snplist_fileupload" class="snp_input_group">
-				</span>
+			<label class="col-xs-2 control-label" for="snplist_fileupload">File input</label>
+			<div class="col-xs-6">
+				<div class="input-group">
+					<span class="input-group-btn">
+						<span class="btn btn-default btn-file">
+							Upload file <input type="file" name="snplist_fileupload" id="snplist_fileupload" class="snp_input_group">
+						</span>
+					</span>
+					<input type="text" class="form-control" id="text_filename" readonly="readonly">
+				</div>
 			</div> <!-- col -->
 		</div> <!-- form-group -->
 		</div> <!-- END input box -->
 	</fieldset>
+
+
 
 
 <!-- ############# LOCI DEFINITION - TWO LINES ############## -->
