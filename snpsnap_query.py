@@ -438,16 +438,21 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff,
 	f_matrix_out.write('Input_SNP\t%s\n' % "\t".join(['Set_'+str(i) for i in xrange(1,N_sample_sets+1)])) #IMPORTANT: writing out header!
 	
 	store = pd.HDFStore(file_db, 'r')
+	
+	data_frame_query = True ######## OBS ########
+	if data_frame_query:
+		snpsnap_db_df = store.select('dummy') # read entire HDF5 into data frame
+	
 
 	idx_input_snps = range(len(df.index)) # REMEMBER: both python and pandas are zero-based
 	N_snps = len(idx_input_snps)
 	for i in idx_input_snps:
 		query_snpID = df.index[i]
-		freq = df.ix[i,'freq_bin']
-		gene_count = df.ix[i,'gene_count']
-		dist = df.ix[i,'dist_nearest_gene_snpsnap']
+		q_freq_bin = df.ix[i,'freq_bin']
+		q_gene_count = df.ix[i,'gene_count']
+		q_dist = df.ix[i,'dist_nearest_gene_snpsnap']
 		colname_ld_buddy_count = 'friends_ld'+str(ld_buddy_cutoff).replace(".", "") # e.g. friends_ld02. "ld_buddy_cutoff" will be a FLOAT like "0.2"
-		ld_buddy_count = df.ix[i,colname_ld_buddy_count] #NEW
+		q_ld_buddy_count = df.ix[i,colname_ld_buddy_count] #NEW
 
 		### Setting delta space ####
 		delta_freq = np.rint(np.linspace(0,max_freq_deviation, n_attempts)).astype(int) # rounds to nearest integer and convert to int
@@ -460,28 +465,40 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff,
 		delta_ld_buddy_count = np.linspace(0,max_ld_buddy_count_deviation, n_attempts)/float(100) # NEW
 
 		### Calculating low/high boundaries
-		freq_low = np.repeat(freq, n_attempts) - delta_freq # ABSOLUTE DEVIATION
-		freq_high = np.repeat(freq, n_attempts) + delta_freq # ABSOLUTE DEVIATION
-		gene_count_low = np.rint(np.repeat(gene_count, n_attempts)*(1-delta_gene_count))
-		gene_count_high = np.rint(np.repeat(gene_count, n_attempts)*(1+delta_gene_count))
-		dist_low = np.rint(np.repeat(dist, n_attempts)*(1-delta_dist))
-		dist_high = np.rint(np.repeat(dist, n_attempts)*(1+delta_dist))
-		ld_buddy_count_low = np.rint(np.repeat(ld_buddy_count, n_attempts)*(1-delta_ld_buddy_count))
-		ld_buddy_count_high = np.rint(np.repeat(ld_buddy_count, n_attempts)*(1+delta_ld_buddy_count))
+		freq_low = np.repeat(q_freq_bin, n_attempts) - delta_freq # ABSOLUTE DEVIATION
+		freq_high = np.repeat(q_freq_bin, n_attempts) + delta_freq # ABSOLUTE DEVIATION
+		gene_count_low = np.rint(np.repeat(q_gene_count, n_attempts)*(1-delta_gene_count))
+		gene_count_high = np.rint(np.repeat(q_gene_count, n_attempts)*(1+delta_gene_count))
+		dist_low = np.rint(np.repeat(q_dist, n_attempts)*(1-delta_dist))
+		dist_high = np.rint(np.repeat(q_dist, n_attempts)*(1+delta_dist))
+		ld_buddy_count_low = np.rint(np.repeat(q_ld_buddy_count, n_attempts)*(1-delta_ld_buddy_count))
+		ld_buddy_count_high = np.rint(np.repeat(q_ld_buddy_count, n_attempts)*(1+delta_ld_buddy_count))
 
 		logger.info( "SNP #%d/%d: ID starting query in data base" % (i+1, N_snps) )
 		match_ID_old = None # placeholder for a Numpy array
 		match_ID = None # placeholder for a Numpy array
 		for attempt in xrange(n_attempts):
-			query_freq = '(freq_bin >= %s & freq_bin <= %s)' % (freq_low[attempt], freq_high[attempt])
-			query_gene_count = '(gene_count >= %s & gene_count <= %s)' % (gene_count_low[attempt], gene_count_high[attempt])
-			query_dist = '(dist_nearest_gene_snpsnap  >= %s & dist_nearest_gene_snpsnap  <= %s)' % (dist_low[attempt], dist_high[attempt])
-			query_ld_buddy_count = '({col} >= {min} & {col} <= {max})'.format(col=colname_ld_buddy_count, min=ld_buddy_count_low[attempt], max=ld_buddy_count_high[attempt])
-
-			query = "%s & %s & %s & %s" % (query_freq, query_gene_count, query_dist, query_ld_buddy_count)
-			#match_ID = store.select('dummy', query, columns=[]).index.values # return no columns --> only index # USED BEFORE JUNE 30
 			start_time = time.time()
-			match_ID = store.select('dummy', query, columns=[]) # return no columns --> only index
+			if data_frame_query:
+				#logger.info("query df")
+				query_freq_bin = '(%s <= freq_bin <= %s)' % (freq_low[attempt], freq_high[attempt])
+				query_gene_count = '(%s <= gene_count <= %s)' % (gene_count_low[attempt], gene_count_high[attempt])
+				query_dist = '(%s <= dist_nearest_gene_snpsnap  <= %s)' % (dist_low[attempt], dist_high[attempt])
+				query_ld_buddy_count = '({min} <= {col} <= {max})'.format(col=colname_ld_buddy_count, min=ld_buddy_count_low[attempt], max=ld_buddy_count_high[attempt])
+
+				query = "%s & %s & %s & %s" % (query_freq_bin, query_gene_count, query_dist, query_ld_buddy_count)
+				match_ID = snpsnap_db_df.query(query)
+			else:
+				#logger.info("query store")
+				query_freq_bin = '(freq_bin >= %s & freq_bin <= %s)' % (freq_low[attempt], freq_high[attempt])
+				query_gene_count = '(gene_count >= %s & gene_count <= %s)' % (gene_count_low[attempt], gene_count_high[attempt])
+				query_dist = '(dist_nearest_gene_snpsnap  >= %s & dist_nearest_gene_snpsnap  <= %s)' % (dist_low[attempt], dist_high[attempt])
+				query_ld_buddy_count = '({col} >= {min} & {col} <= {max})'.format(col=colname_ld_buddy_count, min=ld_buddy_count_low[attempt], max=ld_buddy_count_high[attempt])
+
+				query = "%s & %s & %s & %s" % (query_freq_bin, query_gene_count, query_dist, query_ld_buddy_count)
+				#match_ID = store.select('dummy', query, columns=[]).index.values # return no columns --> only index # USED BEFORE JUNE 30
+				match_ID = store.select('dummy', query, columns=[]) # return no columns --> only index
+
 			## Permuting/shuffling the rows
 			#df.reindex(index=np.random.permutation(df.index)) # A new object is produced unless the new index is equivalent to the current one and copy=False
 			elapsed_time = time.time() - start_time
