@@ -418,8 +418,59 @@ def few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps):
 
 
 
-	
+def calculate_input_to_matched_ratio(file_db, df_input, matched_snpID_array, cols2calc):
+	#colname_ld_buddy_count = 'friends_ld'+str(ld_buddy_cutoff).replace(".", "") # OBS this line is also present in query_similar_snps()
+	#columns2subset = ['freq_bin', 'gene_count', 'dist_nearest_gene_snpsnap', ]
 
+	# Read SNPsnap data base
+	logger.info( "START: reading HDF5 file into DataFrame..." )
+	start_time = time.time()
+	store = pd.HDFStore(file_db, 'r')
+	snpsnap_db_df = store.select('dummy') # read entire HDF5 into data frame
+	store.close()
+	elapsed_time = time.time() - start_time
+	logger.info( "END: read HDF5 file into DataFrame in %s s (%s min)" % (elapsed_time, elapsed_time/60) )
+
+	logger.info( "START: Indexing and creating df_input and df_matched" )
+	start_time = time.time()
+	### Subsetting columns
+	snpsnap_db_df = snpsnap_db_df.ix[:,cols2calc] # taking all rows and specific columns
+	df_input = df_input.ix[:,cols2calc]
+
+	### Contructing df_matched by indexing in snpsnap_db_df
+	df_matched = snpsnap_db_df.ix[matched_snpID_array]
+	elapsed_time = time.time() - start_time
+	logger.info( "END: Indexing and creating df_input and df_matched in %s s (%s min)" % (elapsed_time, elapsed_time/60) )
+
+	### Calculating mean
+	logger.info( "START: calculating mean and ratio..." )
+	start_time = time.time()
+	input_mean = df_input.mean(axis=0) # <class 'pandas.core.series.Series'>
+	matched_mean = df_matched.mean(axis=0) #<class 'pandas.core.series.Series'>
+
+	### Taking ratio and multiply by 100 to get percent.
+	ratio = input_mean/matched_mean*100 # see also: Series.divide(other, level=None, fill_value=None, axis=0)
+	### ^^ Note: I tested the senario that matched_mean contains elements with the value zero. Not exceptions are raised, but elements get value 'inf'
+	### ratio is of class <class 'pandas.core.series.Series'>
+	elapsed_time = time.time() - start_time
+	logger.info( "END: calculating mean and ratio in %s s (%s min)" % (elapsed_time, elapsed_time/60) )
+
+
+	### Convert SERIES to a DICTINARY, like: {'dist_nearest_gene_snpsnap': 162.59887515819352, 'freq_bin': 123.39080459770115,...}
+	report_news = ratio.to_dict()
+	### renaming keys by adding ratio_ to the beginning of the key:
+	for key in report_news.keys():
+	    report_news['ratio_'+key] = report_news.pop(key)
+
+	logger.info("####### RATIO REPORT #########")
+	for key in report_news.keys():
+		logger.info( "%s : %s" % (key, report_news[key]) )
+	logger.info("#############################")
+
+	####### Creating report dict of dicts #####
+	if report_obj.enabled:
+		## NOTE: report_news has already been contructed!
+		report_obj.report['mean_input_to_match_ratio'].update(report_news) # CONSIDER: making a new 'category' containing the ratio values
 
 #@profile
 def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff, exclude_input_SNPs, max_freq_deviation, max_distance_deviation, max_genes_count_deviation, max_ld_buddy_count_deviation):
@@ -439,10 +490,16 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff,
 	
 	store = pd.HDFStore(file_db, 'r')
 	
-	data_frame_query = True ######## OBS ########
+	####################### *OBS* function internal parameter | TRIAL ################
+	data_frame_query = True 
 	if data_frame_query:
 		snpsnap_db_df = store.select('dummy') # read entire HDF5 into data frame
-	
+	##################################################################################
+
+
+	if calculate_mean_input_to_match_ratio:
+		all_matched_snpID = np.array([]) # empty array. This array will be appended to for each FINAL (after sampling with-replacement etc) set of matched SNPs
+
 
 	idx_input_snps = range(len(df.index)) # REMEMBER: both python and pandas are zero-based
 	N_snps = len(idx_input_snps)
@@ -496,8 +553,11 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff,
 				query_ld_buddy_count = '({col} >= {min} & {col} <= {max})'.format(col=colname_ld_buddy_count, min=ld_buddy_count_low[attempt], max=ld_buddy_count_high[attempt])
 
 				query = "%s & %s & %s & %s" % (query_freq_bin, query_gene_count, query_dist, query_ld_buddy_count)
-				#match_ID = store.select('dummy', query, columns=[]).index.values # return no columns --> only index # USED BEFORE JUNE 30
+				#match_ID = store.select('dummy', query, columns=[]).index.values # --> only index # USED BEFORE JUNE 30
 				match_ID = store.select('dummy', query, columns=[]) # return no columns --> only index
+				#match_ID = store.select('dummy', query, columns=['freq_bin', 'gene_count', 'dist_nearest_gene_snpsnap', colname_ld_buddy_count]) # return specific columns
+
+
 
 			## Permuting/shuffling the rows
 			#df.reindex(index=np.random.permutation(df.index)) # A new object is produced unless the new index is equivalent to the current one and copy=False
@@ -596,6 +656,10 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff,
 			match_ID_uniq_new_sample = np.random.choice(match_ID_uniq_new, size=n_elements_to_fill, replace=False, p=None) # sample uniformly from NEW matches
 			match_ID_final = np.concatenate((match_ID_old, match_ID_uniq_new_sample))
 
+
+		if calculate_mean_input_to_match_ratio: 
+			all_matched_snpID = np.append(all_matched_snpID, match_ID_final) # this is a numpy array! 
+
 		# version TOLIST() print
 		# insert query_snpID as first element and CONVERT to list
 		ID_list = np.insert(match_ID_final, 0, query_snpID).tolist() # np.array --> python list. NB: check that a 'flat' list is returned
@@ -610,6 +674,10 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff,
 	#CALL REPORT FUNCTION
 	few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps)
 
+	#CALL calculate_input_to_matched_ratio FUNCTION
+	if calculate_mean_input_to_match_ratio:
+		cols2calc=['freq_bin', 'gene_count', 'dist_nearest_gene_snpsnap', colname_ld_buddy_count]
+		calculate_input_to_matched_ratio(file_db=file_db, df_input=df, matched_snpID_array=all_matched_snpID, cols2calc=cols2calc) # this function will take care of writing the 
 
 	### Calculate score and write few_matches (if any)
 	#if df_snps_few_matches is not None: 
@@ -917,7 +985,8 @@ class Report():
 		#options, 
 		#report, 
 		#mics, 
-		#input
+		#input,
+		#mean_input_to_match_ratio
 
 
 	def write_json_report(self):
@@ -979,6 +1048,11 @@ def main():
 					'distance_cutoff':args.distance_cutoff
 					}
 	report_obj.report['loci_definition'].update(report_news)
+
+	################# GLOBAL *INTERNAL* ARGUMENTS ########
+	global calculate_mean_input_to_match_ratio
+	calculate_mean_input_to_match_ratio = True
+	#####################################################
 
 
 	start_time = time.time()
