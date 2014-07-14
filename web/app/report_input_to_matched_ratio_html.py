@@ -99,7 +99,7 @@ try:
 	  </table>
 
 	<p class='text-muted'>*Ratio defined as <i>Mean input</i>/<i>Mean matched</i>. <br>
-	Requesting a large number of SNPs may lead to a systematic difference between genetic properties of input and matched SNPs indicated by a ratio above 100%.
+	Requesting a large number of SNPs may lead to a systematic difference between genetic properties of input and matched SNPs indicated by a ratio deviating from 100%.
 	<br>
 	In order to obtain a ratio close to 100%, lessen the number of requested SNPs or tighten the matching criteria.
 	<br>

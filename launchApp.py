@@ -491,7 +491,7 @@ if __name__ == '__main__':
 	args = ParseArguments()
 
 	global logger
-	logger = setup_logger(outputdir='/cvar/jhlab/snpsnap/web_logs', enabled=True, path_logging_module='/cvar/jhlab/snpsnap/snpsnap')
+	logger = setup_logger(outputdir='/local/data/web_logs', enabled=True, path_logging_module='/cvar/jhlab/snpsnap/snpsnap')
 	logger.info( "session_id: %s" % args.session_id )
 	logger.info( "cmd_annotate: %s" % args.cmd_annotate )
 	logger.info( "cmd_match: %s" % args.cmd_match )
