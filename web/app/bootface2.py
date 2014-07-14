@@ -518,22 +518,42 @@ def run():
 	""".format(match=str_bar_match, set_file=str_bar_set_file, annotate=str_bar_annotate)
 
 
-	################## PANEL: REPORT ##################
+	################## PANEL: SNPSNAP SCORE ##################
+	#<div class="panel-body" id='snpsnap_report'>
 	print """
 	  <div class="panel panel-default" id='panel_report'>
 		<div class="panel-heading">
 		  <h4 class="panel-title">
-			<a data-toggle="collapse" data-target="#collapse_report" href="#collapse_report" onClick="return false;">
+			<a data-toggle="collapse" data-target="#collapse_snpsnap_score" href="#collapse_snpsnap_score" onClick="return false;">
 			  SNPsnap Scores
 			</a>
 		  </h4>
 		</div>
-		<div id="collapse_report" class="panel-collapse collapse in"> 
-		  <div class="panel-body" id='snpsnap_report'>
+		<div id="collapse_snpsnap_score" class="panel-collapse collapse in"> 
+		  <div class="panel-body">
 		  </div>
 		</div>
 	  </div>
 	"""
+
+	################## PANEL: INPUT TO MATCHED RATIO ##################
+	print """
+	  <div class="panel panel-default" id='panel_report'>
+		<div class="panel-heading">
+		  <h4 class="panel-title">
+			<a data-toggle="collapse" data-target="#collapse_input_to_matched_ratio" href="#collapse_input_to_matched_ratio" onClick="return false;">
+			  Matching Bias
+			</a>
+		  </h4>
+		</div>
+		<div id="collapse_input_to_matched_ratio" class="panel-collapse collapse in"> 
+		  <div class="panel-body">
+		  </div>
+		</div>
+	  </div>
+	"""
+
+
 
 	################## PANEL: RESULTS ##################
 	#url_results = '/results/{sid}.zip'.format(sid=session_id)
@@ -557,6 +577,7 @@ def run():
 		  {results}
 		  <br>
 		  <p class="text-muted">All files are tab delimited with the .txt file extension and can be directly imported to Excel.</p>
+		  <p class="text-muted">You may print or save this result page for later reference. However, <span class="code_files">snpsnap_summary.txt</span> contains all the information shown on this page.</p>
 		  </div>
 		</div>
 	  </div>

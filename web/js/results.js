@@ -1,17 +1,29 @@
 //consider this: 
 	// setTimeout(GetProgress(), 2000);
 
-function getReport(sid) {
-	//alert("getReport() is called");
+function getSnpsnapScore(sid) {
+	//alert("getSnpsnapScore() is called");
 	$.ajax({
-		url:"app/report_html.py",
+		url:"app/report_snpsnap_score_html.py",
 		data: {session_id:sid}, 
 		dataType: "html",
 		success: function(res){
-			$("#collapse_report .panel-body").html(res);
+			$("#collapse_snpsnap_score .panel-body").html(res);
 		}
 	})
 }
+
+function getInputToMatchedRatio(sid) {
+	$.ajax({
+		url:"app/report_input_to_matched_ratio_html.py",
+		data: {session_id:sid}, 
+		dataType: "html",
+		success: function(res){
+			$("#collapse_input_to_matched_ratio .panel-body").html(res);
+		}
+	})
+}
+
 
 
 $(document).ready(function(){
@@ -98,7 +110,8 @@ $(document).ready(function(){
 					//$('#link_results').show();
 					$('#panel_report').show();
 					$('#panel_results').show();
-					getReport(sid);
+					getSnpsnapScore(sid);
+					getInputToMatchedRatio(sid);
 				}
 			}
 		})

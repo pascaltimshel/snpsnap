@@ -457,13 +457,26 @@ def calculate_input_to_matched_ratio(file_db, df_input, matched_snpID_array, col
 
 
 	### Convert SERIES to a DICTINARY, like: {'dist_nearest_gene_snpsnap': 162.59887515819352, 'freq_bin': 123.39080459770115,...}
-	report_news = ratio.to_dict()
-	### renaming keys by adding ratio_ to the beginning of the key:
-	for key in report_news.keys():
-	    report_news['ratio_'+key] = report_news.pop(key)
+	input_mean_dict = input_mean.to_dict() # INPUT
+	for key in input_mean_dict.keys():
+		input_mean_dict['mean_input_'+key] = input_mean_dict.pop(key)
+	matched_mean_dict = matched_mean.to_dict() # MATCHED
+	for key in matched_mean_dict.keys():
+		matched_mean_dict['mean_matched_'+key] = matched_mean_dict.pop(key)
+	ratio_dict = ratio.to_dict() # RATIO
+	for key in ratio_dict.keys():
+		ratio_dict['ratio_'+key] = ratio_dict.pop(key) ### renaming keys by adding ratio_ to the beginning of the key:
+	## The names in the dict will be someting like this:
+	#'ratio_freq_bin'
+	#'ratio_gene_count'
+	#'ratio_dist_nearest_gene_snpsnap'
+	#'ratio_friends_ld05' # <--- OBS this key name is variable!
+
+	## Combining the dicts
+	report_news = dict( input_mean_dict.items() + matched_mean_dict.items() + ratio_dict.items() ) # OBS: if there are any keys exitsting in more than one dict, the value of the key will be overwritten by the latest dict's value
 
 	logger.info("####### RATIO REPORT #########")
-	for key in report_news.keys():
+	for key in sorted(report_news.keys()):
 		logger.info( "%s : %s" % (key, report_news[key]) )
 	logger.info("#############################")
 
@@ -811,7 +824,7 @@ def ParseArguments():
 
 	# NEW: options
 	arg_parser.add_argument("--exclude_HLA_SNPs", help="Bool (switch, takes no value after argument); if set then all matched SNPs mapping to the region 6:25000000-6:35000000 (6:25mb-6:35mb) will be excluded. Input SNPs mapping to this region will be excluded and written to the 'input_snps_excluded' file. (NOTE: enabling this option reduces the speed of SNPsnap). Default is false", action='store_true')
-	arg_parser.add_argument("--web", help="If set, the program will run in web mode. VALUE should be the a filepath to output (temporary) files - usually this will be the session_id. The web mode activates: 1) creating a status_obj and writing it to json file; 2) ENABLE writing a json report file;")
+	arg_parser.add_argument("--web", help="If set, the program will run in web mode. VALUE should be the a FILE-PATH+FILE-BASENAME to output (temporary) files - usually this will be the session_id. The web mode activates: 1) ENABLE a status_obj and writing it to json file ([FILE-BASENAME]_status.json); 2) ENABLE a status_obj and writing it to a json report file ([FILE-BASENAME]_report.json);")
 	arg_parser.add_argument("--NoLogger", help="Bool (switch, takes no value after argument); if set then logging is DISAPLED. Logfile will be placed in output_dir UNLESS log_dir is given", action='store_true')
 	#arg_parser.add_argument("--log_dir", type=check_if_writable, help="DIR to write logfile. Default is to use the args.output_dir. NOTE that if NoLogger is given then log_dir have no function")
 	arg_parser.add_argument("--log_file", type=check_if_file_is_writable, help="Full path and filename of the logfile. Default is to use the args.output_dir as DIR and current_script_name as FILENAME. NOTE that if NoLogger is given then log_file have no function")
@@ -919,16 +932,16 @@ def run_annotate(path_data, path_output, prefix, user_snps_file):
 
 
 class Progress():
-	def __init__(self, sid, args, enabled): #'tmp_data.json'
+	def __init__(self, filebasename, args, enabled): #'tmp_data.json'
+		#*OBS*; filebasename will have the value like: '/cvar/jhlab/snpsnap/web_tmp/2ede5955021a10cb0e1a13882be520eb'.
 		self.enabled = enabled
-		if not self.enabled: return
-
+		if not self.enabled: return # OBS: important!
 		if args.subcommand == "match":
-			self.fname = "{name_parsed}_{subcommand}.{ext}".format(name_parsed=sid, subcommand='status_match', ext='json')
+			self.fname = "{name_parsed}_{subcommand}.{ext}".format(name_parsed=filebasename, subcommand='status_match', ext='json')
 			# e.g. /e43f990bbb981b008b9d84b22c2770f8_status_match.json
 			#self.fh = open(fname, 'w')
 		elif args.subcommand == "annotate":
-			self.fname = "{name_parsed}_{subcommand}.{ext}".format(name_parsed=sid, subcommand='status_annotate', ext='json')
+			self.fname = "{name_parsed}_{subcommand}.{ext}".format(name_parsed=filebasename, subcommand='status_annotate', ext='json')
 			# e.g. /e43f990bbb981b008b9d84b22c2770f8_status_annotate.json
 			#self.fh = open(fname, 'w')
 		else:
@@ -941,7 +954,7 @@ class Progress():
 		self.annotate = {'pct_complete':0, 'status':'not_running'}
 		
 		self.status_now = {'match':self.match, 'set_file':self.set_file, 'annotate':self.annotate}
-		self.status_list = [self.status_now] # NOT NESSESARY
+		self.status_list = [self.status_now] # NOT NESSESARY. This war only implemented to have a full list of the status bar
 
 
 	def update_pct(self, selector, pct):
@@ -974,11 +987,11 @@ class Progress():
 
 
 class Report():
-	def __init__(self, sid, args, enabled): #'tmp_data.json'
+	def __init__(self, filebasename, args, enabled): #'tmp_data.json'
 		self.enabled = enabled
-		self.fname = "{name_parsed}_{subcommand}.{ext}".format(name_parsed=sid, subcommand='report', ext='json')
+		#*OBS*; filebasename will have the value like: '/cvar/jhlab/snpsnap/web_tmp/2ede5955021a10cb0e1a13882be520eb'.
+		self.fname = "{name_parsed}_{subcommand}.{ext}".format(name_parsed=filebasename, subcommand='report', ext='json')
 		self.report = collections.defaultdict(dict) # two-level dict
-		#self.report = {} 
 		# VALID CATEGORIES: 
 		#loci_definition, 
 		#match_criteria, 
@@ -1005,14 +1018,13 @@ def main():
 	### Progress class
 	global status_obj
 	global report_obj
-	# Example of the value of web (if set) - path incl. session_id: '/cvar/jhlab/snpsnap/web_tmp/2ede5955021a10cb0e1a13882be520eb'
+	filebasename = args.web # Example of the value of args.web (if set) - path incl. session_id: '/cvar/jhlab/snpsnap/web_tmp/2ede5955021a10cb0e1a13882be520eb'
+	# thus filebasename is a PATH incl a FILEBASENAME. [CONSIDER SPLITTING IT INTO DIR AND BASEFILE]
 	if args.web and args.subcommand == "match":
-		sid = args.web
-		status_obj = Progress(sid, args, enabled=True)
-		report_obj = Report(sid, args, enabled=True)
+		status_obj = Progress(filebasename, args, enabled=True)
+		report_obj = Report(filebasename, args, enabled=True)
 	elif args.web and args.subcommand == "annotate":
-		sid = args.web
-		status_obj = Progress(sid, args, enabled=True)
+		status_obj = Progress(filebasename, args, enabled=True)
 		report_obj = Report('dummy', args, enabled=False) # do not enable report if command is annotate. 
 		# This will likely overwrite the report file generated by 'match'. The 'annotate' report does not contain all 'fields', e.g. there is will be no self.report_obj['report']['insufficient_rating'] in launchApp function generate_report_for_email()
 		# To be precise: it will overwrite when the 'annotate' process is slower than the 'match' process; remember: launchApp.py runs the 'match' and 'annotate' in parallel.
@@ -1028,7 +1040,6 @@ def main():
 	### CONSTANTS ###
 	#path_data = os.path.abspath("/Users/pascaltimshel/snpsnap/data/step3") ## OSX - HARD CODED PATH!!
 	#path_data = os.path.abspath("/cvar/jhlab/snpsnap/data/step3/ld0.5") ## BROAD - HARD CODED PATH - BEFORE June 2014 (before production_v1)!!
-	
 	path_data = os.path.abspath("/cvar/jhlab/snpsnap/data/step3/1KG_snpsnap_production_v1_uncompressed_incl_rsID") ## BROAD - version: production_v1
 	#path_data = os.path.abspath("/cvar/jhlab/snpsnap/data/step3/1KG_snpsnap_production_v1_single_ld") ## SINGLE LD BROAD - version: production_v1
 	prefix = args.distance_type + args.distance_cutoff
@@ -1036,9 +1047,11 @@ def main():
 
 	user_snps_file = args.user_snps_file
 
+	######################################################
 	################## GLOBAL ARGUMENTS ##################
 	global exclude_HLA_SNPs
 	exclude_HLA_SNPs = args.exclude_HLA_SNPs # exclude_HLA_SNPs with either be True or False since 'store_true' is used
+	#####################################################
 	#####################################################
 	report_news =	{'exclude_HLA_SNPs':args.exclude_HLA_SNPs} # could also use just exclude_HLA_SNPs
 	report_obj.report['options'].update(report_news)
@@ -1049,10 +1062,12 @@ def main():
 					}
 	report_obj.report['loci_definition'].update(report_news)
 
-	################# GLOBAL *INTERNAL* ARGUMENTS ########
+	##########################################################################
+	################# GLOBAL *INTERNAL* ARGUMENTS - NOT COMMAND LINE #########
 	global calculate_mean_input_to_match_ratio
 	calculate_mean_input_to_match_ratio = True
-	#####################################################
+	#########################################################################
+	#########################################################################
 
 
 	start_time = time.time()
