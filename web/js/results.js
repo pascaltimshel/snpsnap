@@ -38,7 +38,8 @@ $(document).ready(function(){
 	$('#row_progress_annotate').toggle( Boolean(annotate) );
 
 	// HIDE: panels (report and results)
-	$('#panel_report').hide();
+	$('#panel_snpsnap_score').hide();
+	$('#panel_input_to_matched_ratio').hide();
 	$('#panel_results').hide();
 
 	// FOR DEBUGGING
@@ -83,9 +84,15 @@ $(document).ready(function(){
 				$("#progress_bar_match .progress-bar").css('width', res.match.pct_complete+'%');
 				$("#progress_bar_match .progress-bar").html(res.match.pct_complete + "%");
 				$("#row_progress_match .text-info").html(res.match.status);
-				if (res.match.status == 'complete') {
+				if (res.match.status == 'finalizing') {
+					$('#row_progress_bias').show();
+				} else if (res.match.status == 'complete') {
 					$("#progress_bar_match").removeClass('active')
 				}
+				// Update the bias calculation
+				$("#progress_bar_bias .progress-bar").css('width', res.bias.pct_complete+'%');
+				$("#progress_bar_bias .progress-bar").html(res.bias.pct_complete + "%");
+				$("#row_progress_bias .text-info").html(res.bias.status);
 
 				if (set_file) {
 					$("#progress_bar_set_file .progress-bar").css('width', res.set_file.pct_complete+'%');
@@ -108,7 +115,8 @@ $(document).ready(function(){
 				if (res.status_all_complete) {
 					clearInterval(progresspump);
 					//$('#link_results').show();
-					$('#panel_report').show();
+					$('#panel_snpsnap_score').show();
+					$('#panel_input_to_matched_ratio').show();
 					$('#panel_results').show();
 					getSnpsnapScore(sid);
 					getInputToMatchedRatio(sid);

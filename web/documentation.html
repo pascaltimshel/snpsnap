@@ -64,7 +64,7 @@
 		<li>Gene density</li>
 	</ul>
 	
-	<h3>Genetic properties used to sample random but matched SNPs</h3>
+	<h3><a name="genetic_properties" class="documentation_header_link">Genetic properties used to sample random but matched SNPs</a></h3>
 	<ul>
 	  <li ><strong>Minor allele frequency</strong>: SNPs are partitioned into minor allele frequency bins of 1-2, 2-3, ..., 49-50% strata.</li>
 	  <li ><strong>LD buddies</strong>: the number of “buddy” (or "proxy") SNPs in LD at various thresholds. SNPsnap currently offers LD buddy counts for thresholds using r&#178 > 0.1, 0.2, ..., 0.9</li>
@@ -72,6 +72,15 @@
 	  <li ><strong>Gene density</strong>: the number of genes in loci around the SNP, using LD (r&#178 > 0.1, 0.2, ..., 0.9) and physical distance (100, 200, ..., 1000 kb) to define loci. </li>
 	</ul>
 	
+	The genetic properties of the SNPs in the current version of SNPsnap's database is left-skewed (see below histograms).
+	<div class="row">
+		<div class="col-xs-offset-1 col-xs-10">
+			<img class="img-responsive" src="img/documentation/Supp_Fig_1_web_edition.png">
+		</div>
+	</div>
+
+
+
 	<h3>Algorithm</h3>
 	<div class="row">
 		<div class="col-xs-offset-1 col-xs-10">
@@ -149,6 +158,20 @@
 	For example, a 'Insufficient-matches' score 'very good' ranks your SNPsnap query among the top 20% scores observed for the 63 GWAS catalog phenotypes.
 	Note that the scoring metrics will only be valid for similar matching settings as the default SNPsnap matching settings.
 	
+	<h3><a name="snpsnap_matching_bias" class="documentation_header_link">SNPsnap matching bias</a></h3>
+
+	Matching bias is defined as the ratio between the mean of the genetic properties of the input SNPs to matched SNPs. SNPsnap reports these values as part of the matching result to provide a guideline for selecting the proper matching settings.
+	<br>
+	The figure below shows the matching bias for each of the genetic properties as a function of the number of requested matched SNPs (using the default matching criteria). The matching bias may be explained by the left skewness of the distribution of the <a href="#genetic_properties"> genetic properties</a>.
+	Large allowable deviation of the genetic properties and a large number of requested SNPs are the primary causes for the matching bias. Bias of the matched SNPs may be reduced or eliminated by lowering one or both of these parameters.
+	We recommend reducing any matched bias because it may hamper downstream genetic enrichment analysis.
+
+	<div class="row">
+		<div class="col-xs-offset-1 col-xs-10">
+			<img class="img-responsive" src="img/documentation/ratio_v4_multiplot2x2_dim1200x800.png">
+		</div>
+	</div>
+
 	<h3> Output files</h3>
 	<ul>
 	  <li ><span class="code_files">matched_snps.txt</span>: matrix with input SNPs as rows and matched SNPs as columns</li>

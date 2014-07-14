@@ -66,8 +66,8 @@ try:
 	      <tr>
 	        <th class="col-xs-3 text-left" style='font-size:125%;'>Genetic property</th>
 	        <th class="col-xs-2 text-left" style='font-size:125%;'>Mean input</th>
-	        <th class="col-xs-2 text-center" style='font-size:125%;'>Mean matched</th>
-	        <th class="col-xs-2 text-center" style='font-size:125%;'>Ratio (%)*</th>
+	        <th class="col-xs-2 text-left" style='font-size:125%;'>Mean matched</th>
+	        <th class="col-xs-2 text-left" style='font-size:125%;'>Ratio (%)*</th>
 	      </tr>
 	    </thead>
 	    <tbody>
@@ -99,9 +99,11 @@ try:
 	  </table>
 
 	<p class='text-muted'>*Ratio defined as <i>Mean input</i>/<i>Mean matched</i>. <br>
-	Due to left skew in the genetic property distributions, an increasing ratio is to be expected with increasing numbers of requested matched SNPs. <br>
-	This will in most cases be an unwanted effect of requesting many number of matched SNPs. In order to obtain a ratio close to 100 %, lessen the number of requested SNPs. <br>
-	See the <a href='documentation.html#SOMETING' target='_blank'>documentation</a> for more information.</p> 
+	Requesting a large number of SNPs may lead to a systematic difference between genetic properties of input and matched SNPs indicated by a ratio above 100%.
+	<br>
+	In order to obtain a ratio close to 100%, lessen the number of requested SNPs or tighten the matching criteria.
+	<br>
+	See the <a href='documentation.html#snpsnap_matching_bias' target='_blank'>documentation</a> for more information.</p> 
 	</div>
 	""".format(
 		fmt_mean_input_freq_bin=fmt_mean_input_freq_bin,

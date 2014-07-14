@@ -460,6 +460,20 @@ def run():
 			</div>
 		</div>
 	</div>
+	<div class='row' id='row_progress_bias' style='display:none;'>
+		<div class='col-xs-3'>
+			<p><strong>Calculating match bias</strong></p>
+		</div>
+		<div class='col-xs-2'>
+			<p class="text-info"></p>
+		</div>
+		<div class='col-xs-7'>
+			<div class='error_description'></div> <!-- PLACEHOLDER FOR AN ERROR Message -->
+			<div class='progress progress-striped active' id='progress_bar_bias'>
+				<div class='progress-bar' style='width: 0%'></div>
+			</div>
+		</div>
+	</div>
 	"""	
 
 	str_bar_set_file = """
@@ -521,7 +535,7 @@ def run():
 	################## PANEL: SNPSNAP SCORE ##################
 	#<div class="panel-body" id='snpsnap_report'>
 	print """
-	  <div class="panel panel-default" id='panel_report'>
+	  <div class="panel panel-default" id='panel_snpsnap_score'>
 		<div class="panel-heading">
 		  <h4 class="panel-title">
 			<a data-toggle="collapse" data-target="#collapse_snpsnap_score" href="#collapse_snpsnap_score" onClick="return false;">
@@ -538,7 +552,7 @@ def run():
 
 	################## PANEL: INPUT TO MATCHED RATIO ##################
 	print """
-	  <div class="panel panel-default" id='panel_report'>
+	  <div class="panel panel-default" id='panel_input_to_matched_ratio'>
 		<div class="panel-heading">
 		  <h4 class="panel-title">
 			<a data-toggle="collapse" data-target="#collapse_input_to_matched_ratio" href="#collapse_input_to_matched_ratio" onClick="return false;">
@@ -574,10 +588,11 @@ def run():
 		</div>
 		<div id="collapse_results" class="panel-collapse collapse in"> 
 		  <div class="panel-body">
-		  {results}
-		  <br>
-		  <p class="text-muted">All files are tab delimited with the .txt file extension and can be directly imported to Excel.</p>
-		  <p class="text-muted">You may print or save this result page for later reference. However, <span class="code_files">snpsnap_summary.txt</span> contains all the information shown on this page.</p>
+		  	  {results}
+			  <div style="margin-bottom:5px; margin-top:5px;">
+			  	<p class="text-muted">All files are tab delimited with the .txt file extension and can be directly imported to Excel.</p>
+			  	<p class="text-muted">You may print or save this result page for later reference. Note that the file <span class="code_files">snpsnap_summary.txt</span> contains all the information shown on this page.</p>
+			  </div>
 		  </div>
 		</div>
 	  </div>

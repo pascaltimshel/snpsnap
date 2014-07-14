@@ -419,12 +419,12 @@ def few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps):
 
 
 def calculate_input_to_matched_ratio(file_db, df_input, matched_snpID_array, cols2calc):
-	#colname_ld_buddy_count = 'friends_ld'+str(ld_buddy_cutoff).replace(".", "") # OBS this line is also present in query_similar_snps()
-	#columns2subset = ['freq_bin', 'gene_count', 'dist_nearest_gene_snpsnap', ]
+	status_obj.update_status('bias', 'running')
 
 	# Read SNPsnap data base
 	logger.info( "START: reading HDF5 file into DataFrame..." )
 	start_time = time.time()
+	status_obj.update_pct('bias', float(20)) # ###### STATUSBAR #########
 	store = pd.HDFStore(file_db, 'r')
 	snpsnap_db_df = store.select('dummy') # read entire HDF5 into data frame
 	store.close()
@@ -434,17 +434,20 @@ def calculate_input_to_matched_ratio(file_db, df_input, matched_snpID_array, col
 	logger.info( "START: Indexing and creating df_input and df_matched" )
 	start_time = time.time()
 	### Subsetting columns
+	status_obj.update_pct('bias', float(40)) # ###### STATUSBAR #########
 	snpsnap_db_df = snpsnap_db_df.ix[:,cols2calc] # taking all rows and specific columns
 	df_input = df_input.ix[:,cols2calc]
 
 	### Contructing df_matched by indexing in snpsnap_db_df
 	df_matched = snpsnap_db_df.ix[matched_snpID_array]
+	status_obj.update_pct('bias', float(60)) # ###### STATUSBAR #########
 	elapsed_time = time.time() - start_time
 	logger.info( "END: Indexing and creating df_input and df_matched in %s s (%s min)" % (elapsed_time, elapsed_time/60) )
 
 	### Calculating mean
 	logger.info( "START: calculating mean and ratio..." )
 	start_time = time.time()
+	status_obj.update_pct('bias', float(80)) # ###### STATUSBAR #########
 	input_mean = df_input.mean(axis=0) # <class 'pandas.core.series.Series'>
 	matched_mean = df_matched.mean(axis=0) #<class 'pandas.core.series.Series'>
 
@@ -485,6 +488,10 @@ def calculate_input_to_matched_ratio(file_db, df_input, matched_snpID_array, col
 		## NOTE: report_news has already been contructed!
 		report_obj.report['mean_input_to_match_ratio'].update(report_news) # CONSIDER: making a new 'category' containing the ratio values
 
+	status_obj.update_pct('bias', float(100)) # ###### STATUSBAR #########
+	status_obj.update_status('bias', 'complete')
+
+
 #@profile
 def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff, exclude_input_SNPs, max_freq_deviation, max_distance_deviation, max_genes_count_deviation, max_ld_buddy_count_deviation):
 	status_obj.update_status('match', 'running')
@@ -503,8 +510,7 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff,
 	
 	store = pd.HDFStore(file_db, 'r')
 	
-	####################### *OBS* function internal parameter | TRIAL ################
-	data_frame_query = True 
+	####################### *OBS* GLOBAL internal parameter | DID NOT IMPROVE PERFORMACE, but tested and works ################
 	if data_frame_query:
 		snpsnap_db_df = store.select('dummy') # read entire HDF5 into data frame
 	##################################################################################
@@ -558,7 +564,7 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff,
 
 				query = "%s & %s & %s & %s" % (query_freq_bin, query_gene_count, query_dist, query_ld_buddy_count)
 				match_ID = snpsnap_db_df.query(query)
-			else:
+			else: # THIS IS USED
 				#logger.info("query store")
 				query_freq_bin = '(freq_bin >= %s & freq_bin <= %s)' % (freq_low[attempt], freq_high[attempt])
 				query_gene_count = '(gene_count >= %s & gene_count <= %s)' % (gene_count_low[attempt], gene_count_high[attempt])
@@ -689,6 +695,7 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff,
 
 	#CALL calculate_input_to_matched_ratio FUNCTION
 	if calculate_mean_input_to_match_ratio:
+		status_obj.update_status('match', 'finalizing') ## OBS: this line is important. results.js uses this keyword to check if the bias calucalation has started
 		cols2calc=['freq_bin', 'gene_count', 'dist_nearest_gene_snpsnap', colname_ld_buddy_count]
 		calculate_input_to_matched_ratio(file_db=file_db, df_input=df, matched_snpID_array=all_matched_snpID, cols2calc=cols2calc) # this function will take care of writing the 
 
@@ -949,11 +956,12 @@ class Progress():
 			logger.critical( emsg )
 			raise Exception( emsg )
 		
-		self.match = {'pct_complete':0, 'status':'not_running'}
-		self.set_file = {'pct_complete':0, 'status':'not_running'}
-		self.annotate = {'pct_complete':0, 'status':'not_running'}
+		self.match = {'pct_complete':0, 'status':'waiting'}
+		self.bias = {'pct_complete':0, 'status':'waiting'}
+		self.set_file = {'pct_complete':0, 'status':'waiting'}
+		self.annotate = {'pct_complete':0, 'status':'waiting'}
 		
-		self.status_now = {'match':self.match, 'set_file':self.set_file, 'annotate':self.annotate}
+		self.status_now = {'match':self.match, 'bias':self.bias, 'set_file':self.set_file, 'annotate':self.annotate}
 		self.status_list = [self.status_now] # NOT NESSESARY. This war only implemented to have a full list of the status bar
 
 
@@ -1064,8 +1072,10 @@ def main():
 
 	##########################################################################
 	################# GLOBAL *INTERNAL* ARGUMENTS - NOT COMMAND LINE #########
+	global data_frame_query
 	global calculate_mean_input_to_match_ratio
 	calculate_mean_input_to_match_ratio = True
+	data_frame_query = False # if set, then read in the whole HDF5 file into a DataFrame. DID NOT IMPROVE SPEED
 	#########################################################################
 	#########################################################################
 
