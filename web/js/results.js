@@ -93,6 +93,9 @@ $(document).ready(function(){
 				$("#progress_bar_bias .progress-bar").css('width', res.bias.pct_complete+'%');
 				$("#progress_bar_bias .progress-bar").html(res.bias.pct_complete + "%");
 				$("#row_progress_bias .text-info").html(res.bias.status);
+				if (res.bias.status == 'complete') {
+					$("#progress_bar_bias").removeClass('active')
+				}
 
 				if (set_file) {
 					$("#progress_bar_set_file .progress-bar").css('width', res.set_file.pct_complete+'%');
