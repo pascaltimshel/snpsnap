@@ -5,6 +5,7 @@ function getSnpsnapScore(sid) {
 	//alert("getSnpsnapScore() is called");
 	$.ajax({
 		url:"app/report_snpsnap_score_html.py",
+		type: 'POST',
 		data: {session_id:sid}, 
 		dataType: "html",
 		success: function(res){
@@ -16,6 +17,7 @@ function getSnpsnapScore(sid) {
 function getInputToMatchedRatio(sid) {
 	$.ajax({
 		url:"app/report_input_to_matched_ratio_html.py",
+		type: 'POST',
 		data: {session_id:sid}, 
 		dataType: "html",
 		success: function(res){
@@ -51,6 +53,7 @@ $(document).ready(function(){
 		var progresspump = setInterval(function(){
 		$.ajax({
 			url:"app/parse_returncode.py",
+			type: 'POST',
 			data: data_parse_cgi, // only the session_id is used
 			dataType: "text",
 			success: function(res){
@@ -77,10 +80,10 @@ $(document).ready(function(){
 		})
 		$.ajax({
 			url:"app/status_json.py",
+			type: 'POST', 
 			data: data_parse_cgi, 
 			dataType: "json",
 			success: function(res){
-
 				$("#progress_bar_match .progress-bar").css('width', res.match.pct_complete+'%');
 				$("#progress_bar_match .progress-bar").html(res.match.pct_complete + "%");
 				$("#row_progress_match .text-info").html(res.match.status);
@@ -126,7 +129,7 @@ $(document).ready(function(){
 				}
 			}
 		})
-		}, 1000)
+		}, 2000)
 	}
  })
 

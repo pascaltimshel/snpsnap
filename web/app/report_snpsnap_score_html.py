@@ -91,12 +91,12 @@ try:
 	      <tr>
 	        <th>Insufficient-matches</th>
 	        <td>{fmt_value_insufficient}%</td>
-	        <td><img src='{img_insufficient_rating}' class="img-responsive" alt="Responsive image"></td>
+	        <td><img src='{img_insufficient_rating}' style="max-width:420px; max-height:21px" alt="SNPsnap score image"></td>
 	      </tr>
 	      <tr>
 	        <th>Match-size</th>
 	        <td>{fmt_value_match_size}%</td>
-	        <td><img src='{img_match_size_rating}' class="img-responsive" alt="Responsive image"></td>
+	        <td><img src='{img_match_size_rating}' style="max-width:420px; max-height:21px" alt="SNPsnap score image"></td>
 	      </tr>
 	    </tbody>
 	  </table>
