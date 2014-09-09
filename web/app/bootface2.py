@@ -164,11 +164,6 @@ def run():
 		      <td>{distance_cutoff}</td>
 		    </tr>
 		    <tr>
-		      <td></td>
-		      <td>Distance type</td>
-		      <td>{distance_type}</td>
-		    </tr>
-		    <tr>
 		      <th>Maximum deviations for matching SNPs</th>
 		      <td>Minor Allele Frequency</td>
 		      <td>{max_freq_deviation}</td>
