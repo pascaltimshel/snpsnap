@@ -144,16 +144,32 @@ def read_user_snps(user_snps_file):
 
 #@profile
 def lookup_user_snps_iter(file_db, user_snps):
-	""" This function will query the user_snps (type list) against the data base index """
+	""" This function will query the user_snps (type list) against the data base index 
+	NOTE that the resultant concatenated data frame (user_snps_df) will have the SAME column names (and index name = 'snpID') as the HDF5 file.
+	"""
 	logger.info( "START: lookup_user_snps_iter" )
 	start_time = time.time()
 	store = pd.HDFStore(file_db, 'r')
 	list_of_df = []
 	#user_snps_df = pd.DataFrame() # APPEND VERSION - WORKS, but NO control of column order. Consider: pd.DataFrame(columns=colnames)
-	for item in user_snps:
+	for i, item in enumerate(user_snps, start=1):
+		logger.info( "#%s/#%s | Look-up SNP: %s" % (i, len(user_snps), item) )
 		df = store.select('dummy', "index=['%s']" % item) # Remember to quote the string!
 		## ^^ df will be an empty DataFrame if there is no SNP with the quired index (NOTE that this is not the same as indexing in a pandas data frame: here a KeyError will be thrown if the index does not exists)
 		## ^^ nothing happens when appending/concatenating empty DataFrames
+		
+		## If no SNP found from chr:pos, then look for rsID.
+		if len(df) == 0:
+			df = store.select('dummy', "rsID=['%s']" % item) # Remember to quote the string!. MAKE SURE THAT rsID is the correct column name.
+			# ^this data frame has the column names (and index name = 'snpID') as the HDF5 file.
+
+			if len(df) == 1: # make sure we only get one match
+				logger.info( "#%s/#%s | Mapped rsID to chr:posID | %s --> %s" % (i, len(user_snps), item, df.index.values[0]) )
+			elif len(df > 1):
+				logger.critical( "Found multiple entries in db when doing look-up based on rsID '%s'" % item )
+				logger.critical( "List of matching SNPs: %s" % ";".join(df.index.values) )
+				logger.critical( "Will not use any of these matching. Considering SNP as SNP_not_found_in_data_base" )
+				df = pd.DataFrame() # setting the data frame as empty. This still works when concatenating the dfs. type() --> pandas.core.frame.DataFrame.
 
 		#TODO: check length of df. MUST BE EXACTLY ONE!!! ****
 		#TODO: immediately write out snps/items with wrong len(df)?
@@ -161,6 +177,28 @@ def lookup_user_snps_iter(file_db, user_snps):
 		#user_snps_df = user_snps_df.append(df) # APPEND VERSION - WORKS.
 	store.close()
 	user_snps_df = pd.concat(list_of_df)
+		# ---> pd.concat KEEPS the order of the list of df parsed. That is, SNPs in the df will be in the same order as the the user submitted them.
+	
+	## Making sure not to have duplicates. Duplicates could arise if the user inputs the different indentifers (chr:pos and rsID) mapping to the same SNP.
+	#.duplicated() [without any arguments] check for ROWS that are duplicated.
+	#.duplicated() IMPORTANT: It returns a Series denoting duplicate rows. The DEFAULT behavior is marking the FIRST observed row as NON duplicate and the FOLLOWING rows as duplicate. That is, there will still be one "copy" left of the row.
+	#.duplicated() only consider column values when looking for duplicates. That is, the index value is not considered.
+	if user_snps_df.duplicated().any(): # user_snps_df.duplicated().any() --> gives a bool value ('True' or 'False')
+		series_duplicated_values = user_snps_df.duplicated() # user_snps_df.duplicated() --> Series object with boolean values.
+		logger.warning( "Found duplicated entries in user_snps_df. Duplicates will be removed (one copy will be retained). Printing snpID and rsID for rows marked as duplicate:" )
+		logger.warning( user_snps_df.ix[series_duplicated_values, ["rsID"]] )
+		user_snps_df.drop(series_duplicated_values, axis=0, inplace=True)
+
+		# ALTERNATIVE SOLUTION (not tested, but useful) - this checks for duplicated INDEX. See also tabs_compile.py [idx_bool = pd.Series(df.index).duplicated().values]
+		#user_snps_df["index_tmp_col"] = user_snps_df.index #--> creating a column of the index (chr:pos ID)
+		#user_snps_df.drop_duplicates(subset='index_tmp_col', inplace=True) #--> Return DataFrame with duplicate rows removed. TIP: you can get the list of duplicates ROWS by df.duplicated()
+		#del user_snps_df["index_tmp_col"] #--> remove column again. Notice that the index of the df does not change.
+		
+
+	
+	# NOTE: all duplicates for chr:pos have been removed in the tabs_compile.py and the list can be found in the file "ld0.X_duplicates.tab"
+	# NOTE: 09/10/2014; Pascal tested the HDF5 file for duplicates of rsIDs. There are NO duplicate rsIDs!
+
 	elapsed_time = time.time() - start_time
 	logger.info( "END: lookup_user_snps_iter in %s s (%s min)" % (elapsed_time, elapsed_time/60) )
 	
@@ -169,6 +207,8 @@ def lookup_user_snps_iter(file_db, user_snps):
 
 
 def exclude_snps(path_output, user_snps, df):
+	""" Function that finds what SNPs where NOT found in the database. Function also EXCLUDES HLA_SNPs"""
+	# REMARK: the list of SNPs not found in db could be generated already in "lookup_user_snps_iter()": just check of the df from store.select() has length 0.
 	user_snps_excluded = path_output+"/input_snps_excluded.txt"
 	logger.info( "START: doing exclude_snps, that is SNPs that will be excluded" )
 	start_time = time.time()
@@ -494,6 +534,8 @@ def calculate_input_to_matched_ratio(file_db, df_input, matched_snpID_array, col
 
 #@profile
 def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff, exclude_input_SNPs, max_freq_deviation, max_distance_deviation, max_genes_count_deviation, max_ld_buddy_count_deviation):
+	## NOTE: df is "user_snps_df"
+
 	status_obj.update_status('match', 'running')
 	
 
@@ -817,6 +859,8 @@ def ParseArguments():
 	#arg_parser_annotate.set_defaults(func=run_annotate)
 	arg_parser_match = subparsers.add_parser('match')
 	#arg_parser_annotate.set_defaults(func=run_match)
+	
+	arg_parser_independent_loci = subparsers.add_parser('independent_loci') # NEW, 09-09-2014
 
 	arg_parser.add_argument("--user_snps_file", help="Path to file with user-defined SNPs", required=True) # TODO: make the program read from STDIN via '-'
 	arg_parser.add_argument("--output_dir", type=check_if_path_is_writable, help="Directory in which output files, i.e. random SNPs will be written", required=True)
@@ -838,6 +882,8 @@ def ParseArguments():
 	## NOT FINISH LOGGING OPTION, 07/07/2014
 	#arg_parser.add_argument("--log", type=get_logging_option, help="If set, the program will enable a logger that prints statements to STDOUT and to a file. VALUE should be a full filepath (path and filename) to the log file. DEFAULT if set then logging is DISAPLED. Logfile will be placed in output_dir.")
 
+	#POTENTIAL "OVERALL" arguments:
+	# -population
 
 	### MATCH arguments
 	arg_parser_match.add_argument("--N_sample_sets", type=check_N_sample_sets, help="Number of matched SNPs to retrieve", required=True) # 1000 - "Permutations?" TODO: change name to --n_random_snp_sets or --N
@@ -851,6 +897,13 @@ def ParseArguments():
 	arg_parser_match.add_argument("--max_ld_buddy_count_deviation", type=int, help="Maximal PERCENTAGE deviation of genes in locus [ld_buddy_count +/- %%deviation]", required=True) # default=5
 	arg_parser_match.add_argument("--set_file", help="Bool (switch, takes no value after argument); if set then write out set files to rand_set..gz. Default is false", action='store_true')
 
+
+	### independent_loci arguments
+	arg_parser_independent_loci.add_argument("--clump-r2", type=float, help="LD threshold for clumping", default=0.5)
+	arg_parser_independent_loci.add_argument("--clump-kb", type=float, help="Physical distance threshold for clumping", default=250)
+	#--> genotype data path will be hard coded
+
+    
 	args = arg_parser.parse_args()
 
 	return args

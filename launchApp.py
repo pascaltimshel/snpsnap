@@ -22,16 +22,16 @@ import zipfile
 #import threading
 # #class Processor(multiprocessing.Process):
 # class Processor(threading.Thread):
-# 	def __init__(self, session_id, email_address, job_name, cmd_annotate, cmd_set_file):
+# 	def __init__(self, session_id, email_address, job_name, cmd_annotate, cmd_match):
 # 		#multiprocessing.Process.__init__(self)
 # 		threading.Thread.__init__(self)
 
 class Processor(object):
-	def __init__(self, session_id, email_address, job_name, cmd_annotate, cmd_set_file):
+	def __init__(self, session_id, email_address, job_name, cmd_annotate, cmd_match):
 		#self.script2call = "/cvar/jhlab/snpsnap/snpsnap/snpsnap_query.py"
 		self.session_id = session_id
 		self.cmd_annotate=cmd_annotate # bool value
-		self.cmd_set_file=cmd_set_file # bool value
+		self.cmd_match=cmd_match # bool value
 		self.email_address=email_address
 		self.job_name=job_name
 		#self.processes = []
@@ -365,9 +365,9 @@ class Processor(object):
 		## Debugging must be done by me be replicating the example. 
 		## (consider sending the formular in the email)
 
-		if self.cmd_set_file:
-			print "cmd cmd_set_file"
-			command_shell = self.cmd_set_file
+		if self.cmd_match:
+			print "cmd cmd_match"
+			command_shell = self.cmd_match
 			self.processes['match']['call'] = command_shell
 			with open(os.devnull, "w") as fnull: # same as open('/dev/null', 'w')
 				p = subprocess.Popen(command_shell, stdout = fnull, stderr = subprocess.STDOUT, shell=True)
@@ -391,9 +391,9 @@ class Processor(object):
 
 
 		# USED FOR DEBUGGING
-		# if self.cmd_set_file:
-		# 	print "cmd cmd_set_file"
-		# 	command_shell = self.cmd_set_file
+		# if self.cmd_match:
+		# 	print "cmd cmd_match"
+		# 	command_shell = self.cmd_match
 		# 	self.processes['match']['call'] = command_shell
 		# 	p = subprocess.Popen(command_shell, stdout = None, stderr = subprocess.STDOUT, shell=True)
 		# 	#self.processes.append(p)
