@@ -99,33 +99,16 @@ class Processor(object):
 			# we are the parent. pid is not 0
 			#print 'Hello from parent. My PID: %s | Child PID: %s' % (os.getpid(), pid)
 
-	def write_snpsnap_summary(self):
-		## This function writes out the snpsnap_summary file to "MAIN" OUTPUT DIR, that is the path that snpsnap_query.py also writes to.
-		
-		file_snpsnap_summary = "{base}/{filename}.{ext}".format(base=self.path_session_output, filename='snpsnap_summary', ext='txt')
-
-		report_news =	{'session_id':self.session_id,
-							'job_name':self.job_name,
-							'email_address':self.email_address
-							}
-		#self.report_obj['web'].update(report_news)
-		self.report_obj['web'] = report_news
-
-
-		f = open(file_snpsnap_summary, 'w')
-		for category, params in self.report_obj.items():
-			f.write( "#{}#".format(category.upper())+"\t"+"\n")
-			for param, value in params.items():
-				f.write( "{}\t{}".format(param.upper(), value) +"\n")
-		f.close()
-
 
 	def read_report(self):
 		#TODO: these files should go into the config file
 		#path_web_tmp_output = '/cvar/jhlab/snpsnap/web_tmp'
 		
 		#OBS: this is the existing 'report/summary' file
-		file_report = "{base}/{sid}_{type}.{ext}".format(base=self.path_web_tmp_output, sid=self.session_id, type='report', ext='json')
+		#file_report = "{base}/{sid}_{type}.{ext}".format(base=self.path_web_tmp_output, sid=self.session_id, type='report', ext='json') # OUTCOMMENTED 09/11/2014
+		file_report = "{base}/{sid}_{type}.{ext}".format(base=self.path_web_tmp_output, sid=self.session_id, type='report', ext='json') 
+		### 09/11/2014: SOMETHING SHOULD BE DONE HERE!!! #self.fname = "{name_parsed}_{file_type}_{subcommand}.{ext}".format(name_parsed=filebasename, file_type='report', subcommand=args.subcommand, ext='json')
+
 
 		## TODO: make try: execpt: block
 		self.report_obj = None ## Needed for correct variable scope
@@ -135,6 +118,29 @@ class Processor(object):
 		###### SETTING instance variables for email to be generated
 		#self.insufficient_rating = report_obj['insufficient_rating']
 		#self.match_size_rating = report_obj['match_size_rating']
+
+
+
+	def write_snpsnap_summary(self):
+		## This function writes out the snpsnap_summary file to "MAIN" OUTPUT DIR, that is the path that snpsnap_query.py also writes to.
+		
+		file_snpsnap_summary = "{base}/{filename}.{ext}".format(base=self.path_session_output, filename='snpsnap_summary', ext='txt')
+
+		### OUTCOMMENTED 09/11/2014 - no longer needed because information exists in bootface2.py
+		# report_news =	{'session_id':self.session_id,
+		# 					'job_name':self.job_name,
+		# 					'email_address':self.email_address
+		# 					}
+		# #self.report_obj['web'].update(report_news)
+		# self.report_obj['web'] = report_news
+
+
+		f = open(file_snpsnap_summary, 'w')
+		for category, params in self.report_obj.items():
+			f.write( "#{}#".format(category.upper())+"\t"+"\n")
+			for param, value in params.items():
+				f.write( "{}\t{}".format(param.upper(), value) +"\n")
+		f.close()
 
 
 

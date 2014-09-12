@@ -116,6 +116,24 @@ def run():
 
 	import re # used for formula validation
 
+	import collections # NEW 09/11/2014 - for Report() class
+	import json # NEW 09/11/2014 - for Report() class
+
+	class Report():
+		def __init__(self, filebasename):
+			## NOTE: filebasename is file_prefix_web_tmp
+			#*OBS*; filebasename will have the value like: '/cvar/jhlab/snpsnap/web_tmp/2ede5955021a10cb0e1a13882be520eb'.
+			self.fname = "{name_parsed}_{subcommand}.{ext}".format(name_parsed=filebasename, subcommand='bootface', ext='json')
+			self.report = collections.defaultdict(dict) # two-level dict
+			# VALID CATEGORIES for bootface: 
+			#loci_definition
+			#match_criteria
+			#options
+
+		def write_json_report(self):
+			with open(self.fname, 'w') as f:
+				json.dump(self.report, f, indent=3)
+
 	# First try to read content of file upload. Hereafter read the content of textinput
 	def get_snplist():
 		snplist_input_type = ''
@@ -263,7 +281,9 @@ def run():
 	file_prefix_web_tmp = path_web_tmp_output+'/'+session_id
 
 
-
+	##############################################################################
+	############################## READING WEB ARGUMENTS #########################
+	##############################################################################
 
 	snplist_input_type = get_snplist() # read input snplist and write to file in /tmp
 	# Now get more arguments
@@ -302,6 +322,62 @@ def run():
 	annotate = form.getvalue('annotate', '') # value will be 'on' if parsed (and no value attribute is specified)
 	set_file = form.getvalue('set_file', '') # value will be 'on' if parsed (and no value attribute is specified)
 
+	#clump = form.getvalue('clump', '')
+	#clump_r2 = form.getvalue('clump_r2', '')
+	#clump_kb = form.getvalue('clump_kb', '')
+
+	##############################################################################
+	############################## WRITING REPORT ###########################
+	##############################################################################
+	
+	################## Creating report_object ##################
+	report_obj = Report(filebasename=file_prefix_web_tmp)
+
+	################## OPTIONS ##################
+	report_news =	{'required_matched_SNPs':N_sample_sets, #*** OBS: different name!
+					'exclude_input_SNPs':exclude_input_SNPs,
+					'exclude_HLA_SNPs':exclude_HLA_SNPs,
+					'annotate_matched_SNPs':set_file,
+					'annotate_input_SNPs':annotate
+					}
+	report_obj.report['options'].update(report_news)
+
+	################## LOCI DEFINITION ##################
+	report_news =	{'distance_type':distance_type,
+					'distance_cutoff':distance_cutoff
+					}
+	report_obj.report['loci_definition'].update(report_news)
+
+	################## MATCHING CRITERIA ##################
+	report_news =	{'max_freq_deviation':max_freq_deviation,
+					'max_distance_deviation':max_distance_deviation,
+					'max_genes_count_deviation':max_genes_count_deviation,
+					'max_ld_buddy_count_deviation':max_ld_buddy_count_deviation, # NEW
+					'ld_buddy_cutoff':ld_buddy_cutoff # NEW 09/11/2014
+					}
+	report_obj.report['match_criteria'].update(report_news)
+	
+	################## CLUMPING ##################
+	# report_news =	{'clump':clump,
+	# 				'clump_r2':clump_r2,
+	# 				'clump_kb':clump_kb
+	# 				}
+	# report_obj.report['clumping'].update(report_news)
+	
+
+	################## WEB ##################
+	report_news =	{'session_id':session_id,
+						'job_name':job_name,
+						'email_address':email_address
+						}
+	report_obj.report['web'].update(report_news)
+
+	################## Writing report ##################
+	report_obj.write_json_report()
+
+	##############################################################################
+	############################## GENERATING COMMANDS ###########################
+	##############################################################################
 
 	script2call = "/cvar/jhlab/snpsnap/snpsnap/snpsnap_query.py"	
 	## this is the base for all the sub options that can be added to SNPsnap

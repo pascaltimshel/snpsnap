@@ -65,7 +65,7 @@ $(document).ready(function(){
 	})
 
 
-	$('#snp_example_link').click(function() { //this will apply to the snp example anchor tag
+	$('#snp_example_link_chrpos').click(function() { //this will apply to the snp example anchor tag
 		var example_snp_input_str = 
 			["14:69873335",
 			"9:5453460",
@@ -77,6 +77,20 @@ $(document).ready(function(){
 			"4:58923290",
 			"4:59511935",
 			"2:73321971"].join('\n');
+		$('#snplist_text').val(example_snp_input_str); //this puts the example_snp_input_str inside the textarea for the id labeled 'snplist_text'
+	});
+
+	$('#snp_example_link_rsID').click(function() { //this will apply to the snp example anchor tag
+		var example_snp_input_str = 
+			["rs10131464",
+			"rs79855302",
+			"rs12111706",
+			"rs67146338",
+			"rs59824113",
+			"rs111462038",
+			"rs143056833",
+			"rs35886686",
+			"rs727470"].join('\n');
 		$('#snplist_text').val(example_snp_input_str); //this puts the example_snp_input_str inside the textarea for the id labeled 'snplist_text'
 	});
 

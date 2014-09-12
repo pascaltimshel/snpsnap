@@ -31,6 +31,8 @@ import pplogger
 
 import json
 
+import subprocess # added 09/11/2014 - to be used for PLINK clumping
+
 import pdb
 
 ########### Example calls ############
@@ -206,11 +208,20 @@ def lookup_user_snps_iter(file_db, user_snps):
 
 
 
-def exclude_snps(path_output, user_snps, df):
-	""" Function that finds what SNPs where NOT found in the database. Function also EXCLUDES HLA_SNPs"""
-	# REMARK: the list of SNPs not found in db could be generated already in "lookup_user_snps_iter()": just check of the df from store.select() has length 0.
-	user_snps_excluded = path_output+"/input_snps_excluded.txt"
-	logger.info( "START: doing exclude_snps, that is SNPs that will be excluded" )
+def process_input_snps(path_output, user_snps, df):
+	""" 
+	1) Function idenfifies SNPs that where NOT found in the database. 
+	2) Function EXCLUDES HLA_SNPs
+	3) Function WRITES FILE input_snps_excluded.txt (either snps_not_in_db or snps_not_in_db)
+	4) Function WRITES FILE input_snps_mapping.txt
+
+	REMARKS: 
+	- the list of SNPs not found in db could be generated already in "lookup_user_snps_iter()": just check of the df from store.select() has length 0.
+	"""
+	file_user_snps_excluded = path_output+"/input_snps_excluded.txt"
+	file_user_snps_mapping = path_output+"/input_snps_mapping.txt"
+
+	logger.info( "START: doing process_input_snps, that is SNPs that will be excluded" )
 	start_time = time.time()
 
 	snps_excluded = {} # dict will contain all user_snps not used further in SNPsnap (snps_not_in_db and snps_in_HLA)
@@ -242,11 +253,14 @@ def exclude_snps(path_output, user_snps, df):
 
 	if snps_excluded: # if non-empty
 		logger.warning( "{} SNPs in total not found or excluded because they map to HLA region".format(len(snps_excluded)) )
-		# WRITING SNPs not found to FILE
-		with open(user_snps_excluded, 'w') as f:
+		### WRITING SNPs not found to FILE ###
+		#if not os.path.exists(file_user_snps_excluded): # This is needed (or better practice) to not (over)write the file when the web service calls match, annotate and clump. However, it could cause problems not overwriting if called from command line
+		# ^ I put in the above line because I was UNSURE about what happens if three processes tries to open and write to the same file.
+		with open(file_user_snps_excluded, 'w') as f:
 			for snp in sorted(snps_excluded, key=snps_excluded.get): # sort be the dict value (here snps_excluded[snp]='reason')
 				f.write(snp+"\t"+snps_excluded[snp]+"\n")
 
+	### SOME USEFUL CODE TO INSPECT THE UNIQUENESS OF USER_SNPs ###
 	# print "*** Warning: Number of unique snpIDs (index) found: %d" % len(np.unique(df.index.values))
 	# bool_duplicates = pd.Series(df.index).duplicated().values # returns true for duplicates
 	# df_duplicate = df.ix[bool_duplicates]
@@ -254,8 +268,14 @@ def exclude_snps(path_output, user_snps, df):
 	# idx_duplicate = df_duplicate.index
 	# print "Pandas data frame with index of duplicate:"
 	# print df.ix[idx_duplicate]
+
+	### WRITING OUT MAPPING FILE
+	#if not os.path.exists(file_user_snps_mapping): #<-- you WANT to overwrite the file if running the tool from commandline
+	df.to_csv(file_user_snps_mapping, sep='\t', index=True, columns=['rsID'], header=True, mode='w') #index_label='snpID' NOT needed - it follows from the HDF5 file
+
+
 	elapsed_time = time.time() - start_time
-	logger.info( "END: exclude_snps in %s s (%s min)" % (elapsed_time, elapsed_time/60) )
+	logger.info( "END: process_input_snps in %s s (%s min)" % (elapsed_time, elapsed_time/60) )
 
 	if report_obj.enabled:
 		report_news = 	{	"unique_user_snps":len(user_snps),
@@ -529,6 +549,7 @@ def calculate_input_to_matched_ratio(file_db, df_input, matched_snpID_array, col
 		report_obj.report['mean_input_to_match_ratio'].update(report_news) # CONSIDER: making a new 'category' containing the ratio values
 
 	status_obj.update_pct('bias', float(100)) # ###### STATUSBAR #########
+	report_obj.write_json_report() # WRITE OUT REPORT so "report_input_to_matched_ratio_html.py" can read it.
 	status_obj.update_status('bias', 'complete')
 
 
@@ -737,6 +758,7 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff,
 
 	#CALL calculate_input_to_matched_ratio FUNCTION
 	if calculate_mean_input_to_match_ratio:
+		report_obj.write_json_report() # OPS: this is important to make sure that a json report is written for "report_snpsnap_score_html" to read.
 		status_obj.update_status('match', 'finalizing') ## OBS: this line is important. results.js uses this keyword to check if the bias calucalation has started
 		cols2calc=['freq_bin', 'gene_count', 'dist_nearest_gene_snpsnap', colname_ld_buddy_count]
 		calculate_input_to_matched_ratio(file_db=file_db, df_input=df, matched_snpID_array=all_matched_snpID, cols2calc=cols2calc) # this function will take care of writing the 
@@ -804,6 +826,53 @@ def write_set_file(path_output, df_collection):
 
 
 
+def clump_snps(user_snps_df, path_output, clump_r2, clump_kb):
+	path_genotype = "/cvar/jhlab/snpsnap/data/step1/full_no_pthin_rmd/CEU_GBR_TSI_unrelated.phase1_dup_excluded"
+	file_plink_tmp_assoc = path_output + "/tmp.assoc"
+	p_val = str(0.00001)
+
+	logger.info( "Writing .assoc file: %s" % file_plink_tmp_assoc )
+	## REMEMBER: Plink needs the 'rsID' to be able to match the SNP IDs with the ones in the genotype data. 
+	#If Plink CANNOT find the ID in the genotype data it will create NAs. See below example
+	# CHR    F          SNP         BP        P    TOTAL   NSIG    S05    S01   S001  S0001    SP2
+	# NA   NA 10:100096148         NA      1e-05       NA     NA     NA     NA     NA     NA     NA
+	with open(file_plink_tmp_assoc, 'w') as f_assoc:
+		f_assoc.write("SNP\tP\n") # Writing header - must be detectable by PLINK
+		for rsID in user_snps_df.ix[:,'rsID']: #iteratable object is a Series object
+			#^ taking rsID column out of data frame and writing out rsIDs.
+			f_assoc.write(rsID + "\t" + p_val + "\n")
+			### Example of file_plink_tmp_assoc (tmp.assoc)
+			# SNP     P
+			# rs6602381       0.00001
+			# rs7899632       0.00001
+
+	cmd_plink = "plink --bfile {geno} --clump {assoc} --clump-r2 {clump_r2} --clump-kb {clump_kb} --noweb".format(geno=path_genotype, assoc=file_plink_tmp_assoc, clump_r2=clump_r2, clump_kb=clump_kb)
+	### REMEMBER plink likely needs to be called as:
+	#source /broad/software/scripts/useuse && use .plink-1.07 && plink <plink arguments>
+	logger.info( "Making plink call: %s" % cmd_plink )
+	fnull = open(os.devnull, "w")
+	p_plink = subprocess.Popen(cmd_plink, stdout = fnull, stderr = subprocess.STDOUT, shell=True)
+	fnull.close()
+	logger.info( "PID = %s | Waiting for plink to finish..." % p_plink.pid )
+	p_plink.wait()
+	logger.info( "PID = %s | DONE. Return code: %s" % (p_plink.pid, p_plink.returncode) )
+
+	with open("plink.clumped", 'r') as f_plink_clumped:
+		### Example:
+		# CHR    F          SNP         BP        P    TOTAL   NSIG    S05    S01   S001  S0001    SP2
+		# 10    1   rs11189555  100092279      1e-05        9      0      0      0      0      9 rs7900936(1),rs10786411(1),rs1536154(1),rs1536153(1),rs7901537(1),rs10883071(1),rs746033(1),rs4917819(1),rs10883072(1)
+		# 10    1   rs10883068  100091769      1e-05        1      0      0      0      0      1 rs12761064(1)
+		# 10    1   rs55950087  100091388      1e-05        0      0      0      0      0      0 NONE
+		for line in f_plink_clumped.readlines()[1:]: #skipping header
+			fields = line.strip().split()
+			index_snp = fields[2] # SNP
+			clump_total_count = fields[5] #TOTAL
+			clumped_snps = fields[11] # SP2
+
+		## THIS IS WHERE I AM!
+
+	return
+
 ###################################### CHECK of INPUT arguments ######################################
 def check_max_distance_deviation(value):
 	ivalue = int(value)
@@ -860,7 +929,7 @@ def ParseArguments():
 	arg_parser_match = subparsers.add_parser('match')
 	#arg_parser_annotate.set_defaults(func=run_match)
 	
-	arg_parser_independent_loci = subparsers.add_parser('independent_loci') # NEW, 09-09-2014
+	arg_parser_clump = subparsers.add_parser('clump') # NEW, 09-09-2014
 
 	arg_parser.add_argument("--user_snps_file", help="Path to file with user-defined SNPs", required=True) # TODO: make the program read from STDIN via '-'
 	arg_parser.add_argument("--output_dir", type=check_if_path_is_writable, help="Directory in which output files, i.e. random SNPs will be written", required=True)
@@ -898,9 +967,9 @@ def ParseArguments():
 	arg_parser_match.add_argument("--set_file", help="Bool (switch, takes no value after argument); if set then write out set files to rand_set..gz. Default is false", action='store_true')
 
 
-	### independent_loci arguments
-	arg_parser_independent_loci.add_argument("--clump-r2", type=float, help="LD threshold for clumping", default=0.5)
-	arg_parser_independent_loci.add_argument("--clump-kb", type=float, help="Physical distance threshold for clumping", default=250)
+	### clump arguments
+	arg_parser_clump.add_argument("--clump_r2", type=float, help="LD threshold for clumping", default=0.5)
+	arg_parser_clump.add_argument("--clump_kb", type=float, help="Physical distance threshold for clumping", default=250)
 	#--> genotype data path will be hard coded
 
     
@@ -956,7 +1025,7 @@ def run_match(path_data, path_output, prefix, user_snps_file, N_sample_sets, ld_
 	file_collection = locate_collection_file(path_data, prefix) # Locate DB files. TODO: make function more robust
 	user_snps = read_user_snps(user_snps_file) # Read input SNPs. Return list
 	user_snps_df = lookup_user_snps_iter(file_db, user_snps) # Query DB, return DF
-	user_snps_df = exclude_snps(path_output, user_snps, user_snps_df) # Report number of matches to DB and drop SNPs mapping to HLA region
+	user_snps_df = process_input_snps(path_output, user_snps, user_snps_df) # Report number of matches to DB and drop SNPs mapping to HLA region
 	
 	# OUTCOMMENTED 07/03/2014
 	#write_user_snps_stats(path_output, user_snps_df) # write stats file (no meta annotation)
@@ -964,6 +1033,7 @@ def run_match(path_data, path_output, prefix, user_snps_file, N_sample_sets, ld_
 	query_similar_snps(file_db, path_output, user_snps_df, N_sample_sets, ld_buddy_cutoff, exclude_input_SNPs, max_freq_deviation, max_distance_deviation, max_genes_count_deviation, max_ld_buddy_count_deviation)
 
 	### STATUS
+	report_obj.write_json_report() # this one may not be needed. Consider deleting. Think it through
 	status_obj.update_status('match', 'complete')
 
 	## TODO: use Threading for the read_collection() call
@@ -980,7 +1050,7 @@ def run_annotate(path_data, path_output, prefix, user_snps_file):
 	file_collection = locate_collection_file(path_data, prefix) # Locate DB files. TODO: make function more robust
 	user_snps = read_user_snps(user_snps_file) # Read input SNPs. Return list
 	user_snps_df = lookup_user_snps_iter(file_db, user_snps) # Query DB, return DF
-	user_snps_df = exclude_snps(path_output, user_snps, user_snps_df) # Report number of matches to DB and drop SNPs mapping to HLA region
+	user_snps_df = process_input_snps(path_output, user_snps, user_snps_df) # Report number of matches to DB and drop SNPs mapping to HLA region
 	
 	status_obj.update_status('annotate', 'running')
 	status_obj.update_pct('annotate', float(20) )
@@ -989,32 +1059,58 @@ def run_annotate(path_data, path_output, prefix, user_snps_file):
 	status_obj.update_pct('annotate', float(100) )
 	status_obj.update_status('annotate', 'complete')
 
+def run_clump(path_data, path_output, prefix, user_snps_file, clump_r2, clump_kb):
+	logger.info( "running clump" )
+	file_db = locate_db_file(path_data, prefix) # Locate DB files. TODO: make function more robust
+	file_collection = locate_collection_file(path_data, prefix) # Locate DB files. TODO: make function more robust
+	user_snps = read_user_snps(user_snps_file) # Read input SNPs. Return list
+	user_snps_df = lookup_user_snps_iter(file_db, user_snps) # Query DB, return DF
+	user_snps_df = process_input_snps(path_output, user_snps, user_snps_df) # Report number of matches to DB and drop SNPs mapping to HLA region
+	
+	status_obj.update_status('clump', 'running')
+	status_obj.update_pct('clump', float(20) )
+	clump_snps(user_snps_df, path_output, clump_r2, clump_kb)
 
+	status_obj.update_status('clump', 'complete')
+	status_obj.update_pct('clump', float(100) )
+	# THIS IS WHERE I STOPPED TUESDAY.
+	# Also, think about the consequences of writing several excluded_files.
+		#- if not exists
+		#
 
 class Progress():
 	def __init__(self, filebasename, args, enabled): #'tmp_data.json'
 		#*OBS*; filebasename will have the value like: '/cvar/jhlab/snpsnap/web_tmp/2ede5955021a10cb0e1a13882be520eb'.
 		self.enabled = enabled
 		if not self.enabled: return # OBS: important!
-		if args.subcommand == "match":
-			self.fname = "{name_parsed}_{subcommand}.{ext}".format(name_parsed=filebasename, subcommand='status_match', ext='json')
-			# e.g. /e43f990bbb981b008b9d84b22c2770f8_status_match.json
-			#self.fh = open(fname, 'w')
-		elif args.subcommand == "annotate":
-			self.fname = "{name_parsed}_{subcommand}.{ext}".format(name_parsed=filebasename, subcommand='status_annotate', ext='json')
-			# e.g. /e43f990bbb981b008b9d84b22c2770f8_status_annotate.json
-			#self.fh = open(fname, 'w')
-		else:
-			emsg = "Could not find matching subcommand. You may have changed the name of the subcommands"
-			logger.critical( emsg )
-			raise Exception( emsg )
+		self.fname = "{name_parsed}_{file_type}_{subcommand}.{ext}".format(name_parsed=filebasename, file_type='status', subcommand=args.subcommand, ext='json')
+		# e.g. /e43f990bbb981b008b9d84b22c2770f8_status_match.json
+		#self.fh = open(fname, 'w')
+
+		### OUTCOMMENTED 09/11/2014 - this code is just silly... May be deleted!
+		# if args.subcommand == "match":
+		# 	self.fname = "{name_parsed}_{subcommand}.{ext}".format(name_parsed=filebasename, subcommand='status_match', ext='json')
+		# 	# e.g. /e43f990bbb981b008b9d84b22c2770f8_status_match.json
+		# 	#self.fh = open(fname, 'w')
+		# elif args.subcommand == "annotate":
+		# 	self.fname = "{name_parsed}_{subcommand}.{ext}".format(name_parsed=filebasename, subcommand='status_annotate', ext='json')
+		# 	# e.g. /e43f990bbb981b008b9d84b22c2770f8_status_annotate.json
+		# 	#self.fh = open(fname, 'w')
+		# elif args.subcommand == "clump":
+		# 	self.fname = "{name_parsed}_{subcommand}.{ext}".format(name_parsed=filebasename, subcommand='status_clump', ext='json')
+		# 	# e.g. /e43f990bbb981b008b9d84b22c2770f8_status_clump.json
+		# else:
+		# 	emsg = "Could not find matching subcommand. You may have changed the name of the subcommands"
+		# 	logger.critical( emsg )
+		# 	raise Exception( emsg )
 		
-		self.match = {'pct_complete':0, 'status':'waiting'}
-		self.bias = {'pct_complete':0, 'status':'waiting'}
-		self.set_file = {'pct_complete':0, 'status':'waiting'}
-		self.annotate = {'pct_complete':0, 'status':'waiting'}
+		self.match = {'pct_complete':0, 'status':'waiting'} # will be updated under args.subcommand == "match"
+		self.bias = {'pct_complete':0, 'status':'waiting'} # will be updated under args.subcommand == "match"
+		self.set_file = {'pct_complete':0, 'status':'waiting'} # will be updated under args.subcommand == "match"
+		self.annotate = {'pct_complete':0, 'status':'waiting'} # will be updated under args.subcommand == "annotate"
+		self.clump = {'pct_complete':0, 'status':'waiting'} # will be updated under args.subcommand == "clump"
 		
-		self.status_now = {'match':self.match, 'bias':self.bias, 'set_file':self.set_file, 'annotate':self.annotate}
+		self.status_now = {'match':self.match, 'bias':self.bias, 'set_file':self.set_file, 'annotate':self.annotate, 'clump':self.clump}
 		self.status_list = [self.status_now] # NOT NESSESARY. This war only implemented to have a full list of the status bar
 
 
@@ -1051,16 +1147,19 @@ class Report():
 	def __init__(self, filebasename, args, enabled): #'tmp_data.json'
 		self.enabled = enabled
 		#*OBS*; filebasename will have the value like: '/cvar/jhlab/snpsnap/web_tmp/2ede5955021a10cb0e1a13882be520eb'.
-		self.fname = "{name_parsed}_{subcommand}.{ext}".format(name_parsed=filebasename, subcommand='report', ext='json')
+		#self.fname = "{name_parsed}_{subcommand}.{ext}".format(name_parsed=filebasename, subcommand='report', ext='json') ### OUTCOMMENTED 09/11/2014. May be deleted!
+		self.fname = "{name_parsed}_{file_type}_{subcommand}.{ext}".format(name_parsed=filebasename, file_type='report', subcommand=args.subcommand, ext='json')
+		logger.info( "report: %s" % enabled )
+		logger.info( "report file name: %s" % self.fname )
 		self.report = collections.defaultdict(dict) # two-level dict
 		# VALID CATEGORIES: 
-		#loci_definition, 
-		#match_criteria, 
-		#options, 
-		#report, 
-		#mics, 
-		#input,
-		#mean_input_to_match_ratio
+		#loci_definition, -->COULD move to bootface
+		#match_criteria, -->COULD move to bootface
+		#options, --> COULD move to bootface
+		#report, --> KEEP HERE
+		#misc, (runtime) --> KEEP HERE
+		#input, (total_user_input_snps_excluded, snps_not_in_db and more) --> KEEP HERE
+		#mean_input_to_match_ratio --> KEEP HERE
 
 
 	def write_json_report(self):
@@ -1081,19 +1180,33 @@ def main():
 	global report_obj
 	filebasename = args.web # Example of the value of args.web (if set) - path incl. session_id: '/cvar/jhlab/snpsnap/web_tmp/2ede5955021a10cb0e1a13882be520eb'
 	# thus filebasename is a PATH incl a FILEBASENAME. [CONSIDER SPLITTING IT INTO DIR AND BASEFILE]
-	if args.web and args.subcommand == "match":
+
+	################## SWITCH for status and report files ##################
+	if args.web:
 		status_obj = Progress(filebasename, args, enabled=True)
 		report_obj = Report(filebasename, args, enabled=True)
-	elif args.web and args.subcommand == "annotate":
-		status_obj = Progress(filebasename, args, enabled=True)
-		report_obj = Report('dummy', args, enabled=False) # do not enable report if command is annotate. 
-		# This will likely overwrite the report file generated by 'match'. The 'annotate' report does not contain all 'fields', e.g. there is will be no self.report_obj['report']['insufficient_rating'] in launchApp function generate_report_for_email()
-		# To be precise: it will overwrite when the 'annotate' process is slower than the 'match' process; remember: launchApp.py runs the 'match' and 'annotate' in parallel.
-		# REMEMBER: with the current implementation, the 'annotate' command will never be run without the 'match' command.
 	else:
-		#status_obj = None
 		status_obj = Progress('dummy', args, enabled=False)
 		report_obj = Report('dummy', args, enabled=False) 
+	
+	### OUTCOMMENTED 09/11/2014 - KEEP code for now! There are some good comments!
+	# if args.web and args.subcommand == "match":
+	# 	status_obj = Progress(filebasename, args, enabled=True)
+	# 	report_obj = Report(filebasename, args, enabled=True)
+	# elif args.web and args.subcommand == "annotate":
+	# 	status_obj = Progress(filebasename, args, enabled=True)
+	# 	report_obj = Report('dummy', args, enabled=False) # do not enable report if command is annotate. 
+	# 	# Enabling "report_obj" for "annotation" will LIKELY overwrite the report file generated by 'match'. The 'annotate' report does not contain all 'fields', e.g. there is will be no self.report_obj['report']['insufficient_rating'] in launchApp function generate_report_for_email()
+	# 	# To be precise: it will overwrite when the 'annotate' process is slower than the 'match' process; remember: launchApp.py runs the 'match' and 'annotate' in parallel.
+	# 	# REMEMBER: with the current WEB implementation, the 'annotate' command will never be run without the 'match' command.
+	# elif args.web and args.subcommand == "clump":
+	# 	status_obj = Progress(filebasename, args, enabled=True)
+	# 	report_obj = Report('dummy', args, enabled=False) # do not enable report if command is annotate.
+	# 	#OBS: See the text/remarks about keeping 
+	# else:
+	# 	#status_obj = None
+	# 	status_obj = Progress('dummy', args, enabled=False)
+	# 	report_obj = Report('dummy', args, enabled=False) 
 
 
 	## TODO: remember to close the status_obj filehandle --> status.obj.finish()
@@ -1112,16 +1225,7 @@ def main():
 	################## GLOBAL ARGUMENTS ##################
 	global exclude_HLA_SNPs
 	exclude_HLA_SNPs = args.exclude_HLA_SNPs # exclude_HLA_SNPs with either be True or False since 'store_true' is used
-	#####################################################
-	#####################################################
-	report_news =	{'exclude_HLA_SNPs':args.exclude_HLA_SNPs} # could also use just exclude_HLA_SNPs
-	report_obj.report['options'].update(report_news)
 
-	### OBS: loci_definition could possibly be moved into the 'if args.subcommand == "match":' block - they are only used by "match"
-	report_news =	{'distance_type':args.distance_type,
-					'distance_cutoff':args.distance_cutoff
-					}
-	report_obj.report['loci_definition'].update(report_news)
 
 	##########################################################################
 	################# GLOBAL *INTERNAL* ARGUMENTS - NOT COMMAND LINE #########
@@ -1145,25 +1249,15 @@ def main():
 		exclude_input_SNPs = args.exclude_input_SNPs # NEW
 		set_file = args.set_file
 		run_match(path_data, path_output, prefix, user_snps_file, N_sample_sets, ld_buddy_cutoff, exclude_input_SNPs, max_freq_deviation, max_distance_deviation, max_genes_count_deviation, max_ld_buddy_count_deviation, set_file)
-		if report_obj.enabled:
-			report_news =	{'max_freq_deviation':max_freq_deviation,
-							'max_distance_deviation':max_distance_deviation,
-							'max_genes_count_deviation':max_genes_count_deviation,
-							'max_ld_buddy_count_deviation':max_ld_buddy_count_deviation # NEW
-							}
-			report_obj.report['match_criteria'].update(report_news)
-			
-			report_news =	{'required_matched_SNPs':N_sample_sets, #*** OBS: different name!
-							'ld_buddy_cutoff':ld_buddy_cutoff,
-							'exclude_input_SNPs':exclude_input_SNPs,
-							'annotate_matched_SNPs':set_file
-							}
-			report_obj.report['options'].update(report_news)
-							
 	elif args.subcommand == "annotate":
 		run_annotate(path_data, path_output, prefix, user_snps_file)
 		## Remember: if annotate is called we should not create a report.
 		## This is due to the fact that annotate is never called "stand-alone" from the web serive
+	elif args.subcommand == "clump":
+		clump_r2 = args.clump_r2
+		clump_kb = args.clump_kb
+		run_clump(path_data, path_output, prefix, user_snps_file, clump_r2, clump_kb)
+		## Remember: if clump is called we should not create a report. REASON: see explanation for annotate
 	else:
 		logger.error( "Error in command line arguments - raising exception" )
 		raise Exception( "ERROR: command line arguments not passed correctly. Fix source code!" )
@@ -1172,10 +1266,11 @@ def main():
 
 	if report_obj.enabled:
 		run_time_min = "{:.2f}".format(elapsed_time)
-		report_news = {"total_runtime_in_seconds":run_time_min}
+		report_news = {"total_runtime_in_seconds_for_snp_matching_and_bias_calculation":run_time_min}
 		report_obj.report['misc'].update(report_news)
 		########### WRITING REPORT #########
-		report_obj.write_json_report()
+		logger.info( "Writing json report to %s" % report_obj.fname )
+		report_obj.write_json_report() # this MUST be the very last step! [But also ok to do before]
 		####################################
 
 

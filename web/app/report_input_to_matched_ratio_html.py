@@ -14,8 +14,9 @@ session_id = form.getvalue('session_id', '')
 # FILE PATH
 path_web_tmp_output = '/local/data/web_tmp' # NEW
 
-file_report = "{base}/{sid}_{type}.{ext}".format(base=path_web_tmp_output, sid=session_id, type='report', ext='json')
-# e.g. 2ede5955021a10cb0e1a13882be520eb_report.json
+#file_report = "{base}/{sid}_{type}.{ext}".format(base=path_web_tmp_output, sid=session_id, type='report', ext='json') # OUTCOMMENTED 09/11/2014, # e.g. 2ede5955021a10cb0e1a13882be520eb_report.json
+file_report = "{base}/{sid}_{file_type}_{subcommand}.{ext}".format(base=path_web_tmp_output, sid=session_id, file_type='report', subcommand='match', ext='json') # NEW 09/11/2014
+# e.g. 2ede5955021a10cb0e1a13882be520eb_report_match.json
 
 try:
 	report_obj = None ## Needed for correct variable scope
@@ -130,7 +131,7 @@ except Exception as e: # DIRTY: but properly the file(s) does not exists
 	<p class='text-danger text-center'> Sorry, we could not generate the report. 
 	Please report this bug to the <a href='contact.html'>SNPsnap team</a>.</p> 
 	"""
-	#%s""" % e
+	html2parse = html2parse + "<p>%s</p>" % e
 	print "Content-Type: text/html"
 	print ""
 	print html2parse
