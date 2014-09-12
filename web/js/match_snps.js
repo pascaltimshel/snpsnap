@@ -31,6 +31,7 @@ $(document).ready(function(){
 		
 	});
 
+	////////////////////////////// UPDATING loci information /////////////////////////////////////
 	// Jquery function for updating distance_cutoff select (dropdown) based on distance_type
 	$("input[name='distance_type']").change(function() {
 		if ($("input[name='distance_type']:checked").val() == 'ld') {
@@ -64,7 +65,17 @@ $(document).ready(function(){
 		// console.log( 'distance_type will be set to: ' + cutoff )
 	})
 
+	////////////////////////////// UPDATING clumping information /////////////////////////////////////
+	$("#clump").change(function() {
+		if (this.checked) {
+			$("#clump_parameter_div").show();
+		 } else {
+			$("#clump_parameter_div").hide();
+		 }
+		
+	});
 
+	////////////////////////////// EXAMPLE SNP input /////////////////////////////////////
 	$('#snp_example_link_chrpos').click(function() { //this will apply to the snp example anchor tag
 		var example_snp_input_str = 
 			["14:69873335",
@@ -161,6 +172,14 @@ $(document).ready(function(){
 			},
 			snplist_fileupload: {
 				require_from_group: [1, ".snp_input_group"]
+			},
+			clump_r2: {
+				required: true
+			},
+			clump_kb: {
+				required: true,
+				digits: true,
+				min: 1
 			}
 		},
 		groups: {

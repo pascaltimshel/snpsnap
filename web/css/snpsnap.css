@@ -64,6 +64,26 @@ h1.allerta {
   border-radius: 5px;
 }
 
+.input_box_heading1 {
+  display: block;
+  width: 100%;
+  padding: 0;
+  margin-bottom: 10px;
+  margin-top: 10px;
+  font-weight: bold;
+  font-size: 16px;
+  line-height: inherit;
+  color: #333;
+  border: 0;
+  border-bottom: 1px solid #c0c0c0;
+
+  /*border-bottom: 1px solid #e5e5e5;*/
+/*  padding: .35em .625em .75em;
+  margin: 0 2px;
+  border: 1px solid #c0c0c0;*/
+}
+
+
 /*NOT USED YET - This is for adding a red asterisk after required fields*/
 /*See more at: http://stackoverflow.com/questions/23141854/adding-asterisk-to-required-fields-in-bootstrap-3*/
 .form-group.required.control-label:after {

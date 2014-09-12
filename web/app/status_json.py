@@ -15,13 +15,18 @@ form = cgi.FieldStorage()
 session_id = form.getvalue('session_id', '')
 set_file = form.getvalue('set_file', '')
 annotate = form.getvalue('annotate', '')
+clump = form.getvalue('clump', '')
 
-#path_web_tmp_output = '/cvar/jhlab/snpsnap/web_tmp'
 path_web_tmp_output = '/local/data/web_tmp'
 
-file_status_match = "{base}/{sid}_{type}.{ext}".format(base=path_web_tmp_output, sid=session_id, type='status_match', ext='json')
-file_status_annotate = "{base}/{sid}_{type}.{ext}".format(base=path_web_tmp_output, sid=session_id, type='status_annotate', ext='json')
+# file_status_match = "{base}/{sid}_{type}.{ext}".format(base=path_web_tmp_output, sid=session_id, type='status_match', ext='json') # OUTCOMMENTED 09/12/2014
+# file_status_annotate = "{base}/{sid}_{type}.{ext}".format(base=path_web_tmp_output, sid=session_id, type='status_annotate', ext='json') # OUTCOMMENTED 09/12/2014
 # e.g. 2ede5955021a10cb0e1a13882be520eb_status_match.json
+
+file_status_match = "{base}/{sid}_{file_type}_{subcommand}.{ext}".format(base=path_web_tmp_output, sid=session_id, file_type='status', subcommand='match', ext='json') # NEW 09/12/2014
+file_status_annotate = "{base}/{sid}_{file_type}_{subcommand}.{ext}".format(base=path_web_tmp_output, sid=session_id, file_type='status', subcommand='annotate', ext='json') # NEW 09/12/2014
+file_status_clump = "{base}/{sid}_{file_type}_{subcommand}.{ext}".format(base=path_web_tmp_output, sid=session_id, file_type='status', subcommand='clump', ext='json') # NEW 09/12/2014
+
 
 
 ### Function for printing out args to Apache log file at /etc/httpd/logs/error_log
@@ -50,6 +55,17 @@ try:
 		## ***OBS: HACK
 		status_obj['annotate'] = {'pct_complete':0, 'status':'complete'} ## OBS: dirty code. 
 		# This enables me to set the 'overall' completion status  
+
+	if clump:
+		with open(file_status_clump, 'r') as json_data:
+			tmp = json.load(json_data)
+			status_obj['clump'] = tmp['clump'] ## OBS: key must be in sync with snpsnap_query.py status keywords!
+	else:
+		## ***OBS: HACK
+		status_obj['clump'] = {'pct_complete':0, 'status':'complete'} ## OBS: dirty code. 
+		# This enables me to set the 'overall' completion status  
+
+
 
 	#### FORMATTING PROCENTATGE COMPLETE
 	for val in status_obj.values():

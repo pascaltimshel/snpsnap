@@ -28,33 +28,50 @@ function getInputToMatchedRatio(sid) {
 
 
 
+function getClump(sid) {
+	$.ajax({
+		url:"app/report_input_to_matched_ratio_html.py",
+		type: 'POST',
+		data: {session_id:sid}, 
+		dataType: "html",
+		success: function(res){
+			$("#collapse_input_to_matched_ratio .panel-body").html(res);
+		}
+	})
+}
+
+
 $(document).ready(function(){
 	// Get hidden parameters
 	var sid = $('#session_id').val();
 	var set_file = $('#set_file').val()
 	var annotate = $('#annotate').val()
+	var clump = $('#clump').val()
 	
 	// TOGGLE: progress bars
 	//Boolean(set_file) gives 'false' or 'true' in python
 	$('#row_progress_set_file').toggle( Boolean(set_file) );
 	$('#row_progress_annotate').toggle( Boolean(annotate) );
+	$('#row_progress_clump').toggle( Boolean(clump) );
 
 	// HIDE: panels (report and results)
 	$('#panel_snpsnap_score').hide();
 	$('#panel_input_to_matched_ratio').hide();
+	$('#panel_input_loci_independence').hide(); //NEW
 	$('#panel_results').hide();
 
 	// FOR DEBUGGING
 	//console.log( "set_file is: *" + set_file + "*" )
 	//console.log( "annotate is: *" + annotate + "*" )
 	//var data_parse_cgi = {key1: 'value1', key2: 'value2'}
-	var data_parse_cgi = {session_id:sid, set_file:set_file, annotate:annotate}
+	var data_parse_cgi = {session_id:sid, set_file:set_file, annotate:annotate, clump:clump}
 	if (true) {
 		
 		// The below "flags" will be set to false when their respective function has been called.
 		// This is to avoid making unnecessary ajax calls
 		var call_getSnpsnapScore = true;
 		var call_getInputToMatchedRatio = true;
+		var call_getClump = true;
 
 		var progresspump = setInterval(function(){
 		$.ajax({
@@ -75,10 +92,14 @@ $(document).ready(function(){
 					$("#progress_bar_set_file").hide();
 					$("#row_progress_set_file .text-info").removeClass('text-info').addClass('text-danger').html('ERROR');
 					$("#row_progress_set_file .error_description").append( "<p class=text-danger>Job could not be completed due to internal error</p>");
-					//ANNOTATE					
+					//ANNOTATE
 					$("#progress_bar_annotate").hide();
 					$("#row_progress_annotate .text-info").removeClass('text-info').addClass('text-danger').html('ERROR');
 					$("#row_progress_annotate .error_description").append( "<p class=text-danger>Job could not be completed due to internal error</p>");
+					//CLUMP
+					$("#progress_bar_clump").hide();
+					$("#row_progress_clump .text-info").removeClass('text-info').addClass('text-danger').html('ERROR');
+					$("#row_progress_clump .error_description").append( "<p class=text-danger>Job could not be completed due to internal error</p>");
 
 					clearInterval(progresspump); // STOP all ajax calls
 				}
@@ -129,6 +150,19 @@ $(document).ready(function(){
 						$("#progress_bar_annotate").removeClass('active')
 					}
 				}
+
+				if (clump) {
+					$("#progress_bar_clump .progress-bar").css('width', res.clump.pct_complete+'%');
+					$("#progress_bar_clump .progress-bar").html(res.clump.pct_complete + "%");
+					$("#row_progress_clump .text-info").html(res.clump.status);
+					if (res.clump.status == 'complete' && call_getClump) {
+						$("#progress_bar_clump").removeClass('active')
+						$('#panel_input_loci_independence').show();
+						call_getClump(sid);
+						call_getClump = false;
+					}
+				}
+
 				// If everything is cleared: stop making .ajax calls to status_json.py
 				if (res.status_all_complete) {
 					clearInterval(progresspump);

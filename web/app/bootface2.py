@@ -217,6 +217,21 @@ def run():
 		      <td>{annotate}</td>
 		    </tr>
 		    <tr>
+		      <td></td>
+		      <td>Report independent loci</td>
+		      <td>{clump}</td>
+		    </tr>
+		    <tr>
+		      <td></td>
+		      <td>Clumping LD threshold</td>
+		      <td>{clump_r2}</td>
+		    </tr>
+		    <tr>
+		      <td></td>
+		      <td>Clumping kb threshold</td>
+		      <td>{clump_kb}</td>
+		    </tr>
+		    <tr>
 		      <th>SNP Exclusions</th>
 		      <td>Exclude input SNPs in matched SNPs</td>
 		      <td>{exclude_input_SNPs}</td>
@@ -249,6 +264,9 @@ def run():
 					N_sample_sets=N_sample_sets,
 					set_file='yes' if set_file else 'no',
 					annotate='yes' if annotate else 'no',
+					clump='yes' if clump else 'no',
+					clump_r2=clump_r2 if clump else 'NA',
+					clump_kb=clump_kb if clump else 'NA',
 					exclude_input_SNPs='yes' if exclude_input_SNPs else 'no',
 					exclude_HLA_SNPs='yes' if exclude_HLA_SNPs else 'no',
 					job_name=job_name,
@@ -322,9 +340,9 @@ def run():
 	annotate = form.getvalue('annotate', '') # value will be 'on' if parsed (and no value attribute is specified)
 	set_file = form.getvalue('set_file', '') # value will be 'on' if parsed (and no value attribute is specified)
 
-	#clump = form.getvalue('clump', '')
-	#clump_r2 = form.getvalue('clump_r2', '')
-	#clump_kb = form.getvalue('clump_kb', '')
+	clump = form.getvalue('clump', '')
+	clump_r2 = form.getvalue('clump_r2', '')
+	clump_kb = form.getvalue('clump_kb', '')
 
 	##############################################################################
 	############################## WRITING REPORT ###########################
@@ -358,11 +376,11 @@ def run():
 	report_obj.report['match_criteria'].update(report_news)
 	
 	################## CLUMPING ##################
-	# report_news =	{'clump':clump,
-	# 				'clump_r2':clump_r2,
-	# 				'clump_kb':clump_kb
-	# 				}
-	# report_obj.report['clumping'].update(report_news)
+	report_news =	{'clump':clump,
+					'clump_r2':clump_r2,
+					'clump_kb':clump_kb
+					}
+	report_obj.report['clumping'].update(report_news)
 	
 
 	################## WEB ##################
@@ -412,6 +430,14 @@ def run():
 	if exclude_input_SNPs: 
 		option = "--exclude_input_SNPs"
 		cmd_match = "{base} {addon}".format(base=cmd_match, addon=option)
+
+	####### CLUMP COMMAND #######
+	cmd_clump = '' # OBS: important that default value evaluates to false in Bool context
+	if clump:
+		subcommand = "clump --clump_r2 {clump_r2} --clump_kb {clump_kb}".format(clump_r2=clump_r2, clump_kb=clump_kb)
+		cmd_clump = "{base} {addon}".format(base=cmd_base, addon=subcommand)
+
+
 
 
 	###################### FORK'ING ##################################
@@ -485,6 +511,7 @@ def run():
 	print "<input type='hidden' id='session_id' value='%s'>" % session_id
 	print "<input type='hidden' id='annotate' value='%s'>" % annotate
 	print "<input type='hidden' id='set_file' value='%s'>" % set_file
+	print "<input type='hidden' id='clump' value='%s'>" % clump
 	##########################
 
 	#<!-- <a data-toggle="collapse" data-target="#me" href="#javascript:void(0);"> -->
@@ -582,6 +609,24 @@ def run():
 	</div>
 	"""	
 
+	str_bar_clump = """
+	<div class='row' id='row_progress_clump'>
+		<div class='col-xs-3'>
+			<p><strong>Clumping Input SNPs</strong></p>
+		</div>
+		<div class='col-xs-2'>
+			<p class="text-info"></p>
+		</div>
+		<div class='col-xs-7'>
+			<div class='error_description'></div> <!-- PLACEHOLDER FOR AN ERROR Message -->
+			<div class='progress progress-striped active' id='progress_bar_clump'>
+				<div class='progress-bar' style='width: 0%'></div>
+			</div>
+		</div>
+	</div>
+	"""	
+
+
 	###### Now print PROGRESS panel
 	print """
 	  <div class="panel panel-default" id='panel_progress'>
@@ -597,10 +642,11 @@ def run():
 			{match}
 			{set_file}
 			{annotate}
+			{clump}
 		  </div>
 		</div>
 	  </div>
-	""".format(match=str_bar_match, set_file=str_bar_set_file, annotate=str_bar_annotate)
+	""".format(match=str_bar_match, set_file=str_bar_set_file, annotate=str_bar_annotate, clump=str_bar_clump)
 
 
 	################## PANEL: SNPSNAP SCORE ##################
@@ -632,6 +678,23 @@ def run():
 		  </h4>
 		</div>
 		<div id="collapse_input_to_matched_ratio" class="panel-collapse collapse in"> 
+		  <div class="panel-body">
+		  </div>
+		</div>
+	  </div>
+	"""
+
+	################## PANEL: INPUT LOCI INDEPENDENCE ##################
+	print """
+	  <div class="panel panel-default" id='panel_input_loci_independence'>
+		<div class="panel-heading">
+		  <h4 class="panel-title">
+			<a data-toggle="collapse" data-target="#collapse_input_loci_independence" href="#collapse_input_loci_independence" onClick="return false;">
+			  Input Loci Independence
+			</a>
+		  </h4>
+		</div>
+		<div id="collapse_input_loci_independence" class="panel-collapse collapse in"> 
 		  <div class="panel-body">
 		  </div>
 		</div>

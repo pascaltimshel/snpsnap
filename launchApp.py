@@ -106,8 +106,7 @@ class Processor(object):
 		
 		#OBS: this is the existing 'report/summary' file
 		#file_report = "{base}/{sid}_{type}.{ext}".format(base=self.path_web_tmp_output, sid=self.session_id, type='report', ext='json') # OUTCOMMENTED 09/11/2014
-		file_report = "{base}/{sid}_{type}.{ext}".format(base=self.path_web_tmp_output, sid=self.session_id, type='report', ext='json') 
-		### 09/11/2014: SOMETHING SHOULD BE DONE HERE!!! #self.fname = "{name_parsed}_{file_type}_{subcommand}.{ext}".format(name_parsed=filebasename, file_type='report', subcommand=args.subcommand, ext='json')
+		file_report= "{base}/{sid}_{file_type}_{subcommand}.{ext}".format(base=self.path_web_tmp_output, sid=self.session_id, file_type='report', subcommand='match', ext='json')
 
 
 		## TODO: make try: execpt: block

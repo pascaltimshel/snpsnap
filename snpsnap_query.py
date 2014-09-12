@@ -213,13 +213,13 @@ def process_input_snps(path_output, user_snps, df):
 	1) Function idenfifies SNPs that where NOT found in the database. 
 	2) Function EXCLUDES HLA_SNPs
 	3) Function WRITES FILE input_snps_excluded.txt (either snps_not_in_db or snps_not_in_db)
-	4) Function WRITES FILE input_snps_mapping.txt
+	4) Function WRITES FILE input_snps_identifer_mapping.txt
 
 	REMARKS: 
 	- the list of SNPs not found in db could be generated already in "lookup_user_snps_iter()": just check of the df from store.select() has length 0.
 	"""
 	file_user_snps_excluded = path_output+"/input_snps_excluded.txt"
-	file_user_snps_mapping = path_output+"/input_snps_mapping.txt"
+	file_user_snps_mapping = path_output+"/input_snps_identifer_mapping.txt"
 
 	logger.info( "START: doing process_input_snps, that is SNPs that will be excluded" )
 	start_time = time.time()
@@ -461,7 +461,7 @@ def few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps):
 	# 	f.write(write_str_score_table+'\n')
 	
 	####### Creating report dict of dicts #####
-	if report_obj.enabled:
+	if report_obj.enabled: 
 		#insufficient_scale_str = (', '.join("'" + item + "'" for item in insufficient_scale))
 		#match_size_scale_str = (', '.join("'" + item + "'" for item in match_size_scale))
 		report_news = 		{	"insufficient_rating":insufficient_rating,
@@ -828,25 +828,31 @@ def write_set_file(path_output, df_collection):
 
 def clump_snps(user_snps_df, path_output, clump_r2, clump_kb):
 	path_genotype = "/cvar/jhlab/snpsnap/data/step1/full_no_pthin_rmd/CEU_GBR_TSI_unrelated.phase1_dup_excluded"
-	file_plink_tmp_assoc = path_output + "/tmp.assoc"
+	file_user_snps_clumped = path_output+"/input_snps_clumped.txt"
+	file_plink_input_tmp_assoc = path_output + "/tmp.assoc"
+	file_plink_output_tmp_prefix = path_output + "/plink_tmp" # this is the filename prefix (root filename). plink will add extensions itself, e.g. .log, .nosex. .clumped
 	p_val = str(0.00001)
 
-	logger.info( "Writing .assoc file: %s" % file_plink_tmp_assoc )
+	logger.info( "Writing .assoc file: %s" % file_plink_input_tmp_assoc )
 	## REMEMBER: Plink needs the 'rsID' to be able to match the SNP IDs with the ones in the genotype data. 
 	#If Plink CANNOT find the ID in the genotype data it will create NAs. See below example
 	# CHR    F          SNP         BP        P    TOTAL   NSIG    S05    S01   S001  S0001    SP2
 	# NA   NA 10:100096148         NA      1e-05       NA     NA     NA     NA     NA     NA     NA
-	with open(file_plink_tmp_assoc, 'w') as f_assoc:
+	with open(file_plink_input_tmp_assoc, 'w') as f_assoc:
 		f_assoc.write("SNP\tP\n") # Writing header - must be detectable by PLINK
 		for rsID in user_snps_df.ix[:,'rsID']: #iteratable object is a Series object
 			#^ taking rsID column out of data frame and writing out rsIDs.
 			f_assoc.write(rsID + "\t" + p_val + "\n")
-			### Example of file_plink_tmp_assoc (tmp.assoc)
+			### Example of file_plink_input_tmp_assoc (tmp.assoc)
 			# SNP     P
 			# rs6602381       0.00001
 			# rs7899632       0.00001
 
-	cmd_plink = "plink --bfile {geno} --clump {assoc} --clump-r2 {clump_r2} --clump-kb {clump_kb} --noweb".format(geno=path_genotype, assoc=file_plink_tmp_assoc, clump_r2=clump_r2, clump_kb=clump_kb)
+	### Updating status ###
+	status_obj.update_pct( 'clump', float(30) )
+
+	## OBS: plink --out is the 'output root filename', e.g. 
+	cmd_plink = "plink --bfile {geno} --clump {assoc} --clump-r2 {clump_r2} --clump-kb {clump_kb} --out {out_prefix} --noweb --silent".format(geno=path_genotype, assoc=file_plink_input_tmp_assoc, clump_r2=clump_r2, clump_kb=clump_kb, out_prefix=out_prefix)
 	### REMEMBER plink likely needs to be called as:
 	#source /broad/software/scripts/useuse && use .plink-1.07 && plink <plink arguments>
 	logger.info( "Making plink call: %s" % cmd_plink )
@@ -857,19 +863,58 @@ def clump_snps(user_snps_df, path_output, clump_r2, clump_kb):
 	p_plink.wait()
 	logger.info( "PID = %s | DONE. Return code: %s" % (p_plink.pid, p_plink.returncode) )
 
-	with open("plink.clumped", 'r') as f_plink_clumped:
+
+	### Updating status ###
+	status_obj.update_pct( 'clump', float(80) )
+
+	#Updating AND writing report - REMEMBER: this 'report' is the "../XXXX_report_clump.json" file.
+	report_news = {"SOMETHING":SOMETHING}
+	#report_obj.report['misc'].update(report_news)
+	#report_obj.write_json_report()# 
+
+	n_total_snps = 0 # this is to dobbelt check that PLINK does not loose any SNPs. This number should be EQUAL to the number of input snps
+	n_clumped_loci = 0 # OBS each line in .clumped corresponds to a 'independent loci'
+	with open(file_plink_output_tmp_prefix+".clumped", 'r') as f_plink_clumped: # note that the filename "plink.clumped" is INVARIABLE (plink assigns this name to the file)
 		### Example:
 		# CHR    F          SNP         BP        P    TOTAL   NSIG    S05    S01   S001  S0001    SP2
 		# 10    1   rs11189555  100092279      1e-05        9      0      0      0      0      9 rs7900936(1),rs10786411(1),rs1536154(1),rs1536153(1),rs7901537(1),rs10883071(1),rs746033(1),rs4917819(1),rs10883072(1)
 		# 10    1   rs10883068  100091769      1e-05        1      0      0      0      0      1 rs12761064(1)
 		# 10    1   rs55950087  100091388      1e-05        0      0      0      0      0      0 NONE
+		## NOTE#1: The (1) after each SNP name refers to the results file they came from (in this case, there is only a single result file specified, so all values are 1)
+		## NOTE#2: The .clumped file contains a few newlines (3?) in the end of the file
+
+		f_out_clumped = open(file_user_snps_clumped, 'r')
 		for line in f_plink_clumped.readlines()[1:]: #skipping header
+			if not line.strip(): # IMPORTANT: skipping blank lines [these are present in the end of the .clumped file]
+			    continue
 			fields = line.strip().split()
 			index_snp = fields[2] # SNP
 			clump_total_count = fields[5] #TOTAL
 			clumped_snps = fields[11] # SP2
 
+			# Counting
+			n_clumped_loci += 1
+			n_total_snps += clump_total_count+1 # --> +1 reason: include the index SNP
+
+			# Processing clumped_snps (comma seperated)
+			clumped_snps_clean_list = [snp.rstrip('(1)') for snp in clumped_snps.split(',')] # splitting on ',' and removing trailing '(1)'
+
+			# Mapping SNPs - NOTE: I ex
+			### ---> THIS IS HERE I STOPPED 09/12/2014
+			#index_snp_chrpos = user_snps_df.ix[index_snp,'rsID']
+			#clumped_snps_clean_list_chrpos = [user_snps_df.ix[snp,'rsID'] for snp in clumped_snps_clean_list]
+
+		f_out_clumped.close()
+
 		## THIS IS WHERE I AM!
+
+	### WRITE OUTPUT FILE
+		#SOMETING
+
+
+	### CLEAN-UP
+	# delete: file_plink_input_tmp_assoc (path_output/tmp.assoc)
+	# delete: file_plink_output_tmp_prefix (path_output/plink_tmp.*)
 
 	return
 
@@ -1073,10 +1118,7 @@ def run_clump(path_data, path_output, prefix, user_snps_file, clump_r2, clump_kb
 
 	status_obj.update_status('clump', 'complete')
 	status_obj.update_pct('clump', float(100) )
-	# THIS IS WHERE I STOPPED TUESDAY.
-	# Also, think about the consequences of writing several excluded_files.
-		#- if not exists
-		#
+
 
 class Progress():
 	def __init__(self, filebasename, args, enabled): #'tmp_data.json'

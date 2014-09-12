@@ -73,7 +73,6 @@
 		<legend class="margin_bottom5">Input</legend>
 		<!-- <p class="help-block">Paste in SNPs (<a id="snp_example_link" href="#" onClick="return false;">load example SNP input</a>) <i>or</i> upload a file</p> -->
 		<p class="help-block">Paste in SNPs <i>or</i> upload a file</p>
-		<p class="help-block">Load example SNP input: <a id="snp_example_link_chrpos" href="#" onClick="return false;">chr:pos format</a> or <a id="snp_example_link_rsID" href="#" onClick="return false;">rsID format</a></p>
 		<!-- INSERT EXAMPLE LINK -->
 <!-- 		<div class="row">
 			<div class="col-xs-4">
@@ -89,6 +88,15 @@
 			</div>
 		</div> -->
 		<div class="input_box"> <!-- START input box -->
+		<div class="form-group">
+			<div class="col-xs-3 text-right">
+			<!-- <p class="help-block">Load example SNPs: <a id="snp_example_link_chrpos" href="#" onClick="return false;">chr:pos format</a> or <a id="snp_example_link_rsID" href="#" onClick="return false;">rsID format</a></p> -->
+				<p class="help-block">Load example SNPs</p>
+			</div>
+			<div class="col-xs-6 text-left">
+				<p class="help-block"><a id="snp_example_link_chrpos" href="#" onClick="return false;">chr:pos format</a> or <a id="snp_example_link_rsID" href="#" onClick="return false;">rsID format</a></p>
+			</div>
+		</div>
 		<div class="form-group">
 			<div class="col-xs-2 text-right">
 				<label class="control-label text-right" for="snplist_text">Paste in SNPs</label>
@@ -124,6 +132,25 @@
 		</div> <!-- END input box -->
 	</fieldset>
 
+
+
+	<!-- ############# POPULATION ############## -->
+	<fieldset>
+		<legend class="margin_bottom5">Population</legend>
+		<p class="help-block">Choose population genotype data</p>
+		<div class="input_box"> <!-- START input box -->
+			<div class="form-group">
+				<label class="col-xs-2 control-label" for="population_dropdown">Population</label>
+					<div class="input-group">
+						<select class="form-control" id="population_dropdown">
+							<option value="" disabled>Select population</option>
+							<option value="phase1_EUR" selected="selected">1000G Phase1 European (CEU, GBR, TSI)</option>
+						</select>
+					</div>
+			</div> <!-- form-group -->
+		</div> <!-- END input box -->
+		<p class="text-muted">See <a href="http://www.1000genomes.org/about#ProjectSamples" target="_blank">1000 Genomes Project</a> website for additional information about the population genotype data</p> 
+	</fieldset>
 
 
 
@@ -169,23 +196,23 @@
 	<p class="help-block">Select your locus definition</p>
 	<div class="input_box"> <!-- START input box -->
 	<div class="form-group">
-		<div class="col-xs-3 label_text text-right">
+		<div class="col-xs-2 label_text text-right">
 		  Distance type
 		</div>
-		<div class="col-xs-2">
+		<div class="col-xs-4">
 			<label class="radio-inline">
 				<input type="radio" name="distance_type" id="ld_distance_type" value="ld" required="required" checked="checked">LD
 			</label>
 			<label class="radio-inline">
-				<input type="radio" name="distance_type" id="kb_distance_type" value="kb" required="required">KB
+				<input type="radio" name="distance_type" id="kb_distance_type" value="kb" required="required">Physical Distance
 			</label>
 		</div>
 		<div class="col-xs-3 label_text text-right">
 			Distance cut-off
 		</div>
-		<div class="col-xs-4">
+		<div class="col-xs-3">
 			<div class="input-group" id="input_group_ld_distance_cutoff">
-				<span class="input-group-addon">LD (r&#178)</span>
+				<span class="input-group-addon">r&#178</span>
 				<select class="form-control" id="ld_distance_cutoff">
 					<option value="0.1">0.1</option>
 					<option value="0.2">0.2</option>
@@ -199,7 +226,7 @@
 				</select>
 			</div>
 			<div class="input-group" id="input_group_kb_distance_cutoff" style="display:none;">
-				<span class="input-group-addon">KB</span>
+				<span class="input-group-addon">kb</span>
 				<select class="form-control" id="kb_distance_cutoff">
 				<!-- OPS - SOMETHING HERE IS NOT WORKING -->
 					<option value="100">100</option>
@@ -301,7 +328,7 @@
 		</div>
 		<div class="col-xs-4">
 			<div class="input-group" id="input_group_ld_buddy_cutoff">
-				<span class="input-group-addon">LD (r&#178)</span>
+				<span class="input-group-addon">r&#178</span>
 				<select class="form-control" id="ld_buddy_cutoff" name="ld_buddy_cutoff">
 					<option value="0.1">0.1</option>
 					<option value="0.2">0.2</option>
@@ -330,8 +357,9 @@
 	<div class="input_box"> <!-- START input box -->
 	<!-- Number of matching SNP sets -->
 	<div class="form-group">
+		<p class="input_box_heading1">Requested SNPs</p>
 		<div class="col-xs-5 text-right">
-			<label for="N_sample_sets" class="control-label">Requested number of matched SNPs</label>
+			<label for="N_sample_sets" class="control-label">Number of matched SNPs</label>
 		</div>
 		<div class="col-xs-2">
 			<input type="text" class="form-control" name="N_sample_sets" id="N_sample_sets" value="10000" data-toggle="tooltip" title="Note that specifying a large value in this field (e.g. > 10000) will make your matching prone to many insufficient matches. See the documentation for details">
@@ -362,9 +390,9 @@
 			</div>
 		</div>
 	</div> -->
-
-	<!-- SET_FILE -->
 	<div class="form-group">
+		<p class="input_box_heading1">Annotation</p>
+		<!-- ANNOTATE Matched SNPs (SET_FILE) -->
 		<div class="col-xs-5">
 			<div class="checkbox">
 				<label>
@@ -382,6 +410,63 @@
 				</label>
 				<!-- <p class="help-block">This will generate a file with annotated input SNPs*</p> -->
 			</div>
+		</div>
+	</div>
+	<!-- REPORT LOCI INDEPENDENCE (Clumping) -->
+	<div class="form-group">
+		<p class="input_box_heading1">Input loci independence</p>
+		<div class="col-xs-6">
+			<div class="checkbox">
+				<label>
+					<input type="checkbox" name="clump" id="clump" data-toggle="tooltip" title="Input loci will be clumped (using PLINK --clump) based on the clumping threshold specified. Selecting this option will generate a file of clumped input loci and the number of independent loci will be reported. Selecting this option may increase runtime significantly."> Report input loci independence (clumping)
+				</label>
+				<!-- <p class="help-block">This will generate a file with annotated matched SNPs*</p> -->
+			</div>
+		</div>
+	</div>
+	<div id="clump_parameter_div" style="display:none">
+		<p class="help-block">Please specify the clumping cut-offs.</p>
+		<div class="form-group">
+			<div class="col-xs-3 text-right">
+				<!-- <label for="clump_r2" class="control-label">Clump-r&#178</label> -->
+				<label for="clump_r2" class="control-label">LD</label>
+			</div>
+			<div class="col-xs-3">
+				<!-- <input type="text" class="form-control" name="clump_r2" id="clump_r2" value="0.5"> -->
+				<div class="input-group">
+					<span class="input-group-addon">r&#178</span>
+					<select class="form-control" id="clump_r2" name="clump_r2">
+						<option value="0.1">0.1</option>
+						<option value="0.2">0.2</option>
+						<option value="0.3">0.3</option>
+						<option value="0.4">0.4</option>
+						<option value="0.5" selected="selected">0.5</option>
+						<option value="0.6">0.6</option>
+						<option value="0.7">0.7</option>
+						<option value="0.8">0.8</option>
+						<option value="0.9">0.9</option>
+					</select>
+				</div>
+			</div>
+			<div class="col-xs-4 error_msg_place">
+				<!-- PLACE HOLDER FOR VALIDATION ERROR MESSAGE -->
+				<span class="form-control-feedback glyphicon"></span>
+			</div> <!-- col -->
+		</div>
+		<div class="form-group">
+			<div class="col-xs-3 text-right">
+				<label for="clump_kb" class="control-label">Physical distance</label>
+			</div>
+			<div class="col-xs-3">
+				<div class="input-group">
+					<span class="input-group-addon">kb</span>
+					<input type="text" class="form-control" name="clump_kb" id="clump_kb" value="250">
+				</div>
+			</div>
+			<div class="col-xs-4 error_msg_place">
+				<!-- PLACE HOLDER FOR VALIDATION ERROR MESSAGE -->
+				<span class="form-control-feedback glyphicon"></span>
+			</div> <!-- col -->
 		</div>
 	</div>
 	</div> <!-- END input box -->
