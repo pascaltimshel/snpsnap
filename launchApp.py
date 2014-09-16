@@ -27,11 +27,12 @@ import zipfile
 # 		threading.Thread.__init__(self)
 
 class Processor(object):
-	def __init__(self, session_id, email_address, job_name, cmd_annotate, cmd_match):
+	def __init__(self, session_id, email_address, job_name, cmd_annotate, cmd_match, cmd_clump):
 		#self.script2call = "/cvar/jhlab/snpsnap/snpsnap/snpsnap_query.py"
 		self.session_id = session_id
 		self.cmd_annotate=cmd_annotate # bool value
 		self.cmd_match=cmd_match # bool value
+		self.cmd_clump=cmd_clump # bool value
 		self.email_address=email_address
 		self.job_name=job_name
 		#self.processes = []
@@ -106,19 +107,52 @@ class Processor(object):
 		
 		#OBS: this is the existing 'report/summary' file
 		#file_report = "{base}/{sid}_{type}.{ext}".format(base=self.path_web_tmp_output, sid=self.session_id, type='report', ext='json') # OUTCOMMENTED 09/11/2014
-		file_report= "{base}/{sid}_{file_type}_{subcommand}.{ext}".format(base=self.path_web_tmp_output, sid=self.session_id, file_type='report', subcommand='match', ext='json')
+		
 
+		file_report_match = "{base}/{sid}_{file_type}_{subcommand}.{ext}".format(base=self.path_web_tmp_output, sid=self.session_id, file_type='report', subcommand='match', ext='json')
+		file_report_annotate = "{base}/{sid}_{file_type}_{subcommand}.{ext}".format(base=self.path_web_tmp_output, sid=self.session_id, file_type='report', subcommand='annotate', ext='json')
+		file_report_clump = "{base}/{sid}_{file_type}_{subcommand}.{ext}".format(base=self.path_web_tmp_output, sid=self.session_id, file_type='report', subcommand='clump', ext='json')
+		
+		file_report_bootface = "{base}/{sid}_{subcommand}.{ext}".format(base=self.path_web_tmp_output, sid=self.session_id, subcommand='bootface', ext='json')
 
-		## TODO: make try: execpt: block
 		self.report_obj = None ## Needed for correct variable scope
-		with open(file_report, 'r') as json_data:
-			self.report_obj = json.load(json_data)
+		#### READING match ######
+		try:
+			with open(file_report_match, 'r') as json_data: ## TODO: make try: execpt: block
+				self.report_obj = json.load(json_data)
+		except:
+			logger.warning( "Could not read match report: %s" % file_report_match )
 
-		###### SETTING instance variables for email to be generated
-		#self.insufficient_rating = report_obj['insufficient_rating']
-		#self.match_size_rating = report_obj['match_size_rating']
+		
+		#### READING annotate ######
+		# OBS: there is really not that much to read from this json file. I think that runtime is the only thing of interest.
+		try:
+			with open(file_report_annotate, 'r') as json_data: ## TODO: make try: execpt: block
+				tmp_json = json.load(json_data)
+	 			self.report_obj.update(tmp_json) #update() uses last-one-wins conflict-handling
+		except:
+			logger.warning( "Could not read annotate report: %s" % file_report_annotate )
 
 
+		#### READING clump ######
+		try:
+			with open(file_report_clump, 'r') as json_data: ## TODO: make try: execpt: block
+				tmp_json = json.load(json_data)
+	 			self.report_obj.update(tmp_json) #update() uses last-one-wins conflict-handling
+		except:
+			logger.warning( "Could not read clump report: %s" % file_report_clump )
+
+
+		#### READING bootface ######
+		try:
+			with open(file_report_bootface, 'r') as json_data: ## TODO: make try: execpt: block
+				tmp_json = json.load(json_data)
+	 			self.report_obj.update(tmp_json) #update() uses last-one-wins conflict-handling
+		except:
+			logger.warning( "Could not read bootface report: %s" % file_report_bootface )
+
+		### FOR DEBUGGING
+		#logger.info("After CLUMP: %s" % json.dumps(self.report_obj))
 
 	def write_snpsnap_summary(self):
 		## This function writes out the snpsnap_summary file to "MAIN" OUTPUT DIR, that is the path that snpsnap_query.py also writes to.
@@ -136,7 +170,7 @@ class Processor(object):
 
 		f = open(file_snpsnap_summary, 'w')
 		for category, params in self.report_obj.items():
-			f.write( "#{}#".format(category.upper())+"\t"+"\n")
+			f.write( "##### {} #####".format(category.upper())+"\t"+"\n")
 			for param, value in params.items():
 				f.write( "{}\t{}".format(param.upper(), value) +"\n")
 		f.close()
@@ -371,7 +405,6 @@ class Processor(object):
 		## (consider sending the formular in the email)
 
 		if self.cmd_match:
-			print "cmd cmd_match"
 			command_shell = self.cmd_match
 			self.processes['match']['call'] = command_shell
 			with open(os.devnull, "w") as fnull: # same as open('/dev/null', 'w')
@@ -393,7 +426,12 @@ class Processor(object):
 				#logger.info( "annotate STDERR: %s" % stderrdata )
 				#SIGKILL	9	Exit	Killed
 
-
+		if self.cmd_clump:
+			command_shell = self.cmd_clump # HACK
+			self.processes['clump']['call'] = command_shell
+			with open(os.devnull, "w") as fnull: # same as open('/dev/null', 'w')
+				p = subprocess.Popen(command_shell, stdout = fnull, stderr = subprocess.STDOUT, shell=True) 
+				self.processes['clump']['process_obj'] = p
 
 		# USED FOR DEBUGGING
 		# if self.cmd_match:
@@ -465,6 +503,7 @@ def ParseArguments():
 	arg_parser.add_argument("--job_name", default=False)
 	arg_parser.add_argument("--cmd_annotate", default=False)
 	arg_parser.add_argument("--cmd_match", default=False)
+	arg_parser.add_argument("--cmd_clump", default=False)
 
 	args = arg_parser.parse_args()
 	return args
@@ -500,7 +539,8 @@ if __name__ == '__main__':
 	logger.info( "session_id: %s" % args.session_id )
 	logger.info( "cmd_annotate: %s" % args.cmd_annotate )
 	logger.info( "cmd_match: %s" % args.cmd_match )
-	app = Processor(args.session_id, args.email_address, args.job_name, args.cmd_annotate, args.cmd_match)
+	logger.info( "cmd_clump: %s" % args.cmd_clump )
+	app = Processor(args.session_id, args.email_address, args.job_name, args.cmd_annotate, args.cmd_match, args.cmd_clump)
 	app.run()
 
 

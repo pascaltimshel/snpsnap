@@ -76,14 +76,20 @@
 	Internet Explorer 11 is supported but may not provide the best user experience. Users using older versions of Internet Explorer (10 or older) may experience problems.</dd>
 </dl>
 
-<h4 class="faq_section">Input</h4>
+<h4 class="faq_section">Variant Identifiers and Annotation</h4>
 <dl class="dl">
 	<dt class="faq_question">Will I be able to use rs-numbers as input SNP identifiers?</dt>
-	<dd class="faq_answer">Currently SNPsnap only accepts chromosomal coordinates (from GRCh47/hg19) as SNP identifiers.</dd>
+	<dd class="faq_answer">Yes. SNPsnap accepts rs-numbers and chromosomal coordinates (from GRCh47/hg19) as SNP identifiers. <strong>Please note</strong> that not all variants in the 1000 Genomes Project have been assigned a rs-number. When no rs-number is given in the 1000 Genomes data, SNPsnap uses the chromosomal coordinate as a substitute for the rs-number.</dd>
+	<dt class="faq_question">What types of variants are included in the SNPsnap database?</dt>
+	<dd class="faq_answer">All types of variants listed by 1000 Genomes Project</strong> are included: single nucleotide variants (SNPs), indels and larger structural variants. <br>
+	Note that SNPsnap's chr:pos identifers does not describe the type of variant, as it is the case for IMPUTE-format (e.g. chr1:100123071:D or chr1:100134769:I for insertions and deletions, respectively).</dd>
 </dl>
+
 
 <h4 class="faq_section">Output</h4>
 <dl class="dl">
+	<dt class="faq_question">Is the number of input loci equal to the number of matched loci?</dt>
+	<dd class="faq_answer">No. SNPsnap does not match SNPs to produce the same number of matched loci as input loci. In fact, SNPsnap will macthed SNPs will likely consist of many more loci than the input number of loci because of random sampling of matched SNPs.</dd>
 	<dt class="faq_question">What gene annotations does SNPsnap use for column locus genes like<span class="code_output">ID_genes_in_matched_locus</span>?</dt>
 	<!-- <dd>SNPsnap uses the complete set of genes from the Ensembl database and covers about 48,000 genes.</dd> -->
 	<dd class="faq_answer">SNPsnap uses ~48,000 genes from the Ensembl database and including protein coding genes, non-coding genes and pseudo genes.</dd>
@@ -93,7 +99,7 @@
 </dl>
 
 
-<h4 class="faq_section">Getting results files</h4>
+<h4 class="faq_section">Results</h4>
 <dl class="dl">
 	<dt class="faq_question">What are the run times for SNPsnap?</dt>
 	<dd class="faq_answer">SNPsnap matching takes ~5 seconds per input SNP when requesting 10,000 SNPs (matching 100 input SNPs will take ~8 minutes to match). Run time for matching may be reduced by a factor two if less matched SNPs is requested. If any annotation option (<span class="code_settings">Annotate matched SNPs</span> or <span class="code_settings">Annotate input SNPs</span>) is enabled SNPsnap uses an additional ~2 minutes in total.</dd>

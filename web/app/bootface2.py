@@ -468,10 +468,12 @@ def run():
 					'--email_address', email_address,
 					'--job_name', job_name,
 					'--cmd_annotate', cmd_annotate,
-					'--cmd_match', cmd_match
+					'--cmd_match', cmd_match,
+					'--cmd_clump', cmd_clump
 					]
 		#cmd_formatted = '{program} {p_session_id} "{session_id}" {p_email_address} "{email_address}" {p_job_name} "{job_name}" {p_cmd_annotate} "{cmd_annotate}" {p_cmd_match} "{cmd_match}"'.format()
-		cmd_formatted = '{} {} "{}" {} "{}" {} "{}" {} "{}" {} "{}"'.format(*cmd_launch)
+		#cmd_formatted = '{} {} "{}" {} "{}" {} "{}" {} "{}" {} "{}"'.format(*cmd_launch) # before --clump
+		cmd_formatted = '{} {} "{}" {} "{}" {} "{}" {} "{}" {} "{}" {} "{}"'.format(*cmd_launch)
 		sys.stderr.write("called command: %s\n" % cmd_launch)
 		sys.stderr.write("FORMATTED called command: %s\n" % cmd_formatted)
 		p = subprocess.Popen(cmd_launch, stdout = fnull, stderr = subprocess.STDOUT)
@@ -501,7 +503,7 @@ def run():
 	print "<h2 class='text-center'>SNPsnap is now matching your SNPs</h2>"
 
 	#print "<p>Your session ID is: %s</p>" % session_id
-	print "<p> An email will be sent to <strong>%s</strong> when the job is completed.</p>" % email_address
+	print "<p> An email will be sent to <strong>%s</strong> when the job is completed.<br>You will be able to download the results from the bottom of this page.</p>" % email_address
 	print """<p class='text-muted'><i>If you browse back you will not be able to retrieve this site again.<br>
 	However, you will still receive an email notification about your job completion.
 	</i></p>
@@ -558,6 +560,9 @@ def run():
 			</div>
 		</div>
 	</div>
+	"""
+
+	str_bar_bias = """
 	<div class='row' id='row_progress_bias' style='display:none;'>
 		<div class='col-xs-3'>
 			<p><strong>Calculating match bias</strong></p>
@@ -571,8 +576,7 @@ def run():
 				<div class='progress-bar' style='width: 0%'></div>
 			</div>
 		</div>
-	</div>
-	"""	
+	</div>""" # NOTE THAT bias is HIDDEN BY DEFAUL! (style='display:none;')
 
 	str_bar_set_file = """
 	<div class='row' id='row_progress_set_file'>
@@ -640,13 +644,14 @@ def run():
 		<div id="collapse_progress" class="panel-collapse collapse in"> 
 		  <div class="panel-body">
 			{match}
+			{bias}
 			{set_file}
 			{annotate}
 			{clump}
 		  </div>
 		</div>
 	  </div>
-	""".format(match=str_bar_match, set_file=str_bar_set_file, annotate=str_bar_annotate, clump=str_bar_clump)
+	""".format(match=str_bar_match, bias=str_bar_bias, set_file=str_bar_set_file, annotate=str_bar_annotate, clump=str_bar_clump)
 
 
 	################## PANEL: SNPSNAP SCORE ##################

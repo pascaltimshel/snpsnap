@@ -60,7 +60,7 @@ try:
 	rating_img = {} # this dict will contain two keys
 	for report_param in ['insufficient_rating', 'match_size_rating']:
 		for rating in img_path.keys():
-			if report_obj['report'][report_param] == rating:
+			if report_obj['snpsnap_score'][report_param] == rating:
 			#if report_obj[report_param] == rating:
 				rating_img[report_param] = img_path[rating]
 		# if report_obj[key] == 'very good':
@@ -68,8 +68,8 @@ try:
 
 
 	################ GETTING THE ACTUAL VALUES OF THE REPORT ##################
-	fmt_value_insufficient = "{:.2f}".format( report_obj['report']['insufficient_matches_pct'] ) # OBS: formatting number. You can format any number as float, but you cannot format floats as int (e.g. {:d})
-	fmt_value_match_size = "{:.2f}".format( report_obj['report']['match_size_median_pct'] ) # OBS: formatting number. You can format any number as float, but you cannot format floats as int (e.g. {:d})
+	fmt_value_insufficient = "{:.2f}".format( report_obj['snpsnap_score']['insufficient_matches_pct'] ) # OBS: formatting number. You can format any number as float, but you cannot format floats as int (e.g. {:d})
+	fmt_value_match_size = "{:.2f}".format( report_obj['snpsnap_score']['match_size_median_pct'] ) # OBS: formatting number. You can format any number as float, but you cannot format floats as int (e.g. {:d})
 
 	###### 07/10/2014 - MAY BE DELETED ######
 	# <th class="col-xs-3"><p class="text-left" style='font-size:125%;'>SNPsnap score</p></th>

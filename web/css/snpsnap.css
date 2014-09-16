@@ -249,7 +249,8 @@ a.documentation_header_link {
 .code_settings {
   padding: 2px 2px;
   /*color: #580000 ;*/ 
-  color: #3333CC ;
+  /*color: #3333CC ;*/
+  color: #FF7F3B ;
   /*text-decoration: underline;*/
 }
 

@@ -93,10 +93,13 @@ try:
 	print status2parse
 
 except Exception as e: # DIRTY: but properly the file(s) does not exists
+	# NOTE from 09/15/2014 about why I do the below: 
+	# we need the below lines to avoid getting errors in Javascripts about undefined values for e.g. res.bias.pct_complete and res.bias.status
 	status_obj = {}
 	status_obj['match'] = {'pct_complete':0, 'status':'initialyzing'} ## OBS: dirty code.
 	status_obj['set_file'] = {'pct_complete':0, 'status':'initialyzing'} ## OBS: dirty code.
 	status_obj['annotate'] = {'pct_complete':0, 'status':'initialyzing'} ## OBS: dirty code.
+	status_obj['clump'] = {'pct_complete':0, 'status':'initialyzing'} ## OBS: dirty code.
 	
 	### RETURNING json string to ajax calls
 	print "Content-Type: application/json"

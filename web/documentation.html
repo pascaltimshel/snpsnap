@@ -64,6 +64,11 @@
 		<li>Gene density</li>
 	</ul>
 	
+	<h3>Data</h3>
+	SNPsnap currently uses 1000 Genomes Project Phase 1 variants from the <strong>European ancestral cohorts</strong>. Specifically our database contains 9,239,614 biallelic, uniquely mapped SNPs derived from preprocessing the phase 1 genotype data for 268 samples from the CEU, GBR and TSI populations.
+	SNPsnap's database only holds <strong>common variants</strong> (>1% MAF). SNPsnap contains <strong>all types of variants listed by 1000 Genomes Project</strong>: single nucleotide variants (SNPs), indels and larger structural variants (as assigned with evs-numbers).
+	<p class="text-danger">SNPsnap will soon be updated with 1000 Genomes Phase 3 variants. The update will also include more populations.</p>
+
 	<h3><a name="genetic_properties" class="documentation_header_link">Genetic properties used to sample random but matched SNPs</a></h3>
 	<ul>
 	  <li ><strong>Minor allele frequency</strong>: SNPs are partitioned into minor allele frequency bins of 1-2, 2-3, ..., 49-50% strata.</li>
@@ -116,7 +121,10 @@
 	<h2 class="documentation_header">Webserver</h2>
 
 	<h3>User input</h3>
-	Chromosomal coordinates of SNPs (not rsIDs), e.g. 3:20145787 for a SNP on chromosome 3 at bp 20,145,787. <span class="documentation_important">SNPsnap uses genome build GRCh37/hg19 for SNP coordinates.</span>
+	Chromosomal coordinates of SNPs e.g. 3:20145787 (chr:posIDs) for a SNP on chromosome 3 at bp 20,145,787. 
+	SNPsnap also accepts rs-numbers as assigned by the 1000 Genome Project. Please note that not all variants in the 1000 Genomes Project have been assigned a rs-number and thus only can be identified by their chromosomal coordinate.<br>
+	We recommend using chromosomal identifers for eaiser downstream processing of SNPsnap's output. Also, SNPsnap is speed optimized for chr:posID inputs.<br>
+	<span class="documentation_important"> SNPsnap uses genome build GRCh37/hg19 for SNP coordinates.</span>
 	
 	
 	<h3><a name="snpsnap_score" class="documentation_header_link">SNPsnap score</a></h3> <!-- OBS: this link is used in report_html.py. MAKE SURE THAT THE NAMES ARE IN SYNC! -->
@@ -172,13 +180,21 @@
 		</div>
 	</div>
 
-	<h3> Output files</h3>
+	<h3>Clumping</h3>
+	The input SNPs to SNPsnap should be independent if enrichment analysis are the goal of downstream investigations. Failing to input independent SNPs will lead to unintended bias in the matched SNPs, which in turn may cause wrong interpretation of enrichment analysis.<br>
+	SNPsnap offers users to check independence of input SNPs by selecting <span class="code_settings">Report input loci independence</span>. SNPs can be clumped based in threshold LD and physical distance thresholds.<br>
+	SNPsnap uses PLINKs (Purcell et al. 2007) algorithm for clumping SNPs (see <a href="http://pngu.mgh.harvard.edu/~purcell/plink/clump.shtml" target="_blank">PLINKs documentation</a> for details).
+
+
+	<h3>Output files</h3>
 	<ul>
-	  <li ><span class="code_files">matched_snps.txt</span>: matrix with input SNPs as rows and matched SNPs as columns</li>
-	  <li ><span class="code_files">input_snps_excluded.txt</span>: first column is input SNP identifier; second column is reason for exclusion, e.g. the SNP does not exist in the SNPsnap SNP data base or the SNP maps to the HLA region (if the <span class="code_settings">Exclude HLA SNPs</span> is enabled)</li>
-	  <li ><span class="code_files">input_snps_annotated.txt</span>: annotation of input SNPs (see <a href="#snp_annotation_input_snps_annotated">SNP Annotations</a> for details)</li>
-	  <li ><span class="code_files">matched_snps_annotated.txt</span>: annotation of matched SNPs (see <a href="#snp_annotation_matched_snps_annotated">SNP Annotations</a> for details) </li>
-	  <li ><span class="code_files">snpsnap_summary.txt</span>: a summery of the input parameters to SNPsnap and the SNPsnap scores</li>
+	  <li ><span class="code_files">matched_snps.txt</span><br>Primary output of SNPsnap; a matrix with input SNPs as rows and matched SNPs as columns</li>
+	  <li ><span class="code_files">input_snps_excluded.txt</span><br>File listing the input SNPs excluded from analysis. There may be two reasons for an input SNP is excluded: 1) the SNP does not exist in the SNPsnap SNP database; 2) the SNP maps to the HLA region and the <span class="code_settings">Exclude HLA SNPs</span> is enabled. First column in the file is input SNP identifier; second column is the reason for exclusion.</li>
+	  <li ><span class="code_files">input_snps_annotated.txt</span> (if <span class="code_settings">Annotate input SNPs</span> selected)<br>File containing annotation of input SNPs (see <a href="#snp_annotation_input_snps_annotated">SNP Annotations</a> for details).</li>
+	  <li ><span class="code_files">input_snps_clumped.txt</span> (if <span class="code_settings">Report input loci independence</span> selected)<br>File listing the clumping of the input SNPs. First column is the index SNP identifier of the clumped locus; second column is the count of number of clumped SNPs; third column is a comma seperated list of clumped SNPs.</li>
+	  <li ><span class="code_files">input_snps_identifer_mapping.txt</span><br>File useful for mapping to/from chr:pos and rs-number identifiers. Note that some SNPs do not have rs-numbers. In such cases the chromosomal coordinate identifier is used instead.</li>
+	  <li ><span class="code_files">matched_snps_annotated.txt</span> (if <span class="code_settings">Annotate matched SNPs</span> selected)<br>File containing annotation of matched SNPs (see <a href="#snp_annotation_matched_snps_annotated">SNP Annotations</a> for details).</li>
+	  <li ><span class="code_files">snpsnap_summary.txt</span><br>a summery of the input parameters to SNPsnap and the SNPsnap scores.</li>
 	</ul>
 	<p>All files are tab delimited with the .txt file extension and can be directly imported to Excel.</p>
 

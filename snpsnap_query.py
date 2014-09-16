@@ -97,6 +97,10 @@ def locate_collection_file(path, prefix):
 
 # Function to read userdefined list of SNPs
 def read_user_snps(user_snps_file):
+	"""
+	Function to read user SNPs. 
+	Function reports duplicats and empty lines in the input SNPlist.
+	Returns a LIST of SNPs """
 	#TODO error check:
 	# check for match to X:YYYYYY partern: '\d{1-2}:\d+'
 	# check for duplicates in list ---> most important
@@ -208,15 +212,18 @@ def lookup_user_snps_iter(file_db, user_snps):
 
 
 
-def process_input_snps(path_output, user_snps, df):
+def process_input_snps(path_output, user_snps, user_snps_df):
 	""" 
 	1) Function idenfifies SNPs that where NOT found in the database. 
 	2) Function EXCLUDES HLA_SNPs
-	3) Function WRITES FILE input_snps_excluded.txt (either snps_not_in_db or snps_not_in_db)
+	3) Function WRITES FILE input_snps_excluded.txt (either user_snps_not_in_db or user_snps_mapping_to_HLA)
 	4) Function WRITES FILE input_snps_identifer_mapping.txt
 
 	REMARKS: 
-	- the list of SNPs not found in db could be generated already in "lookup_user_snps_iter()": just check of the df from store.select() has length 0.
+	- user_snps_df is a Data Frame containing ONLY user SNPs that exists in SNPsnap DB
+	- user_snps is a LIST of the input SNPs. You need to be careful what operations you perform on the user_snps - prepare for the most crazy input. Thus use 'try except' when doing operations on them
+	IMPROVEMENT:
+	- the list of SNPs not found in db could be generated already in "lookup_user_snps_iter()": just check the lenght of the user_snps_df from store.select() has length 0.
 	"""
 	file_user_snps_excluded = path_output+"/input_snps_excluded.txt"
 	file_user_snps_mapping = path_output+"/input_snps_identifer_mapping.txt"
@@ -224,32 +231,31 @@ def process_input_snps(path_output, user_snps, df):
 	logger.info( "START: doing process_input_snps, that is SNPs that will be excluded" )
 	start_time = time.time()
 
-	snps_excluded = {} # dict will contain all user_snps not used further in SNPsnap (snps_not_in_db and snps_in_HLA)
-	snps_in_HLA = [] # this list will be used to drop input SNPs fra the DataFrame (df) mapping to HLA
+	snps_excluded = {} # dict will contain all user_snps not used further in SNPsnap (user_snps_not_in_db and snps_in_HLA)
+	snps_in_HLA = [] # this list will be used to drop input SNPs from the DataFrame (user_snps_df) mapping to HLA
 	n_snps_not_in_db = 0 # counter for snps not found in data base - USED IN report_news 
-	for snp in user_snps:
-		if not (df.index == snp).any():
+	for snp in user_snps: # OBS: looping over user_snps [LIST].
+		#if not (user_snps_df.index == snp).any():
+		if ( not (user_snps_df.index == snp).any() ) and ( not (user_snps_df.ix[:,'rsID'] == snp).any() ): # [(not A) AND (not B)] <=> [not (A OR B)]. De Morgan's laws: when changing sign outside parenthesis you must change logic inside parenthesis.
 			snps_excluded[snp] = "SNP_not_found_in_data_base"
 			n_snps_not_in_db += 1
 	logger.warning( "{} SNPs not found in data base:\n{}".format( n_snps_not_in_db, "\n".join(snps_excluded.keys()) ) ) # OBS: more SNPs may be added to snps_excluded in the exclude_HLA_SNPs step
-	logger.info( "Found %d out of the %d user input SNPs in data base" % (len(df.index), len(user_snps)) )
+	logger.info( "Found %d out of the %d user input SNPs in data base" % (len(user_snps_df.index), len(user_snps)) )
 
 	if exclude_HLA_SNPs: # global boolean variable, True or False
-		for snp in user_snps: # OBS: we are looping twice over user_snps. I choose this to improve readability
-			#NOTE: SNPs that will be excluded because they map to HLA may alreay exists in snps_excluded because they where not found in the data base.
-			# OBS: you need to be careful what operations you perform on the user_snps - prepare for the most crazy input. Thus use 'try except' when doing operations on them
-			# BONUS: we also do not overwrite their 'reason' for exclusion this way
-			if snp not in snps_excluded: # WE ARE NOW SURE THAT THE SNP EXISTS IN OUR DATA-BASE: this is a quality mark/control
-				split_list = snp.split(":")
-				(snp_chr, snp_position) = ( int(split_list[0]), int(split_list[1]) ) # OBS: remember to convert to int!
-				# ^^ if the user input is e.g. 'Q&*)@^)@*$&Y_' or 'blabla' a ValueError will be raised if trying to convert to int
-				if snp_chr == 6: # exclude SNPs in the HLA region 6:25000000-6:35000000
-					if 25000000 <= snp_position <= 35000000:
-						snps_excluded[snp] = "SNP_in_HLA_region"
-						snps_in_HLA.append(snp) # appending to list for exclusion
+		for snp in user_snps_df.index: # OBS: looping over user_snps_df [DATA FRAME]
+			# ^^^WE ARE NOW SURE THAT THE SNP EXISTS IN OUR DATA-BASE. This is important because we now know what operations (e.g split) we can perform on them
+			# type(snp) --> <type 'str'>
+			split_list = snp.split(":")
+			(snp_chr, snp_position) = ( int(split_list[0]), int(split_list[1]) ) # OBS: remember to convert to int!
+			# ^^ if the user input is e.g. 'Q&*)@^)@*$&Y_' or 'blabla' a ValueError will be raised if trying to convert to int
+			if snp_chr == 6: # exclude SNPs in the HLA region 6:25000000-6:35000000
+				if 25000000 <= snp_position <= 35000000:
+					snps_excluded[snp] = "SNP_in_HLA_region"
+					snps_in_HLA.append(snp) # appending to list for exclusion
 		logger.warning( "{} SNPs mapping to HLA region:\n{}".format( len(snps_in_HLA), "\n".join(snps_in_HLA) ) ) # OBS: more SNPs may be added to snps_excluded in the exclude_HLA_SNPs step
 		logger.warning( "Excluding the SNPs mapping to HLA region...")
-		df.drop(snps_in_HLA, axis=0, inplace=True) # inplace dropping index mapping to HLA
+		user_snps_df.drop(snps_in_HLA, axis=0, inplace=True) # inplace dropping index mapping to HLA
 
 	if snps_excluded: # if non-empty
 		logger.warning( "{} SNPs in total not found or excluded because they map to HLA region".format(len(snps_excluded)) )
@@ -261,38 +267,39 @@ def process_input_snps(path_output, user_snps, df):
 				f.write(snp+"\t"+snps_excluded[snp]+"\n")
 
 	### SOME USEFUL CODE TO INSPECT THE UNIQUENESS OF USER_SNPs ###
-	# print "*** Warning: Number of unique snpIDs (index) found: %d" % len(np.unique(df.index.values))
-	# bool_duplicates = pd.Series(df.index).duplicated().values # returns true for duplicates
-	# df_duplicate = df.ix[bool_duplicates]
-	# print df_duplicate
-	# idx_duplicate = df_duplicate.index
+	# print "*** Warning: Number of unique snpIDs (index) found: %d" % len(np.unique(user_snps_df.index.values))
+	# bool_duplicates = pd.Series(user_snps_df.index).duplicated().values # returns true for duplicates
+	# user_snps_df_duplicate = user_snps_df.ix[bool_duplicates]
+	# print user_snps_df_duplicate
+	# idx_duplicate = user_snps_df_duplicate.index
 	# print "Pandas data frame with index of duplicate:"
-	# print df.ix[idx_duplicate]
+	# print user_snps_df.ix[idx_duplicate]
 
 	### WRITING OUT MAPPING FILE
 	#if not os.path.exists(file_user_snps_mapping): #<-- you WANT to overwrite the file if running the tool from commandline
-	df.to_csv(file_user_snps_mapping, sep='\t', index=True, columns=['rsID'], header=True, mode='w') #index_label='snpID' NOT needed - it follows from the HDF5 file
+	user_snps_df.to_csv(file_user_snps_mapping, sep='\t', index=True, columns=['rsID'], header=True, mode='w') #index_label='snpID' NOT needed - it follows from the HDF5 file
 
 
 	elapsed_time = time.time() - start_time
 	logger.info( "END: process_input_snps in %s s (%s min)" % (elapsed_time, elapsed_time/60) )
 
 	if report_obj.enabled:
-		report_news = 	{	"unique_user_snps":len(user_snps),
-							"total_user_input_snps_excluded":len(snps_excluded),
-							"snps_not_in_db":n_snps_not_in_db,
-							"snps_mapping_to_HLA":len(snps_in_HLA)
+		report_news = 	{	"user_snps_unique_input":len(user_snps),
+							"user_snps_working_set":len(user_snps_df),
+							"user_snps_excluded_in_total":len(snps_excluded),
+							"user_snps_not_in_db":n_snps_not_in_db,
+							"user_snps_mapping_to_HLA":len(snps_in_HLA)
 							}
 		report_obj.report['input'].update(report_news)
 
 	### RETURNING DataFrame
-	#Note: if exclude_HLA_SNPs is enabled, then the DataFrame (df) will be a modified version of the one parsed to this function
-	return df 
+	#Note: if exclude_HLA_SNPs is enabled, then the DataFrame (user_snps_df) will be a modified version of the one parsed to this function
+	return user_snps_df 
 
 # NOT IN USE SINCE 07/03/2014 - MAY BE OUTCOMMENTED/DELETED
-# def write_user_snps_stats(path_output, df):
+# def write_user_snps_stats(path_output, user_snps_df):
 # 	user_snps_stats_file = path_output+"/input_snps.tab"
-# 	df.to_csv(user_snps_stats_file, sep='\t', header=True, index=True,  mode='w')
+# 	user_snps_df.to_csv(user_snps_stats_file, sep='\t', header=True, index=True,  mode='w')
 
 #@profile
 def read_collection(file_collection):
@@ -471,7 +478,7 @@ def few_matches_report(path_output, df_snps_few_matches, N_sample_sets, N_snps):
 								"match_size_median_pct":match_size_median_pct,
 								"match_size_median":match_size_median
 							}
-		report_obj.report['report'].update(report_news)
+		report_obj.report['snpsnap_score'].update(report_news)
 		
 					#'insufficient_scale_str':insufficient_scale_str,
 					#'match_size_scale_str':match_size_scale_str
@@ -827,21 +834,45 @@ def write_set_file(path_output, df_collection):
 
 
 def clump_snps(user_snps_df, path_output, clump_r2, clump_kb):
-	path_genotype = "/cvar/jhlab/snpsnap/data/step1/full_no_pthin_rmd/CEU_GBR_TSI_unrelated.phase1_dup_excluded"
+	#path_genotype = "/cvar/jhlab/snpsnap/data/step1/full_no_pthin_rmd/CEU_GBR_TSI_unrelated.phase1_dup_excluded"
+	path_genotype = "/cvar/jhlab/snpsnap/data/step1/test_thin0.02_rmd/CEU_GBR_TSI_unrelated.phase1_dup_excluded" # TEST DATA SET!!!
 	file_user_snps_clumped = path_output+"/input_snps_clumped.txt"
 	file_plink_input_tmp_assoc = path_output + "/tmp.assoc"
 	file_plink_output_tmp_prefix = path_output + "/plink_tmp" # this is the filename prefix (root filename). plink will add extensions itself, e.g. .log, .nosex. .clumped
-	p_val = str(0.00001)
+	p_val = "0.00001" # --> str(0.00001) gives 1e-05 when written to file.
+	#^OBS: this p_val must be LOWER than (or equal to?) plinks --clump-p1 (default=0.0001) and --clump-p2 (default=0.01). Only SNPs passing p2 significant will be written in the "SP2" column of the .clumped file
 
 	logger.info( "Writing .assoc file: %s" % file_plink_input_tmp_assoc )
 	## REMEMBER: Plink needs the 'rsID' to be able to match the SNP IDs with the ones in the genotype data. 
 	#If Plink CANNOT find the ID in the genotype data it will create NAs. See below example
 	# CHR    F          SNP         BP        P    TOTAL   NSIG    S05    S01   S001  S0001    SP2
 	# NA   NA 10:100096148         NA      1e-05       NA     NA     NA     NA     NA     NA     NA
+	
+	rsID2chrpos_map_dict = {} 	# This dict will have rsID as keys [NOTE: they are ALL UNIQUE] and chrposID as values. THIS MUST BE A 1-1 MAPPING!!
+								# This dict is a convenient way of mapping rsIDs back to their corresponding chrposIDs
+	chrpos2rsID_map_dict = {} # this dict is created to ensure a 1-1 mapping. THIS WILL NOT BE USED FURTHER (only for asserting about the data type)
 	with open(file_plink_input_tmp_assoc, 'w') as f_assoc:
 		f_assoc.write("SNP\tP\n") # Writing header - must be detectable by PLINK
-		for rsID in user_snps_df.ix[:,'rsID']: #iteratable object is a Series object
-			#^ taking rsID column out of data frame and writing out rsIDs.
+		for index, rsID in user_snps_df.ix[:,'rsID'].iteritems(): #iteratable object is a Series object
+			#^ taking rsID column out of data frame. .iteritems() gives (index, value) tuples
+			
+			## Checking non-duplicates of rsIDs
+			if not rsID in rsID2chrpos_map_dict.keys(): # .keys() can be removed - only added for clarity.
+				rsID2chrpos_map_dict[rsID] = index # index is chrposID
+			else:
+				logger.critical( "While creating rsID2chrpos_map_dict: Accessed a key that is already in rsID2chrpos_map_dict. See next line for details:" )
+				logger.critical( "Previous key-value pair: (key={rsID}; value={chrposID_old}). Current key-value pair: (key={rsID}; value={chrposID_now})".format(rsID=rsID, chrposID_old=rsID2chrpos_map_dict[rsID], chrposID_now=index) )
+				logger.critical( "Will raise Exception now..." )
+				raise Exception( "Detected that rsID and chrposID is not a 1-1 mapping" )
+			## Checking non-duplicates of chrposIDs (index)
+			if not index in chrpos2rsID_map_dict.keys(): # .keys() can be removed - only added for clarity.
+				chrpos2rsID_map_dict[index] = rsID 
+			else:
+				logger.critical( "While creating chrpos2rsID_map_dict: Accessed a key that is already in chrpos2rsID_map_dict. See next line for details:" )
+				logger.critical( "Previous key-value pair: (key={index}; value={rsID_old}). Current key-value pair: (key={index}; value={rsID_now})".format(index=index, rsID_old=rsID2chrpos_map_dict[rsID], rsID_now=index) )
+				logger.critical( "Will raise Exception now..." )
+				raise Exception( "Detected that rsID and chrposID is not a 1-1 mapping" )
+
 			f_assoc.write(rsID + "\t" + p_val + "\n")
 			### Example of file_plink_input_tmp_assoc (tmp.assoc)
 			# SNP     P
@@ -852,7 +883,10 @@ def clump_snps(user_snps_df, path_output, clump_r2, clump_kb):
 	status_obj.update_pct( 'clump', float(30) )
 
 	## OBS: plink --out is the 'output root filename', e.g. 
-	cmd_plink = "plink --bfile {geno} --clump {assoc} --clump-r2 {clump_r2} --clump-kb {clump_kb} --out {out_prefix} --noweb --silent".format(geno=path_genotype, assoc=file_plink_input_tmp_assoc, clump_r2=clump_r2, clump_kb=clump_kb, out_prefix=out_prefix)
+	# Linux snpsnap 2.6.32-431.5.1.el6.x86_64 #1 SMP Fri Jan 10 14:46:43 EST 2014 x86_64 x86_64 x86_64 GNU/Linux
+	#/cvar/jhlab/snpsnap/bin/plink-1.07-x86_64/plink
+	#cmd_plink = "source /broad/software/scripts/useuse && use .plink-1.07 && plink --bfile {geno} --clump {assoc} --clump-r2 {clump_r2} --clump-kb {clump_kb} --out {file_plink_output_tmp_prefix} --noweb --silent".format(geno=path_genotype, assoc=file_plink_input_tmp_assoc, clump_r2=clump_r2, clump_kb=clump_kb, file_plink_output_tmp_prefix=file_plink_output_tmp_prefix)
+	cmd_plink = "/cvar/jhlab/snpsnap/bin/plink-1.07-x86_64/plink --bfile {geno} --clump {assoc} --clump-r2 {clump_r2} --clump-kb {clump_kb} --out {file_plink_output_tmp_prefix} --noweb --silent".format(geno=path_genotype, assoc=file_plink_input_tmp_assoc, clump_r2=clump_r2, clump_kb=clump_kb, file_plink_output_tmp_prefix=file_plink_output_tmp_prefix)
 	### REMEMBER plink likely needs to be called as:
 	#source /broad/software/scripts/useuse && use .plink-1.07 && plink <plink arguments>
 	logger.info( "Making plink call: %s" % cmd_plink )
@@ -861,16 +895,15 @@ def clump_snps(user_snps_df, path_output, clump_r2, clump_kb):
 	fnull.close()
 	logger.info( "PID = %s | Waiting for plink to finish..." % p_plink.pid )
 	p_plink.wait()
-	logger.info( "PID = %s | DONE. Return code: %s" % (p_plink.pid, p_plink.returncode) )
+	if not p_plink.returncode == 0:
+		raise Exception("PID = %s | PLINK crashed during clumping process (return code = %s). Will not continue to process potentially corupted files!" % (p_plink.pid, p_plink.returncode) )
+	else:
+		logger.info( "PID = %s | DONE. Return code is ok! (return code = %s)" % (p_plink.pid, p_plink.returncode) )
 
 
 	### Updating status ###
 	status_obj.update_pct( 'clump', float(80) )
 
-	#Updating AND writing report - REMEMBER: this 'report' is the "../XXXX_report_clump.json" file.
-	report_news = {"SOMETHING":SOMETHING}
-	#report_obj.report['misc'].update(report_news)
-	#report_obj.write_json_report()# 
 
 	n_total_snps = 0 # this is to dobbelt check that PLINK does not loose any SNPs. This number should be EQUAL to the number of input snps
 	n_clumped_loci = 0 # OBS each line in .clumped corresponds to a 'independent loci'
@@ -882,41 +915,82 @@ def clump_snps(user_snps_df, path_output, clump_r2, clump_kb):
 		# 10    1   rs55950087  100091388      1e-05        0      0      0      0      0      0 NONE
 		## NOTE#1: The (1) after each SNP name refers to the results file they came from (in this case, there is only a single result file specified, so all values are 1)
 		## NOTE#2: The .clumped file contains a few newlines (3?) in the end of the file
+		
+		## NOTE#3: The .clumped file would look something like the below if the SNP identifiers in .assoc cannot be found in plinks .bim. THIS SHOULD ONLY HAPPEN IF YOU USE TEST GENOTYP DATA (or do not convert to rsID numbers)
+		# CHR    F           SNP         BP        P    TOTAL   NSIG    S05    S01   S001  S0001    SP2
+		#  NA   NA   rs146350976         NA      1e-05       NA     NA     NA     NA     NA     NA     NA
+		#  NA   NA   rs139360817         NA      1e-05       NA     NA     NA     NA     NA     NA     NA
+		f_out_clumped = open(file_user_snps_clumped, 'w')
+		f_out_clumped.write("index_snp\tn_clumped\tclumped_snps\n") # writing header
 
-		f_out_clumped = open(file_user_snps_clumped, 'r')
 		for line in f_plink_clumped.readlines()[1:]: #skipping header
 			if not line.strip(): # IMPORTANT: skipping blank lines [these are present in the end of the .clumped file]
-			    continue
+				continue
 			fields = line.strip().split()
 			index_snp = fields[2] # SNP
 			clump_total_count = fields[5] #TOTAL
 			clumped_snps = fields[11] # SP2
 
+			## Validating .clumped file: making sure that all SNP IDs were found. This is TESTED AND WORKS
+			if any(["NA" == field for field in fields]):
+				raise Exception("While processing .clumped file: found a field with 'NA' values. This means that there were an SNP identifier that PLINK could not find")
+
 			# Counting
 			n_clumped_loci += 1
-			n_total_snps += clump_total_count+1 # --> +1 reason: include the index SNP
+			n_total_snps += int(clump_total_count)+1 # --> +1 reason: include the index SNP
 
-			# Processing clumped_snps (comma seperated)
-			clumped_snps_clean_list = [snp.rstrip('(1)') for snp in clumped_snps.split(',')] # splitting on ',' and removing trailing '(1)'
 
-			# Mapping SNPs - NOTE: I ex
-			### ---> THIS IS HERE I STOPPED 09/12/2014
-			#index_snp_chrpos = user_snps_df.ix[index_snp,'rsID']
-			#clumped_snps_clean_list_chrpos = [user_snps_df.ix[snp,'rsID'] for snp in clumped_snps_clean_list]
+			# Mapping SNP IDs: rsID --> chrposID
+			index_snp_chrpos = rsID2chrpos_map_dict[index_snp] # mapping index SNP
+			clumped_snps_clean_list_chrpos = None
+			if clumped_snps == "NONE": # the field SP2 can be "NONE" if no SNPs where clumped into the index SNP. Then we set the field empty to be consistent with the use of empty fields for SNPsnap.
+				clumped_snps_clean_list_chrpos = [""] # LIST with empty string - must be list for ";".join() to work?
+			else:
+				# Processing clumped_snps (comma seperated):
+				clumped_snps_clean_list = [snp.replace('(1)', '') for snp in clumped_snps.split(',')] # splitting on ',' and removing trailing '(1)'.
+				# OBS: snp.rstrip('(1)') does NOT work because it potentially removes trailing '1' in the rsID. That is, .rstrip() removes CHARs not SUBSTRINGs
+
+				# Mapping:
+				clumped_snps_clean_list_chrpos = [rsID2chrpos_map_dict[snp] for snp in clumped_snps_clean_list]
+
+			## Writing file
+			f_out_clumped.write(index_snp_chrpos + "\t" + clump_total_count + "\t" + ";".join(clumped_snps_clean_list_chrpos) + "\n" )
 
 		f_out_clumped.close()
 
-		## THIS IS WHERE I AM!
+	if not n_total_snps == len(user_snps_df):
+		raise Exception( "Number of input SNPs (%s) is NOT equal to PLINKs total number of SNPs (%s) listed in the .clumped file." % (len(user_snps_df), n_total_snps) )
+	else:
+		logger.info("Number of input SNPs (%s) is equal to PLINKs total number of SNPs (%s) listed in the .clumped file." % (len(user_snps_df), n_total_snps) )
 
-	### WRITE OUTPUT FILE
-		#SOMETING
+	## Creating "independent loci" flag
+	user_snps_are_all_independent_loci = None
+	if n_clumped_loci == len(user_snps_df):
+		user_snps_are_all_independent_loci = True
+	else:
+		user_snps_are_all_independent_loci = False
+
+	#Updating AND writing report - REMEMBER: this 'report' is the "../XXXX_report_clump.json" file.
+	report_news = 	{
+					"n_clumped_loci":n_clumped_loci,
+					"n_input_loci":len(user_snps_df),
+					"user_snps_are_all_independent_loci":user_snps_are_all_independent_loci
+					}
+					# NOTE: "n_input_loci" is the same is "user_snps_working_set"
+	report_obj.report['clumping'].update(report_news)
+	report_obj.write_json_report() #it is important to write the report as quickly as possible. [Note that the report is always written at the end of the snpsnap_query.py script]
 
 
-	### CLEAN-UP
+	### CLEAN-UP - Deleting files
 	# delete: file_plink_input_tmp_assoc (path_output/tmp.assoc)
 	# delete: file_plink_output_tmp_prefix (path_output/plink_tmp.*)
 
-	return
+	os.remove(path_output+"/tmp.assoc")
+	plink_tmp_files = glob.glob(path_output+"/plink_tmp.*")
+	for f in plink_tmp_files:
+		os.remove(f)
+
+
 
 ###################################### CHECK of INPUT arguments ######################################
 def check_max_distance_deviation(value):
@@ -1017,7 +1091,7 @@ def ParseArguments():
 	arg_parser_clump.add_argument("--clump_kb", type=float, help="Physical distance threshold for clumping", default=250)
 	#--> genotype data path will be hard coded
 
-    
+	
 	args = arg_parser.parse_args()
 
 	return args
@@ -1198,9 +1272,10 @@ class Report():
 		#loci_definition, -->COULD move to bootface
 		#match_criteria, -->COULD move to bootface
 		#options, --> COULD move to bootface
-		#report, --> KEEP HERE
+
+		#snpsnap_score, --> KEEP HERE
 		#misc, (runtime) --> KEEP HERE
-		#input, (total_user_input_snps_excluded, snps_not_in_db and more) --> KEEP HERE
+		#input, (user_snps_excluded_in_total, user_snps_not_in_db and more) --> KEEP HERE
 		#mean_input_to_match_ratio --> KEEP HERE
 
 
@@ -1303,17 +1378,19 @@ def main():
 	else:
 		logger.error( "Error in command line arguments - raising exception" )
 		raise Exception( "ERROR: command line arguments not passed correctly. Fix source code!" )
+	
 	elapsed_time = time.time() - start_time
 	logger.info( "TOTAL RUNTIME: %s s (%s min)" % (elapsed_time, elapsed_time/60) )
-
-	if report_obj.enabled:
-		run_time_min = "{:.2f}".format(elapsed_time)
-		report_news = {"total_runtime_in_seconds_for_snp_matching_and_bias_calculation":run_time_min}
-		report_obj.report['misc'].update(report_news)
-		########### WRITING REPORT #########
-		logger.info( "Writing json report to %s" % report_obj.fname )
-		report_obj.write_json_report() # this MUST be the very last step! [But also ok to do before]
-		####################################
+	#if report_obj.enabled:
+	run_time_formatted_seconds = "{:.2f}".format(elapsed_time)
+	#total_runtime_in_seconds_for_snp_matching_and_bias_calculation
+	run_time_string = "total_runtime_in_seconds_{subcommand}".format(subcommand=args.subcommand)
+	report_news = {run_time_string:run_time_formatted_seconds} 
+	report_obj.report['misc_%s' % args.subcommand].update(report_news)
+	########### WRITING REPORT #########
+	logger.info( "Writing json report to %s" % report_obj.fname )
+	report_obj.write_json_report() # this MUST be the very last step! [But also ok to do before]
+	####################################
 
 
 if __name__ == '__main__':

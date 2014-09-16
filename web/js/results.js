@@ -30,12 +30,12 @@ function getInputToMatchedRatio(sid) {
 
 function getClump(sid) {
 	$.ajax({
-		url:"app/report_input_to_matched_ratio_html.py",
+		url:"app/report_clump.py",
 		type: 'POST',
 		data: {session_id:sid}, 
 		dataType: "html",
 		success: function(res){
-			$("#collapse_input_to_matched_ratio .panel-body").html(res);
+			$("#collapse_input_loci_independence .panel-body").html(res);
 		}
 	})
 }
@@ -74,37 +74,92 @@ $(document).ready(function(){
 		var call_getClump = true;
 
 		var progresspump = setInterval(function(){
+		
 		$.ajax({
 			url:"app/parse_returncode.py",
 			type: 'POST',
 			data: data_parse_cgi, // only the session_id is used
-			dataType: "text",
+			dataType: "json",
 			success: function(res){
-				var returncode = Number(res)
-				// console.log(returncode)
-				// console.log(typeof returncode)
-				if (returncode != 0) {
-					// MATCH
-					$("#progress_bar_match").hide();
-					$("#row_progress_match .text-info").removeClass('text-info').addClass('text-danger').html('ERROR');
-					$("#row_progress_match .error_description").append( "<p class=text-danger>Job could not be completed due to internal error</p>");
-					// SET_FILE
-					$("#progress_bar_set_file").hide();
-					$("#row_progress_set_file .text-info").removeClass('text-info').addClass('text-danger').html('ERROR');
-					$("#row_progress_set_file .error_description").append( "<p class=text-danger>Job could not be completed due to internal error</p>");
-					//ANNOTATE
-					$("#progress_bar_annotate").hide();
-					$("#row_progress_annotate .text-info").removeClass('text-info').addClass('text-danger').html('ERROR');
-					$("#row_progress_annotate .error_description").append( "<p class=text-danger>Job could not be completed due to internal error</p>");
-					//CLUMP
-					$("#progress_bar_clump").hide();
-					$("#row_progress_clump .text-info").removeClass('text-info').addClass('text-danger').html('ERROR');
-					$("#row_progress_clump .error_description").append( "<p class=text-danger>Job could not be completed due to internal error</p>");
+				if (res.dummy == 0) { // if dummy == 0 then we know that the XXX_returncodes.json file is written and ALL return codes are available.
+					var failure = false
+					if (res.hasOwnProperty('match') && res.match != 0) { // If 'match' fails, then set_file and bias calculation has also failed (they are computed in the same call)
+						// MATCH
+						$("#progress_bar_match").hide();
+						$("#row_progress_match .text-info").removeClass('text-info').addClass('text-danger').html('ERROR');
+						$("#row_progress_match .error_description").append( "<p class=text-danger>Job could not be completed due to internal error</p>");
+						// SET_FILE
+						$("#progress_bar_set_file").hide();
+						$("#row_progress_set_file .text-info").removeClass('text-info').addClass('text-danger').html('ERROR');
+						$("#row_progress_set_file .error_description").append( "<p class=text-danger>Job could not be completed due to internal error</p>");
+						// BIAS
+						$("#progress_bar_bias").hide();
+						$("#row_progress_bias .text-info").removeClass('text-info').addClass('text-danger').html('ERROR');
+						$("#row_progress_bias .error_description").append( "<p class=text-danger>Job could not be completed due to internal error</p>");
+						// setting failure flag
+						failure = true
+					}
+					if (res.hasOwnProperty('annotate') && res.annotate != 0) {
+						//ANNOTATE
+						$("#progress_bar_annotate").hide();
+						$("#row_progress_annotate .text-info").removeClass('text-info').addClass('text-danger').html('ERROR');
+						$("#row_progress_annotate .error_description").append( "<p class=text-danger>Job could not be completed due to internal error</p>");
+						// setting failure flag
+						failure = true
+					}
+					if (res.hasOwnProperty('clump') && res.clump != 0) {
+						//CLUMP
+						$("#progress_bar_clump").hide();
+						$("#row_progress_clump .text-info").removeClass('text-info').addClass('text-danger').html('ERROR');
+						$("#row_progress_clump .error_description").append( "<p class=text-danger>Job could not be completed due to internal error</p>");
+						// setting failure flag
+						failure = true
+					}
+					if (failure) {
+						$("#collapse_progress .panel-body").append("<p class='text-danger text-center'>We are sorry, but one or more of your jobs could not be completed due to internal error.<br>Please re-run the job and report to the SNPsnap team if you keep getting this error message.</p>")
+					}
 
-					clearInterval(progresspump); // STOP all ajax calls
+					clearInterval(progresspump); // STOP all ajax calls. 
 				}
 			}
 		})
+
+		/////////////// BEFORE 09/15/2014 /////////////////
+		//////// Things 'wrong': 
+			// 1) Calculating match bias were still listed as 'Complete' even though an error occured
+			// 2) parsing too simple (txt). did not allow for specific fails
+			// 3) Not message about how to treat this error
+		// $.ajax({
+		// 	url:"app/parse_returncode.py",
+		// 	type: 'POST',
+		// 	data: data_parse_cgi, // only the session_id is used
+		// 	dataType: "text",
+		// 	success: function(res){
+		// 		var returncode = Number(res)
+		// 		// console.log(returncode)
+		// 		// console.log(typeof returncode)
+		// 		if (returncode != 0) {
+		// 			// MATCH
+		// 			$("#progress_bar_match").hide();
+		// 			$("#row_progress_match .text-info").removeClass('text-info').addClass('text-danger').html('ERROR');
+		// 			$("#row_progress_match .error_description").append( "<p class=text-danger>Job could not be completed due to internal error</p>");
+		// 			// SET_FILE
+		// 			$("#progress_bar_set_file").hide();
+		// 			$("#row_progress_set_file .text-info").removeClass('text-info').addClass('text-danger').html('ERROR');
+		// 			$("#row_progress_set_file .error_description").append( "<p class=text-danger>Job could not be completed due to internal error</p>");
+		// 			//ANNOTATE
+		// 			$("#progress_bar_annotate").hide();
+		// 			$("#row_progress_annotate .text-info").removeClass('text-info').addClass('text-danger').html('ERROR');
+		// 			$("#row_progress_annotate .error_description").append( "<p class=text-danger>Job could not be completed due to internal error</p>");
+		// 			//CLUMP
+		// 			$("#progress_bar_clump").hide();
+		// 			$("#row_progress_clump .text-info").removeClass('text-info').addClass('text-danger').html('ERROR');
+		// 			$("#row_progress_clump .error_description").append( "<p class=text-danger>Job could not be completed due to internal error</p>");
+
+		// 			clearInterval(progresspump); // STOP all ajax calls
+		// 		}
+		// 	}
+		// })
 		$.ajax({
 			url:"app/status_json.py",
 			type: 'POST', 
@@ -158,7 +213,7 @@ $(document).ready(function(){
 					if (res.clump.status == 'complete' && call_getClump) {
 						$("#progress_bar_clump").removeClass('active')
 						$('#panel_input_loci_independence').show();
-						call_getClump(sid);
+						getClump(sid);
 						call_getClump = false;
 					}
 				}
