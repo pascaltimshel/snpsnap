@@ -35,7 +35,7 @@ try:
 		str_header = "<span class='bg-success'>Your input SNPs are independent</span>" # also try "bg-info" (light blue)
 	else:
 		str_header = "<span class='bg-danger'>Your input SNPs are <i>not</i> independent</span>"
-		str_explanation = "<span class='text-danger'>The number of independent loci is less than the number input SNPs. For intended usage of SNPsnap, input SNPs should be independent becuase SNPsnap is not accounting for the correlation between input SNPs. Please consider clumping your input SNPs to form independent loci.</span>"
+		str_explanation = "<span class='text-danger'>The number of independent loci is less than the number input SNPs. For intended usage of SNPsnap, input SNPs should be independent because SNPsnap is not accounting for the correlation between input SNPs. Please consider clumping your input SNPs to derive independent loci.</span>"
 
 
 	#Contextual colors: <p class="text-danger">...</p>

@@ -834,8 +834,8 @@ def write_set_file(path_output, df_collection):
 
 
 def clump_snps(user_snps_df, path_output, clump_r2, clump_kb):
-	#path_genotype = "/cvar/jhlab/snpsnap/data/step1/full_no_pthin_rmd/CEU_GBR_TSI_unrelated.phase1_dup_excluded"
-	path_genotype = "/cvar/jhlab/snpsnap/data/step1/test_thin0.02_rmd/CEU_GBR_TSI_unrelated.phase1_dup_excluded" # TEST DATA SET!!!
+	path_genotype = "/cvar/jhlab/snpsnap/data/step1/full_no_pthin_rmd/CEU_GBR_TSI_unrelated.phase1_dup_excluded"
+	#path_genotype = "/cvar/jhlab/snpsnap/data/step1/test_thin0.02_rmd/CEU_GBR_TSI_unrelated.phase1_dup_excluded" # TEST DATA SET!!!
 	file_user_snps_clumped = path_output+"/input_snps_clumped.txt"
 	file_plink_input_tmp_assoc = path_output + "/tmp.assoc"
 	file_plink_output_tmp_prefix = path_output + "/plink_tmp" # this is the filename prefix (root filename). plink will add extensions itself, e.g. .log, .nosex. .clumped
@@ -933,6 +933,8 @@ def clump_snps(user_snps_df, path_output, clump_r2, clump_kb):
 
 			## Validating .clumped file: making sure that all SNP IDs were found. This is TESTED AND WORKS
 			if any(["NA" == field for field in fields]):
+				status_obj.update_status('clump', 'ERROR')
+				status_obj.update_pct('clump', float(0) )
 				raise Exception("While processing .clumped file: found a field with 'NA' values. This means that there were an SNP identifier that PLINK could not find")
 
 			# Counting
@@ -959,6 +961,8 @@ def clump_snps(user_snps_df, path_output, clump_r2, clump_kb):
 		f_out_clumped.close()
 
 	if not n_total_snps == len(user_snps_df):
+		status_obj.update_status('clump', 'ERROR')
+		status_obj.update_pct('clump', float(0) )
 		raise Exception( "Number of input SNPs (%s) is NOT equal to PLINKs total number of SNPs (%s) listed in the .clumped file." % (len(user_snps_df), n_total_snps) )
 	else:
 		logger.info("Number of input SNPs (%s) is equal to PLINKs total number of SNPs (%s) listed in the .clumped file." % (len(user_snps_df), n_total_snps) )
