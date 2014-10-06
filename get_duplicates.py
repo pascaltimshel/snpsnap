@@ -7,6 +7,13 @@ import collections
 
 import pdb
 
+import datetime
+
+### TOOD production v2
+#1) change outputfile name to be something like the infile prefix + ".duplicates.txt"
+#2) write out 
+
+
 # original data, job submission
 #xmsub -de -o get_dup.out -e get_dup.err -r y -q cbs -N get_dup -l mem=20gb,walltime=604800,flags=sharedmem /home/projects/tp/childrens/snpsnap/git/get_duplicates.py --input /home/projects/tp/data/1000G/data/phase1/CEU_GBR_TSI_unrelated.phase1_release_v3.20101123.snps_indels_svs.genotypes.bim
 
@@ -14,9 +21,8 @@ import pdb
 #def makehash():
 #	return collections.defaultdict(makehash) 
 
-def get_duplicates(inputfile, outputdir):
+def get_duplicates(inputfile, outputfile, appendfile):
 	snps_seen = {}
-	outputfile = outputdir+"/duplicates.txt"
 	dup = collections.defaultdict(list)
 	with open(outputfile, 'w') as outfile:
 		with open(inputfile, 'r') as infile:
@@ -50,12 +56,23 @@ def get_duplicates(inputfile, outputdir):
 						dup[rsID].extend([snps_seen[rsID], pos]) # save previous seen rs position and duplicate position
 					else:
 						dup[rsID].append(pos)
-		print "Writting to file: %s" % outputfile
-		print "rsID\tCount\tPositions"
 		for rs, pos in dup.items():
-			print "%s\t%s\t%s" % (rs, len(pos), ";".join(pos))
 			# Now write to file
 			outfile.write(rs+"\n")
+
+		with open(appendfile, 'a') as fappend:
+			now_string = datetime.datetime.now().strftime("%a %b %d %Y %H:%M:%S") # e.g. Wed Sep 24 2014 12:51:54'
+			fappend.write( "#"*80 + '\n' )
+			fappend.write( "INPUT FILE: %s\n" % inputfile )
+			fappend.write( "TIME: %s\n" % now_string )
+			result_string = "Duplicates Detected!" if dup else "No Duplicates"
+			fappend.write( "RESULT: %s\n" % result_string )
+			if dup:
+				fappend.write("rsID\tCount\tPositions\n")
+				for rs, pos in dup.items():
+					fappend.write( "%s\t%s\t%s\n" % (rs, len(pos), ";".join(pos)) )
+			fappend.write( "#"*80 + '\n' )
+			
 
 
 #print "************************************"
@@ -65,12 +82,18 @@ def get_duplicates(inputfile, outputdir):
 
 
 #Parse Arguments
-arg_parser = argparse.ArgumentParser("Finds duplicates in genotype data and write them to filename 'duplicates.txt' in the input dir")
-arg_parser.add_argument("--input", help="input .bim file", required=True)
-# e.g. /home/projects/tp/childrens/snpsnap/data/step1/full_no_pthin/CEU_GBR_TSI_unrelated.phase1.bim
+arg_parser = argparse.ArgumentParser("Finds duplicates in genotype data and write them to filename '<input-prefix>.duplicates.txt' in the input dir. FURTHERMORE the script APPENDS to a file 'get_duplicates_append_file.txt' in the inputdir")
+arg_parser.add_argument("--input", help="input .bim file", required=True) # e.g. /home/projects/tp/childrens/snpsnap/data/step1/full_no_pthin/CEU_GBR_TSI_unrelated.phase1.bim
 args = arg_parser.parse_args()
 
 inputfile = args.input
-outputdir = os.path.dirname(inputfile)
+(root, ext) = os.path.splitext(inputfile) #Split the pathname path into a pair (root, ext) such that root + ext == path, and ext is empty or begins with a period and contains at most one period.
+	### EXAMPLE:
+	#os.path.splitext('home/robert/Documents/Workspace/datafile.xlsx')
+	#gives --> ('home/robert/Documents/Workspace/datafile', '.xlsx')
+outputfile = root + '.duplicates.txt' # e.g. /home/projects/tp/childrens/snpsnap/data/step1/full_no_pthin/CEU_GBR_TSI_unrelated.phase1.duplicates.txt
 
-get_duplicates(inputfile, outputdir)
+appendfile = os.path.dirname(inputfile) + '/get_duplicates_append_file.txt'
+
+
+get_duplicates(inputfile, outputfile, appendfile)
