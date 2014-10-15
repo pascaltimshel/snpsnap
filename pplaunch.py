@@ -98,10 +98,51 @@ class LaunchBsub(object):
 	- cmd_custom:
 		- if any true value (in a boolean context) is given then the cmd_custom COMPLETELY overwrites the other settings
 		- RECOMMENDATION: when using cmd_custom, instantiate the LaunchBsub object with 'None' in ALL other arguments
+
+	## Queues
+	- queue_name
+	- app:
+		application profile
+		string. 
+		shortjobs [max runtime = 15.0 min]
+		supershortjobs [max runtime = 1 min] 
+		HINT: "bapp -l" will list the application profiles available
+	
+	## RESOURCES
+	- proc: ["min_proc"] or ["min_proc,max_proc"]
+		min_proc[,max_proc].
+		parallel job and specifies the number of processors required to run the job
+		this sets the $LSB_DJOB_NUMPROC
+		EXAMPLE:
+			"2"		: two processes/slots/CPUs
+			"2,4"	: between two and four processes/slots/CPUs
+	- mem: memory reserved (for the whole job) in GB
+		sets -R "rusage[mem=mem]"
+	- runlimit: [hh:mm] string OR [mm] string
+		-W [hour:]minute
+		Set the wall-clock run time limit of this batch job. RUNLIMIT==WALLTIME.
+		the maximum time the job can have the status "running". This is a HARD LIMIT
+		EXAMPLE:
+			"3:30"	a run_limit of 3 and a half hours.
+			"210"	a run_limit of 3 and a half hours.
+	- shared_mem: OWN flag
+		sets -R 'span[hosts=1]'
+		use this for multithreaded SMP jobs: You always want to use this with SMP jobs!
+
+	## LSF INFO
+	lsinfo
+	bsub -V
+	bsub -h
+	lsid -V ---> Platform LSF 7.0.6.134609, Sep 04 2009
+
+	## LINK collection
+	SMP/MPI on LSF: http://wiki.gwdg.de/index.php/Running_Jobs#bsub_options_for_parallel_.28SMP_or_MPI.29_jobs
+
+
 	"""
 	LB_job_counter = 0
 	LB_job_fails = 0
-	def __init__(self, cmd, queue_name, mem, jobname='NoJobName', projectname='NoProjectName', path_stdout=os.getcwd(), file_output=None, no_output=False, email=None, email_status_notification=False, email_report=False, logger=False, cmd_custom=None): #file_output=os.path.join(os.getcwd(), __name__+'.tmp.log'
+	def __init__(self, cmd, queue_name, mem, proc=None, shared_mem=None, runlimit=None, app=None, jobname='NoJobName', projectname='NoProjectName', path_stdout=os.getcwd(), file_output=None, no_output=False, email=None, email_status_notification=False, email_report=False, logger=False, cmd_custom=None): #file_output=os.path.join(os.getcwd(), __name__+'.tmp.log'
 		LaunchBsub.LB_job_counter += 1 # Counter the number of jobs
 		self.job_number = LaunchBsub.LB_job_counter
 		
@@ -123,38 +164,66 @@ class LaunchBsub(object):
 		self.projectname = projectname
 		self.status = ""
 		self.attempts = 0
-
-		self.p_queue_name = queue_name # string
-		#self.p_walltime = walltime # hours		format HOURS | or hh:mm  (hours:minutes)
-		self.p_mem = mem #
-		#TODO self.mem_per_process ## M --> a per-process (soft) memory limit
-		#TODO self.p_cpu ## n (e.g. 2 or 1-4)
-		#TODO self.p_n_span
 		#TODO: overwrite output files with -oo ?
 
-		#-W run_limit[/host_spec]: Set the wall-clock run time limit of this batch job. 
-		 # ---> hard limit!? Do not use
+		#TODO self.mem_per_process ## M --> a per-process (soft) memory limit
+		#TODO: span[ptile=value]
+			#Indicates the number of processors on each host that should be allocated to the job, where value is one of the following:
+			#-R span[ptile=<x>]
+			# x denotes the exact number of job slots to be used on each host. If the total process number is not divisible by x, the residual processes will be put on one host.
+			#**DOES THIS OPTION EXISTS ON THE BROAD LSF 7.0.6?
+		#TODO: "-w" option to bsub to set up the dependencies 
+		#TODO: I/O resource requests --> bsub -R "rusage[indium_io=3]" ...
+			## "df -k ." --> gets the file
+			## /broad/tools/scripts/io_resource_for_file . -->
+		#TODO: BSUB -x - request exclusive access to the nodes
 
-		self.cmd = cmd # this is the command/program to run
-		cmd_default = "bsub -P {project} -J {jobname} -o {output} -r -q {queue} -R 'rusage[mem={mem}]'".format(project=self.projectname, jobname=self.jobname,  output=self.file_output, queue=self.p_queue_name, mem=self.p_mem) 
+
+		self.p_queue_name = queue_name # string
+		self.p_mem = mem # in GB
+		self.p_proc = proc 
+		self.p_runlimit = runlimit 
+		self.p_shared_mem = shared_mem # boolean value. 
+		self.p_app = app 
+
+
+		self.cmd = cmd # this is the command/program to run. THIS IS APPENDED TO the bsub command
+		self.bcmd = "bsub -P {project} -J {jobname} -o {output} -r -q {queue} -R 'rusage[mem={mem}]'".format(project=self.projectname, jobname=self.jobname,  output=self.file_output, queue=self.p_queue_name, mem=self.p_mem) 
 		
-		self.email = email
-		if self.email:
-			#TODO: consider using -N option to seperate output and report
+		if self.p_shared_mem:
+			#TODO: figure out how the 'multiple -R options' works --> ANSWER: bsub accepts multiple -R options for the select section in simple resource requirements.
+			#http://www-01.ibm.com/support/docview.wss?uid=isg3T1013512
+			#http://www.ccs.miami.edu/hpc/lsf/7.0.6/admin/resrequirements.html
+			#ALTERNATIVE: -R "rusage[mem=128000]  span[hosts=1]" 
+			addon = "-R 'span[hosts=1]'" # OBS: remember the QUOTES!
+			self.bcmd = "{base} {addon}".format(base=self.bcmd, addon=addon)
+
+		if self.p_proc:
+			addon = "-n {}".format(self.p_proc)
+			self.bcmd = "{base} {addon}".format(base=self.bcmd, addon=addon)
+
+		if self.p_runlimit:
+			addon = "-W {}".format(self.p_runlimit) 
+			self.bcmd = "{base} {addon}".format(base=self.bcmd, addon=addon)
+
+		if self.p_app:
+			addon = "-app {}".format(self.p_app)
+			self.bcmd = "{base} {addon}".format(base=self.bcmd, addon=addon)
+
+		if email:
+			# *Question: can I get the report in both an email and the stdout file? ANSWER ---> NO!
+			addon = "-u {}".format(email) 
+			self.bcmd = "{base} {addon}".format(base=self.bcmd, addon=addon)
+		if email_status_notification: # -B
 			# -B: Sends email to the job submitter when the job is dispatched and begins running
+			addon = "-B"
+			self.bcmd = "{base} {addon}".format(base=self.bcmd, addon=addon)
+		if email_report: # -N
 			# -N: If you want to separate the job report information from the job output, use the -N option to specify that the job report information should be sent by email.
-			# *Question: can I get the report in both an email and the stdout file?
-				# ---> NO!
-			if email_status_notification and email_report: # -B and -N
-				self.bcmd = "bsub -P {project} -J {jobname} -o {output} -r -q {queue} -R 'rusage[mem={mem}]' -N -B -u {email}".format(project=self.projectname, jobname=self.jobname,  output=self.file_output, queue=self.p_queue_name, mem=self.p_mem, email=self.email) 
-			elif email_status_notification: # -B
-				self.bcmd = "bsub -P {project} -J {jobname} -o {output} -r -q {queue} -R 'rusage[mem={mem}]' -B -u {email}".format(project=self.projectname, jobname=self.jobname,  output=self.file_output, queue=self.p_queue_name, mem=self.p_mem, email=self.email) 
-			elif email_report: # -N
-				self.bcmd = "bsub -P {project} -J {jobname} -o {output} -r -q {queue} -R 'rusage[mem={mem}]' -N -u {email}".format(project=self.projectname, jobname=self.jobname,  output=self.file_output, queue=self.p_queue_name, mem=self.p_mem, email=self.email)
-			else: # OBS
-				self.bcmd = cmd_default
-		else:
-			self.bcmd = cmd_default
+			addon = "-N"
+			self.bcmd = "{base} {addon}".format(base=self.bcmd, addon=addon)
+
+
 
 		### GENERATING CALL
 		self.call = ''
@@ -417,6 +486,7 @@ class LaunchBsub(object):
 					(tmp_pid, tmp_jobname, logger) = pids2check[i]
 					#logger.info( "i is %d" % ( i ) )
 					pool.apply_async(report_bacct, args=(tmp_pid, tmp_jobname), callback=finished.append) # OBS: cannot parse logger since it is NOT a pickable object!
+					#^^apply_async and map_async are intended to let the main process continuing. It does so maintaining an internal Queue which size is unfortunately impossible to change.
 				pool.close()
 				pool.join()
 				elapsed_time = time.time() - t1
