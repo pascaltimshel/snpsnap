@@ -263,6 +263,7 @@ def process_input_snps(path_output, user_snps, user_snps_df):
 		#if not os.path.exists(file_user_snps_excluded): # This is needed (or better practice) to not (over)write the file when the web service calls match, annotate and clump. However, it could cause problems not overwriting if called from command line
 		# ^ I put in the above line because I was UNSURE about what happens if three processes tries to open and write to the same file.
 		with open(file_user_snps_excluded, 'w') as f:
+			# THIS COULD LEAD TO AN ERROR IF SNP-keys are not uniqe! TODO: fix this to operator.itemgetter() approach
 			for snp in sorted(snps_excluded, key=snps_excluded.get): # sort be the dict value (here snps_excluded[snp]='reason')
 				f.write(snp+"\t"+snps_excluded[snp]+"\n")
 

@@ -135,8 +135,15 @@ class LaunchBsub(object):
 	bsub -h
 	lsid -V ---> Platform LSF 7.0.6.134609, Sep 04 2009
 
+	## Monitoring jobs:
+	/seq/annotation/bio_tools/OBA/GridSubmissions/bjobss
+	watch -n 10 bjobs
+
 	## LINK collection
 	SMP/MPI on LSF: http://wiki.gwdg.de/index.php/Running_Jobs#bsub_options_for_parallel_.28SMP_or_MPI.29_jobs
+	BROAD lsf7.0.5: https://iwww.broadinstitute.org/itsystems/softwaredocs/lsf7.0.5/lsf_command_ref/index.htm
+	BROAD lsf7.0.6: https://iwww.broadinstitute.org/itsystems/softwaredocs/lsf7.0.6/
+
 
 
 	"""
