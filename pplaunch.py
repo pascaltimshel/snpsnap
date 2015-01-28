@@ -335,6 +335,11 @@ class LaunchBsub(object):
 
 	@staticmethod
 	def report_status(pids, logger): #LB_List_Of_Instances
+		""" 
+		This method was fix/updated/debugged 01/28/2015
+		The major change was replacing subprocess.check_output() with subprocess.Popen().
+		Remember that subprocess.check_output() only pipes the STDOUT and not STDERR.
+		"""
 		sleep_time = 60 # seconds
 		incomplete = copy.deepcopy(pids)
 		finished = [] # list will contain 'report_line''s from _report_bacct
@@ -347,6 +352,8 @@ class LaunchBsub(object):
 		#TODO: make sure that len(finished) NEVER becomes larger than len(pids)
 		counter = 0
 		start_time = time.time()
+
+		################## While loop - START ##################
 		while len(finished) < len(pids):
 			counter += 1
 			elapsed_time = time.time() - start_time
@@ -355,15 +362,34 @@ class LaunchBsub(object):
 			logger.info( "Checking status: #{:d} | Waiting={:d}, Running={:d}".format( counter, len(waiting), len(running) ) )
 			lines = ['']
 			call = "bjobs -aw {jobs}".format( jobs=" ".join(incomplete) ) #consider bjobs -aw
-			try:
-				out = subprocess.check_output(call, shell=True)
-			except subprocess.CalledProcessError as e:
-				emsg = e
-				logger.error( "call: %s\nerror in report_status: %s" % (call, emsg) )
+
+			### OLD - Making subprocess call
+			# try:
+			# 	out = subprocess.check_output(call, shell=True)
+			# except subprocess.CalledProcessError as e: # if return code from "subprocess.check_output()" is non-zero the CalledProcessError is raised
+			# 	emsg = e
+			# 	logger.error( "call: %s\nerror in report_status: %s" % (call, emsg) )
+			# else:
+			# 	lines = out.splitlines()[1:] #skipping header
+
+
+			### Making subprocess call
+			p = subprocess.Popen(call, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+			(stdoutdata, stderrdata) = p.communicate() # OBS: .communicate() will wait for process to terminate.
+			p_returncode = p.returncode
+			if p_returncode != 0:
+				logger.error( "Error in report_status: subprocess call returned non-zero exist status. Returncode = %s" % p_returncode )
+				logger.error( "Subprocess call that caused error: %s" % call )
+				logger.error( "Subprocess.STDOUT (if any): %s" % stdoutdata )
+				logger.error( "Subprocess.STDERR (if any): %s" % stderrdata )
+				logger.error( "Will attempt to make subprocess call again. (continue in while loop without missing anything)" )
+				#NOTE: 	if continue is not called, an exception is likely to be raised in "... = (cols[0], cols[2], cols[6])" because stdoutdata and thus also cols is empty!
+				#		continue in this while loop does not "miss out" on any job checks. The only change is that *counter is incremented*.
+				continue 
 			else:
-				lines = out.splitlines()[1:] #skipping header
-				#logger.info( "called: %s" % call )
-				#logger.info( "got out:\n%s" % out )
+				lines = stdoutdata.splitlines()[1:] #skipping header
+
+			################## Processing stdout from subprocess ##################
 			for line in lines:
 				cols = line.strip().split()
 				(tmp_pid, tmp_status, tmp_jobname) = (cols[0], cols[2], cols[6])
@@ -407,10 +433,10 @@ class LaunchBsub(object):
 						waiting.append(tmp_pid)
 					if tmp_pid in running: running.remove(tmp_pid) # remove from running - added June 2014
 
-
-
 			#consider sleeping for some time
 			time.sleep(sleep_time)
+		################## While loop - END ##################
+
 		# All jobs are NOW somehow finished
 		elapsed_time = time.time() - start_time
 		logger.info( "Checking status: #{:d} | Run time = {:.5g} s ({:.3g} min)".format( counter, elapsed_time, elapsed_time/float(60) ) )
@@ -433,6 +459,10 @@ class LaunchBsub(object):
 
 	@staticmethod
 	def report_status_multiprocess(pids, logger): #LB_List_Of_Instances
+		""" Please note that report_status_multiprocess() currently does *NOT* support the following 'categories' of job status:
+			- Running: 'RUN'
+			- Waiting: 'PEND', 'PSUSP', 'USUSP', 'SSUSP'
+		"""
 		sleep_time = 60 # seconds
 		incomplete = copy.deepcopy(pids)
 		finished = [] # all jobs that are not runninng or pending - jobs that are either "exit" or "done"
@@ -442,6 +472,8 @@ class LaunchBsub(object):
 		#TODO: make sure that len(finished) NEVER becomes larger than len(pids)
 		counter = 0
 		start_time = time.time()
+
+		################## While loop - START ##################
 		while len(finished) < len(pids):
 			counter += 1
 			elapsed_time = time.time() - start_time
@@ -449,15 +481,24 @@ class LaunchBsub(object):
 			logger.info( "Checking status: #{:d} | Finished={:d}, Incomplete={:d}, Total={:d} [Fails={:d}]".format( counter, len(finished), len(incomplete), len(pids), len(failed) ) )
 			lines = ['']
 			call = "bjobs -aw {jobs}".format( jobs=" ".join(incomplete) ) #consider bjobs -aw
-			try:
-				out = subprocess.check_output(call, shell=True)
-			except subprocess.CalledProcessError as e:
-				emsg = e
-				logger.error( "call: %s\nerror in report_status: %s" % (call, emsg) )
+			
+			### Making subprocess call
+			p = subprocess.Popen(call, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+			(stdoutdata, stderrdata) = p.communicate() # OBS: .communicate() will wait for process to terminate.
+			p_returncode = p.returncode
+			if p_returncode != 0:
+				logger.error( "Error in report_status: subprocess call returned non-zero exist status. Returncode = %s" % p_returncode )
+				logger.error( "Subprocess call that caused error: %s" % call )
+				logger.error( "Subprocess.STDOUT (if any): %s" % stdoutdata )
+				logger.error( "Subprocess.STDERR (if any): %s" % stderrdata )
+				logger.error( "Will attempt to make subprocess call again. (continue in while loop without missing anything)" )
+				#NOTE: 	if continue is not called, an exception is likely to be raised in "... = (cols[0], cols[2], cols[6])" because stdoutdata and thus also cols is empty!
+				#		continue in this while loop does not "miss out" on any job checks. The only change is that *counter is incremented*.
+				continue 
 			else:
-				lines = out.splitlines()[1:] #skipping header
-				#logger.info( "called: %s" % call )
-				#logger.info( "got out:\n%s" % out )
+				lines = stdoutdata.splitlines()[1:] #skipping header
+
+
 			pids2check = []
 			for line in lines:
 				cols = line.strip().split()
@@ -501,6 +542,9 @@ class LaunchBsub(object):
 
 			#consider sleeping for some time
 			time.sleep(sleep_time)
+		################## While loop - END ##################
+
+
 		# All jobs are NOW somehow finished
 		elapsed_time = time.time() - start_time
 		logger.info( "LAST Checking status DONE: #{:d} | Run time = {:.5g} s ({:.3g} min)".format( counter, elapsed_time, elapsed_time/float(60) ) )
