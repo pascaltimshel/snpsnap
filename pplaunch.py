@@ -345,6 +345,7 @@ class LaunchBsub(object):
 		finished = [] # list will contain 'report_line''s from _report_bacct
 		failed = [] # list will contain 'report_line''s from _report_bacct
 		done = [] # list will contain 'report_line''s from _report_bacct
+		unknown_completion = [] # list will contain a message/string stating that the result is unknown
 
 		waiting = []
 		running = []
@@ -358,7 +359,7 @@ class LaunchBsub(object):
 			counter += 1
 			elapsed_time = time.time() - start_time
 			logger.info( "Checking status: #{:d} | Run time = {:.5g} s ({:.3g} min)".format( counter, elapsed_time, elapsed_time/float(60) ) )
-			logger.info( "Checking status: #{:d} | Finished={:d}, Incomplete={:d}, Total={:d} [Fails={:d}]".format( counter, len(finished), len(incomplete), len(pids), len(failed) ) )
+			logger.info( "Checking status: #{:d} | Finished={:d} [Fails={:d}, Unknown Completion={:d}], Incomplete={:d}, Total={:d}".format( counter, len(finished), len(failed), len(unknown_completion), len(incomplete), len(pids) ) )
 			logger.info( "Checking status: #{:d} | Waiting={:d}, Running={:d}".format( counter, len(waiting), len(running) ) )
 			lines = ['']
 			call = "bjobs -aw {jobs}".format( jobs=" ".join(incomplete) ) #consider bjobs -aw
@@ -380,14 +381,46 @@ class LaunchBsub(object):
 			if p_returncode != 0:
 				logger.error( "Error in report_status: subprocess call returned non-zero exist status. Returncode = %s" % p_returncode )
 				logger.error( "Subprocess call that caused error: %s" % call )
-				logger.error( "Subprocess.STDOUT (if any): %s" % stdoutdata )
-				logger.error( "Subprocess.STDERR (if any): %s" % stderrdata )
-				logger.error( "Will attempt to make subprocess call again. (continue in while loop without missing anything)" )
+				logger.error( "Subprocess.STDOUT (if any):\n%s" % stdoutdata )
+				logger.error( "Subprocess.STDERR (if any):\n%s" % stderrdata )
+				### Attempt to solve problem by 'continue'
+				#pause_time = 5 # seconds
+				#logger.error( "Will attempt to make subprocess call again in %s seconds. (continue in while loop without missing anything)" % pause_time )
 				#NOTE: 	if continue is not called, an exception is likely to be raised in "... = (cols[0], cols[2], cols[6])" because stdoutdata and thus also cols is empty!
 				#		continue in this while loop does not "miss out" on any job checks. The only change is that *counter is incremented*.
-				continue 
-			else:
+				#time.sleep(pause_time)
+				#continue 
+
+				logger.error( "This program assumes that some jobs specified in 'bjobs -aw [JOB IDs]' could not be found. E.g. the error 'Job <8065143> is not found'" )
+				logger.error( "Will attempt to remove LSF jobs IDs that could not be found." )
+
+				pattern = re.compile(r"Job <(\d+)> is not found", flags=re.IGNORECASE)
+				for line in stderrdata.splitlines(): # 'keepends' is False by default. 
+					# ^^ IMPORTANT: stderrdata is a STRING and needs to be splitted. Newlines are automatically stripped using .splitlines()
+
+					### Assuming that the stderrdata looks like this:
+					# Job <8065143> is not found
+					# Job <8065144> is not found
+					# Job <8065145> is not found
+					# Job <8065146> is not found
+					# Job <8065147> is not found
+					# Job <8065148> is not found
+					# Job <8065149> is not found
+					mobj = pattern.match(line) # consider using .search() to match the whole string
+					if mobj: # if true: we have a match
+						tmp_pid = mobj.group(1) # Return the first parenthesized subgroup as a string.
+						report_line = "{pid}|{name}|{status_line}".format(pid=tmp_pid, name="...", status_line="Unknown - cannot get status of job")
+						if tmp_pid in waiting: waiting.remove(tmp_pid)
+						if tmp_pid in running: running.remove(tmp_pid)
+						finished.append(report_line) #TODO - IMPROVE THIS: Perhaps we should not add the job to "finished". However, the while loop is dependent on 'finish' filling up
+						unknown_completion.append(report_line)
+			
+			################## Checking stdoutdata ##################
+			if stdoutdata:
 				lines = stdoutdata.splitlines()[1:] #skipping header
+			else:
+				logger.error( "stdoutdata was empty from subprocess 'bjobs -aw [JOB IDs]' call. Will continue in 'while loop'..." )
+				continue
 
 			################## Processing stdout from subprocess ##################
 			for line in lines:
@@ -492,8 +525,13 @@ class LaunchBsub(object):
 				logger.error( "Subprocess.STDOUT (if any): %s" % stdoutdata )
 				logger.error( "Subprocess.STDERR (if any): %s" % stderrdata )
 				logger.error( "Will attempt to make subprocess call again. (continue in while loop without missing anything)" )
-				#NOTE: 	if continue is not called, an exception is likely to be raised in "... = (cols[0], cols[2], cols[6])" because stdoutdata and thus also cols is empty!
-				#		continue in this while loop does not "miss out" on any job checks. The only change is that *counter is incremented*.
+				
+				## Attempt to solve problem by 'continue'
+				pause_time = 5 # seconds
+				logger.error( "Will attempt to make subprocess call again in %s seconds. (continue in while loop without missing anything)" % pause_time )
+				## NOTE: 	if continue is not called, an exception is likely to be raised in "... = (cols[0], cols[2], cols[6])" because stdoutdata and thus also cols is empty!
+				## 		continue in this while loop does not "miss out" on any job checks. The only change is that *counter is incremented*.
+				time.sleep(pause_time)
 				continue 
 			else:
 				lines = stdoutdata.splitlines()[1:] #skipping header
