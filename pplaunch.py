@@ -412,6 +412,7 @@ class LaunchBsub(object):
 						report_line = "{pid}|{name}|{status_line}".format(pid=tmp_pid, name="...", status_line="Unknown - cannot get status of job")
 						if tmp_pid in waiting: waiting.remove(tmp_pid)
 						if tmp_pid in running: running.remove(tmp_pid)
+						if tmp_pid in incomplete: incomplete.remove(tmp_pid) # maybe the "if tmp_pid in XXX" is not needed here...
 						finished.append(report_line) #TODO - IMPROVE THIS: Perhaps we should not add the job to "finished". However, the while loop is dependent on 'finish' filling up
 						unknown_completion.append(report_line)
 			
