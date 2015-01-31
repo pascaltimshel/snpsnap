@@ -354,6 +354,8 @@ class LaunchBsub(object):
 		counter = 0
 		start_time = time.time()
 
+		pattern_job_not_found = re.compile(r"Job <(\d+)> is not found", flags=re.IGNORECASE|re.MULTILINE) # multiple flags
+
 		################## While loop - START ##################
 		while len(finished) < len(pids):
 			counter += 1
@@ -361,7 +363,6 @@ class LaunchBsub(object):
 			logger.info( "Checking status: #{:d} | Run time = {:.5g} s ({:.3g} min)".format( counter, elapsed_time, elapsed_time/float(60) ) )
 			logger.info( "Checking status: #{:d} | Finished={:d} [Fails={:d}, Unknown Completion={:d}], Incomplete={:d}, Total={:d}".format( counter, len(finished), len(failed), len(unknown_completion), len(incomplete), len(pids) ) )
 			logger.info( "Checking status: #{:d} | Waiting={:d}, Running={:d}".format( counter, len(waiting), len(running) ) )
-			lines = ['']
 			call = "bjobs -aw {jobs}".format( jobs=" ".join(incomplete) ) #consider bjobs -aw
 
 			### OLD - Making subprocess call
@@ -378,49 +379,55 @@ class LaunchBsub(object):
 			p = subprocess.Popen(call, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
 			(stdoutdata, stderrdata) = p.communicate() # OBS: .communicate() will wait for process to terminate.
 			p_returncode = p.returncode
-			if p_returncode != 0:
+			
+			### Look for all matches to "Job <XXXXXXX> is not found"
+			# re.findall(pattern, string, flags=0)
+			# Return all non-overlapping matches of pattern in string, as a list of strings. Will return empty list if no matched
+			# If one group are present in the pattern, return a list of strings containing the groups;
+			
+			# NB. we are interested in all matches in the string - this is why we do NOT use search(stdoutdata, flags=re.MULTILINE).
+			# If we where to use .search(), we would have to loop over each line in stdoutdata, which is inconvinient
+			### Assuming that the stderrdata looks like this:
+			# Job <8065143> is not found
+			# Job <8065144> is not found
+			list_of_matched_groups_stdoutdata = pattern_job_not_found.findall(stdoutdata)
+			list_of_matched_groups_stderrdata = pattern_job_not_found.findall(stderrdata)
+
+			if p_returncode != 0: # does not do anything - the only purpose is to present the user with information about the situtation
 				logger.error( "Error in report_status: subprocess call returned non-zero exist status. Returncode = %s" % p_returncode )
 				logger.error( "Subprocess call that caused error: %s" % call )
 				logger.error( "Subprocess.STDOUT (if any):\n%s" % stdoutdata )
 				logger.error( "Subprocess.STDERR (if any):\n%s" % stderrdata )
-				### Attempt to solve problem by 'continue'
-				#pause_time = 5 # seconds
-				#logger.error( "Will attempt to make subprocess call again in %s seconds. (continue in while loop without missing anything)" % pause_time )
-				#NOTE: 	if continue is not called, an exception is likely to be raised in "... = (cols[0], cols[2], cols[6])" because stdoutdata and thus also cols is empty!
-				#		continue in this while loop does not "miss out" on any job checks. The only change is that *counter is incremented*.
-				#time.sleep(pause_time)
-				#continue 
+				logger.error( "This program handles this 'exception'-like situation in the 'if list_of_matched_groups_{stdoutdata/stderrdata}:' statements." )
 
-				logger.error( "This program assumes that some jobs specified in 'bjobs -aw [JOB IDs]' could not be found. E.g. the error 'Job <8065143> is not found'" )
-				logger.error( "Will attempt to remove LSF jobs IDs that could not be found." )
-
-				pattern = re.compile(r"Job <(\d+)> is not found", flags=re.IGNORECASE)
-				for line in stderrdata.splitlines(): # 'keepends' is False by default. 
-					# ^^ IMPORTANT: stderrdata is a STRING and needs to be splitted. Newlines are automatically stripped using .splitlines()
-
-					### Assuming that the stderrdata looks like this:
-					# Job <8065143> is not found
-					# Job <8065144> is not found
-					# Job <8065145> is not found
-					# Job <8065146> is not found
-					# Job <8065147> is not found
-					# Job <8065148> is not found
-					# Job <8065149> is not found
-					mobj = pattern.match(line) # consider using .search() to match the whole string
-					if mobj: # if true: we have a match
-						tmp_pid = mobj.group(1) # Return the first parenthesized subgroup as a string.
-						report_line = "{pid}|{name}|{status_line}".format(pid=tmp_pid, name="...", status_line="Unknown - cannot get status of job")
-						if tmp_pid in waiting: waiting.remove(tmp_pid)
-						if tmp_pid in running: running.remove(tmp_pid)
-						if tmp_pid in incomplete: incomplete.remove(tmp_pid) # maybe the "if tmp_pid in XXX" is not needed here...
-						finished.append(report_line) #TODO - IMPROVE THIS: Perhaps we should not add the job to "finished". However, the while loop is dependent on 'finish' filling up
-						unknown_completion.append(report_line)
+			if list_of_matched_groups_stdoutdata: # I think stdoutdata will contain matches to the "pattern_job_not_found" ONLY when all JOB IDs in 'bjobs -aw [JOB IDs]' *does not exists* anymore.
+				logger.error( "Processing STDOUT data from call (e.g. 'bjobs -aw [JOB IDs]') {}:".format(call) )
+				logger.error( "As far as the program can tell (by regex matching), the error was caused by the following JOB IDs not being found: {}".format(" ".join(list_of_matched_groups_stdoutdata)) )
+				for tmp_pid in list_of_matched_groups_stdoutdata:
+					report_line = "{pid}|{name}|{status_line}".format(pid=tmp_pid, name="...", status_line="Unknown - cannot get status of job")
+					if tmp_pid in waiting: waiting.remove(tmp_pid)
+					if tmp_pid in running: running.remove(tmp_pid)
+					if tmp_pid in incomplete: incomplete.remove(tmp_pid) # maybe the "if tmp_pid in XXX" is not needed here...
+					finished.append(report_line) #TODO - IMPROVE THIS: Perhaps we should not add the job to "finished". However, the while loop is dependent on 'finish' filling up
+					unknown_completion.append(report_line)
+			if list_of_matched_groups_stderrdata:
+				logger.error( "Processing STDERR data from call (e.g. 'bjobs -aw [JOB IDs]') {}:".format(call) )
+				logger.error( "As far as the program can tell (by regex matching), the error was caused by the following JOB IDs not being found: {}".format(" ".join(list_of_matched_groups_stderrdata)) )
+				for tmp_pid in list_of_matched_groups_stderrdata:
+					report_line = "{pid}|{name}|{status_line}".format(pid=tmp_pid, name="...", status_line="Unknown - cannot get status of job")
+					if tmp_pid in waiting: waiting.remove(tmp_pid)
+					if tmp_pid in running: running.remove(tmp_pid)
+					if tmp_pid in incomplete: incomplete.remove(tmp_pid) # maybe the "if tmp_pid in XXX" is not needed here...
+					finished.append(report_line) #TODO - IMPROVE THIS: Perhaps we should not add the job to "finished". However, the while loop is dependent on 'finish' filling up
+					unknown_completion.append(report_line)
 			
+			lines = ['']
 			################## Checking stdoutdata ##################
 			if stdoutdata:
 				lines = stdoutdata.splitlines()[1:] #skipping header
 			else:
-				logger.error( "stdoutdata was empty from subprocess 'bjobs -aw [JOB IDs]' call. Will continue in 'while loop'..." )
+				logger.error( "stdoutdata was empty from subprocess 'bjobs -aw [JOB IDs]' call. Will continue in 'while loop' in 10 seconds..." )
+				time.sleep(10)
 				continue
 
 			################## Processing stdout from subprocess ##################
@@ -612,6 +619,9 @@ class LaunchBsub(object):
 		pass
 
 
+
+
+
 		# ptimshel@copper:~/git/snpsnap> bjobs -aw
 		# JOBID   USER    STAT  QUEUE      FROM_HOST   EXEC_HOST   JOB_NAME   SUBMIT_TIME
 		# 6728139 ptimshel RUN   interactive copper      node1382    /bin/bash  May 14 15:29
@@ -706,8 +716,55 @@ class LaunchBsub(object):
 # 	return keep
 
 
+###################################### OLD VERSION of *PART* of report_status()  ######################################
+			####### Replaced 01/30/2015
+			####### MAY BE DELETED
 
+			# ### Making subprocess call
+			# p = subprocess.Popen(call, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+			# (stdoutdata, stderrdata) = p.communicate() # OBS: .communicate() will wait for process to terminate.
+			# p_returncode = p.returncode
+			# if p_returncode != 0:
+			# 	logger.error( "Error in report_status: subprocess call returned non-zero exist status. Returncode = %s" % p_returncode )
+			# 	logger.error( "Subprocess call that caused error: %s" % call )
+			# 	logger.error( "Subprocess.STDOUT (if any):\n%s" % stdoutdata )
+			# 	logger.error( "Subprocess.STDERR (if any):\n%s" % stderrdata )
+			# 	### Attempt to solve problem by 'continue'
+			# 	#pause_time = 5 # seconds
+			# 	#logger.error( "Will attempt to make subprocess call again in %s seconds. (continue in while loop without missing anything)" % pause_time )
+			# 	#NOTE: 	if continue is not called, an exception is likely to be raised in "... = (cols[0], cols[2], cols[6])" because stdoutdata and thus also cols is empty!
+			# 	#		continue in this while loop does not "miss out" on any job checks. The only change is that *counter is incremented*.
+			# 	#time.sleep(pause_time)
+			# 	#continue 
 
+			# 	logger.error( "This program assumes that some jobs specified in 'bjobs -aw [JOB IDs]' could not be found. E.g. the error 'Job <8065143> is not found'" )
+			# 	logger.error( "Will attempt to remove LSF jobs IDs that could not be found." )
+
+			# 	pattern_job_not_found = re.compile(r"Job <(\d+)> is not found", flags=re.IGNORECASE)
+			# 	for line in stderrdata.splitlines(): # 'keepends' is False by default. 
+			# 		# ^^ IMPORTANT: stderrdata is a STRING and needs to be splitted. Newlines are automatically stripped using .splitlines()
+
+			# 		### Assuming that the stderrdata looks like this:
+			# 		# Job <8065143> is not found
+			# 		# Job <8065144> is not found
+			# 		# Job <8065145> is not found
+			# 		mobj = pattern_job_not_found.match(line) # consider using .search() to match the whole string
+			# 		if mobj: # if true: we have a match
+			# 			tmp_pid = mobj.group(1) # Return the first parenthesized subgroup as a string.
+			# 			report_line = "{pid}|{name}|{status_line}".format(pid=tmp_pid, name="...", status_line="Unknown - cannot get status of job")
+			# 			if tmp_pid in waiting: waiting.remove(tmp_pid)
+			# 			if tmp_pid in running: running.remove(tmp_pid)
+			# 			if tmp_pid in incomplete: incomplete.remove(tmp_pid) # maybe the "if tmp_pid in XXX" is not needed here...
+			# 			finished.append(report_line) #TODO - IMPROVE THIS: Perhaps we should not add the job to "finished". However, the while loop is dependent on 'finish' filling up
+			# 			unknown_completion.append(report_line)
+			
+			# ################## Checking stdoutdata ##################
+			# if stdoutdata:
+			# 	lines = stdoutdata.splitlines()[1:] #skipping header
+			# else:
+			# 	logger.error( "stdoutdata was empty from subprocess 'bjobs -aw [JOB IDs]' call. Will continue in 'while loop' in 5 seconds..." )
+			# 	time.sleep(5)
+			# 	continue
 
 
 
