@@ -401,8 +401,9 @@ class LaunchBsub(object):
 				logger.error( "This program handles this 'exception'-like situation in the 'if list_of_matched_groups_{stdoutdata/stderrdata}:' statements." )
 
 			if list_of_matched_groups_stdoutdata: # I think stdoutdata will contain matches to the "pattern_job_not_found" ONLY when all JOB IDs in 'bjobs -aw [JOB IDs]' *does not exists* anymore.
-				logger.error( "Processing STDOUT data from call (e.g. 'bjobs -aw [JOB IDs]') {}:".format(call) )
+				logger.error( "Processing STDOUT data from call (e.g. 'bjobs -aw [JOB IDs]'): {}".format(call) )
 				logger.error( "As far as the program can tell (by regex matching), the error was caused by the following JOB IDs not being found: {}".format(" ".join(list_of_matched_groups_stdoutdata)) )
+				logger.error( "Will add each of the these JOB IDs to 'finished' list and remove them from '{waiting/running/incomplete}'." )
 				for tmp_pid in list_of_matched_groups_stdoutdata:
 					report_line = "{pid}|{name}|{status_line}".format(pid=tmp_pid, name="...", status_line="Unknown - cannot get status of job")
 					if tmp_pid in waiting: waiting.remove(tmp_pid)
@@ -411,8 +412,9 @@ class LaunchBsub(object):
 					finished.append(report_line) #TODO - IMPROVE THIS: Perhaps we should not add the job to "finished". However, the while loop is dependent on 'finish' filling up
 					unknown_completion.append(report_line)
 			if list_of_matched_groups_stderrdata:
-				logger.error( "Processing STDERR data from call (e.g. 'bjobs -aw [JOB IDs]') {}:".format(call) )
+				logger.error( "Processing STDERR data from call (e.g. 'bjobs -aw [JOB IDs]'): {}".format(call) )
 				logger.error( "As far as the program can tell (by regex matching), the error was caused by the following JOB IDs not being found: {}".format(" ".join(list_of_matched_groups_stderrdata)) )
+				logger.error( "Will add each of the these JOB IDs to 'finished' list and remove them from '{waiting/running/incomplete}'." )
 				for tmp_pid in list_of_matched_groups_stderrdata:
 					report_line = "{pid}|{name}|{status_line}".format(pid=tmp_pid, name="...", status_line="Unknown - cannot get status of job")
 					if tmp_pid in waiting: waiting.remove(tmp_pid)
