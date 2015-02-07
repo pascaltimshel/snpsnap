@@ -504,18 +504,24 @@ def run():
 
 	#print "<p>Your session ID is: %s</p>" % session_id
 	print "<p> An email will be sent to <strong>%s</strong> when the job is completed.<br>You will be able to download the results as soon your job finish. You can download the results from the bottom of this page or via the below link.</p>" % email_address
-	print """<p class='text-muted'><i>If you browse back you will not be able to retrieve this site again.<br>
-	However, you will still receive an email notification about your job completion.
-	</i></p>"""
 	
 	### Display results URL as "raw text"
 	print "<p>Results URL: <code>{url}</code></p>".format(url="http://www.broadinstitute.org/mpg/snpsnap/"+url_results)
 
+	### Give some information about the use...
+	print """<p class='text-muted'><i>If you browse back you will not be able to retrieve this site again.<br>
+	However, you will still receive an email notification about your job completion.
+	<br>
+	<strong>Do not refresh this page, as it will duplicate your job</strong>. That is, you will submit an additional identical job.
+	</i></p>"""
+	
 	### Give the user a warning about the instability of SNPsnap emailing server
 	print """
 	<p class="text-danger">SNPsnap have been experiencing issues with the email notification server. 
 	We encourage all users to copy the above result download link and store it temporarily. 
 	This will enable users to fetch the results even if the email does not reach the user's inbox.
+	<br>
+	SNPsnap is sometimes 'hanging' in the initialization phase of a job. Please allow a few minutes for the job to get started before you do anything.
 	<br>
 	Typical jobs finish within 10-60 minutes after which the download link becomes active and you can download the results.
 	</p>
