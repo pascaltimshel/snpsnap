@@ -539,9 +539,12 @@ if __name__ == '__main__':
 	global logger
 	logger = setup_logger(outputdir='/local/data/web_logs', enabled=True, path_logging_module='/cvar/jhlab/snpsnap/snpsnap')
 	logger.info( "session_id: %s" % args.session_id )
-	logger.info( "cmd_annotate: %s" % args.cmd_annotate )
-	logger.info( "cmd_match: %s" % args.cmd_match )
-	logger.info( "cmd_clump: %s" % args.cmd_clump )
+	
+	logger.info( "Will now print the command line arguments received from from the caller of this program:" )
+	logger.info( "cmd_annotate: [%s]" % args.cmd_annotate )
+	logger.info( "cmd_match: [%s]" % args.cmd_match )
+	logger.info( "cmd_clump: [%s]" % args.cmd_clump )
+	logger.info( "Will instantiate Processor object and call app.run()" )
 	app = Processor(args.session_id, args.email_address, args.job_name, args.cmd_annotate, args.cmd_match, args.cmd_clump)
 	app.run()
 
