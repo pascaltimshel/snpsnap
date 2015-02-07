@@ -210,11 +210,11 @@ class Processor(object):
 		# """.format(insufficient_rating=self.report_obj['report']['insufficient_rating'], match_size_rating=self.report_obj['report']['match_size_rating'])
 
 
-		fmt_value_insufficient = "{:.2f}".format( self.report_obj['report']['insufficient_matches_pct'] ) # OBS: formatting number. You can format any number as float, but you cannot format floats as int (e.g. {:d})
-		fmt_value_match_size = "{:.2f}".format( self.report_obj['report']['match_size_median_pct'] ) # OBS: formatting number. You can format any number as float, but you cannot format floats as int (e.g. {:d})
+		fmt_value_insufficient = "{:.2f}".format( self.report_obj['snpsnap_score']['insufficient_matches_pct'] ) # OBS: formatting number. You can format any number as float, but you cannot format floats as int (e.g. {:d})
+		fmt_value_match_size = "{:.2f}".format( self.report_obj['snpsnap_score']['match_size_median_pct'] ) # OBS: formatting number. You can format any number as float, but you cannot format floats as int (e.g. {:d})
 
-		insufficient_rating = self.report_obj['report']['insufficient_rating']
-		match_size_rating = self.report_obj['report']['match_size_rating']
+		insufficient_rating = self.report_obj['snpsnap_score']['insufficient_rating']
+		match_size_rating = self.report_obj['snpsnap_score']['match_size_rating']
 
 		report_html = """
 		  <table style='width:75%;'>
@@ -464,9 +464,11 @@ class Processor(object):
 			json.dump(return_code_dict, f)
 
 		if return_code_error_flag:
-			logger.critical( "return_code_error_flag is set - will call send_crash_email and return" )
+			logger.critical( "return_code_error_flag is set - will call send_crash_email and return!" )
 			self.send_crash_email()
 			return # IMPORTANT
+		else:
+			logger.info( "All jobs seem to have completed nicely! No return_code_error_flag is set..." )
 
 		### Now all is done:
 		logger.info( "read_report will be called" )
