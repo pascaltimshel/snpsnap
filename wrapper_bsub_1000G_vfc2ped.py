@@ -31,27 +31,27 @@ def submit():
 	processes = []
 	for super_population in param_super_population:
 		logger.info( "****** RUNNING: type=%s *******" % super_population )
-		for param in param_list:
-			logger.info( "RUNNING: param=%s" % param )
-			gzvcf_file = "ALL.chr{chr_no}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.vcf.gz".format(chr_no=param)
+		for chromosome in param_chromosome:
+			logger.info( "RUNNING: chromosome=%s" % chromosome )
+			gzvcf_file = "ALL.{chr}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.vcf.gz".format(chr=chromosome)
 			gzvcf_in = input_dir_base + '/' + gzvcf_file
 			keep = input_dir_base + '/' + "my.panel.population.{super_population}.list".format(super_population=super_population)
 			
 			out_dir = output_dir_base + '/' + super_population
 			if not os.path.exists(out_dir):
 				os.mkdir(out_dir)
-			out_file = out_dir + '/' + "ALL.chr{chr_no}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes".format(chr_no=param)
+			out_file = out_dir + '/' + "ALL.{chr}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes".format(chr=chromosome)
 			
 			if glob.glob(out_file+".*"): # if the list is non-empty. will match .ped, .map and .log files
-				logger.warning( "%s | chr%s | out_file: %s seem to exists already. Skipping it..." % (super_population, param, out_file) )
-				logger.warning( "%s | chr%s | globbing matches:\n%s" % ( super_population, param, "\n".join(glob.glob(out_file+".*")) ) )
+				logger.warning( "%s | chr%s | out_file: %s seem to exists already. Skipping it..." % (super_population, chromosome, out_file) )
+				logger.warning( "%s | chr%s | globbing matches:\n%s" % ( super_population, chromosome, "\n".join(glob.glob(out_file+".*")) ) )
 				continue
 
 			#cmd = ["vcftools", "--vcf", gzvcf_in, "--out", out_file, "--keep", keep, "--plink"]
 			cmd = "vcftools --gzvcf {gzvcf_in} --out {out_file} --keep {keep} --plink".format(gzvcf_in=gzvcf_in, out_file=out_file, keep=keep)
 			logger.info( "making command:\n%s" % cmd )
 			
-			jobname = super_population + "_chr_" + str(param) # e.g EUR_chr_21
+			jobname = super_population + "_" + chromosome # e.g EUR_chr21
 
 			processes.append( pplaunch.LaunchBsub(cmd=cmd, queue_name=queue_name, mem=mem, jobname=jobname, projectname='snpsnp', path_stdout=log_dir, file_output=None, no_output=False, email=email, email_status_notification=email_status_notification, email_report=email_report, logger=logger) ) #
 
@@ -136,10 +136,10 @@ logger.info( "INSTANTIATION NOTE: placeholder" )
 
 ############################# SWITCH ##########################################
 param_super_population = ["EUR", "EAS", "WAFR"]
-param_list = range(1,23) # produces 1, 2, .., 21, 22
-
-#param_super_population = ["EUR", "WAFR"]
-#param_list = [1, 21] # produces 1, 2, .., 21, 22
+#param_chromosome = range(1,23) # produces 1, 2, .., 21, 22
+param_chromosome = ["chr"+str(chrID) for chrID in range(1,23)+["X", "Y"]]
+#>>> param_chromosome
+#['chr1', 'chr2', 'chr3', 'chr4', 'chr5', 'chr6', 'chr7', 'chr8', 'chr9', 'chr10', 'chr11', 'chr12', 'chr13', 'chr14', 'chr15', 'chr16', 'chr17', 'chr18', 'chr19', 'chr20', 'chr21', 'chr22', 'chrX', 'chrY']
 
 
 ##############################################################################
