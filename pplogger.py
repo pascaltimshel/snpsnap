@@ -40,6 +40,7 @@ class Logger(object):
 		self.enabled = enabled
 		self.log2stream = log2stream
 		self.log2file = log2file
+		self.file_name = "[No file_name set for this Logger instance]"
 
 		if self.enabled:
 			self.logger = self.setup_logger()

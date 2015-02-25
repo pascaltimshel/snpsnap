@@ -254,7 +254,7 @@ class LaunchBsub(object):
 
 		pattern = re.compile("<(.*?)>")
 		emsg = "" # placeholder for error massage from CalledProcessError exception
-		self.logger.info( "#################### JOB NUMBER %d ####################" % self.job_number )
+		self.logger.info( "#################### JOB NUMBER %s ####################" % self.job_number )
 		self.logger.info( "LaunchBsub method call to run(). Jobsubmission call:\n%s" % self.call )
 
 		while self.attempts < max_calls:
