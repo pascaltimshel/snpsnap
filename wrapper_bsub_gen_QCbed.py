@@ -19,13 +19,13 @@ import logging
 
 import pdb
 
-def test():
-	try:
-		FNULL = open(os.devnull, 'w')
-		subprocess.Popen(["plink", "--silent", "--noweb"], stdout=FNULL, stderr=subprocess.STDOUT)
-		FNULL.close()
-	except Exception as e:
-		raise Exception("Could not find plink as executable on path. Please check that you have used 'use Plink' (this is version 1.07 [USE IT!]; 'use PLINK' gives version v1.08p). Error msg: %s" % e.message)
+# def test():
+# 	try:
+# 		FNULL = open(os.devnull, 'w')
+# 		subprocess.Popen(["plink", "--silent", "--noweb"], stdout=FNULL, stderr=subprocess.STDOUT)
+# 		FNULL.close()
+# 	except Exception as e:
+# 		raise Exception("Could not find plink as executable on path. Please check that you have used 'use Plink' (this is version 1.07 [USE IT!]; 'use PLINK' gives version v1.08p). Error msg: %s" % e.message)
 
 
 def submit():
@@ -36,7 +36,7 @@ def submit():
 			logger.info( "RUNNING: chromosome=%s" % chromosome )
 
 			### INPUT dir params ###
-			input_ped="/cvar/jhlab/snpsnap/data/step1/production_v2/{super_population}/ALL.chr{chromosome}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes".format(super_population=super_population, chromosome=chromosome) # OBS: this is the prefix needed in PLINK
+			input_ped="/cvar/jhlab/snpsnap/data/step1/production_v2/{super_population}/ALL.{chromosome}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes".format(super_population=super_population, chromosome=chromosome) # OBS: this is the prefix needed in PLINK
 
 			dir_out = None # correct variable scope
 			if gen_test_data:
@@ -65,17 +65,19 @@ def submit():
 			cmd_plink = None
 			if gen_test_data:
 				# TEST DATA dir
-				cmd_plink = "plink --file {input_ped} --thin {pthin} --maf {pmaf} --geno {pgeno} --hwe {phwe} --make-bed --out {out_prefix} --noweb".format(input_ped=input_ped, pthin=pthin, pmaf=pmaf, pgeno=pgeno, phwe=phwe, out_prefix=out_prefix)
+				cmd_plink = "/cvar/jhlab/timshel/bin/plink1.9_linux_x86_64/plink --file {input_ped} --thin {pthin} --maf {pmaf} --geno {pgeno} --hwe {phwe} --biallelic-only strict list --make-bed --out {out_prefix}".format(input_ped=input_ped, pthin=pthin, pmaf=pmaf, pgeno=pgeno, phwe=phwe, out_prefix=out_prefix)
 			else:
 				# FULL DATA (--thin REMOVED)
-				cmd_plink = "plink --file {input_ped} --maf {pmaf} --geno {pgeno} --hwe {phwe} --make-bed --out {out_prefix} --noweb".format(input_ped=input_ped, pmaf=pmaf, pgeno=pgeno, phwe=phwe, out_prefix=out_prefix)
+				cmd_plink = "/cvar/jhlab/timshel/bin/plink1.9_linux_x86_64/plink --file {input_ped} --maf {pmaf} --geno {pgeno} --hwe {phwe} --biallelic-only strict list --make-bed --out {out_prefix}".format(input_ped=input_ped, pmaf=pmaf, pgeno=pgeno, phwe=phwe, out_prefix=out_prefix)
 			logger.info( "Making call '--make-bed and QC':\n%s" % cmd_plink )
+			# "--biallelic-only strict list" CREATES FILE: plink.skip.3allele
+
 
 			jobname = None
 			if gen_test_data:
-				jobname = "QCbed_test_" + super_population + "_chr_" + str(chromosome) # e.g QCbed_EUR_chr_21
+				jobname = "QCbed_test_" + super_population + "_" + chromosome # e.g QCbed_EUR_21
 			else:
-				jobname = "QCbed_full_" + super_population + "_chr_" + str(chromosome) # e.g QCbed_EUR_chr_21
+				jobname = "QCbed_full_" + super_population + "_" + chromosome # e.g QCbed_EUR_chr_21
 
 			processes.append( pplaunch.LaunchBsub(cmd=cmd_plink, queue_name=queue_name, mem=mem, jobname=jobname, projectname='snpsnp', path_stdout=log_dir, file_output=None, no_output=False, email=email, email_status_notification=email_status_notification, email_report=email_report, logger=logger) ) #
 
@@ -170,11 +172,10 @@ logger.info( "INSTANTIATION NOTE: placeholder" )
 ############################# SWITCH ##########################################
 
 param_super_population = ["EUR", "EAS", "WAFR"]
-param_chromosome = range(1,23) # produces 1, 2, .., 21, 22
+#param_chromosome = range(1,23) # produces 1, 2, .., 21, 22
+param_chromosome = ["chr"+str(chrID) for chrID in range(1,23)+["X"]] 
+	# ---> *IMPORTANT NOTE* Y-chromosome removed. Plink2 (and plink1) fails to process it because all variants are removed after filtering
 
-#param_super_population = ["EUR", "WAFR"]
-#param_chromosome = range(1,23)
-#param_chromosome = [1, 21]
 
 
 ###################################### PARAMETERS ######################################
@@ -191,7 +192,7 @@ phwe=0.000001 #10^-6 [phwe=0.001 default value]
 ###################################### RUN FUNCTIONS ######################################
 # NOW RUN FUNCTIONS
 LogArguments()
-test() # test that things are ok
+#test() # test that things are ok
 processes = submit()
 
 start_time_check_jobs = time.time()

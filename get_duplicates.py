@@ -24,6 +24,9 @@ import datetime
 def get_duplicates(inputfile, outputfile, appendfile):
 	snps_seen = {}
 	dup = collections.defaultdict(list)
+	
+	print "will read inputfile..."
+	
 	with open(outputfile, 'w') as outfile:
 		with open(inputfile, 'r') as infile:
 		
@@ -56,10 +59,13 @@ def get_duplicates(inputfile, outputfile, appendfile):
 						dup[rsID].extend([snps_seen[rsID], pos]) # save previous seen rs position and duplicate position
 					else:
 						dup[rsID].append(pos)
+		
+		print "done read inputfile! will start writing to outfile"
 		for rs, pos in dup.items():
 			# Now write to file
 			outfile.write(rs+"\n")
 
+		print "will write to appendfile"
 		with open(appendfile, 'a') as fappend:
 			now_string = datetime.datetime.now().strftime("%a %b %d %Y %H:%M:%S") # e.g. Wed Sep 24 2014 12:51:54'
 			fappend.write( "#"*80 + '\n' )
@@ -72,7 +78,9 @@ def get_duplicates(inputfile, outputfile, appendfile):
 				for rs, pos in dup.items():
 					fappend.write( "%s\t%s\t%s\n" % (rs, len(pos), ";".join(pos)) )
 			fappend.write( "#"*80 + '\n' )
-			
+		
+		print "done in function get_duplicates()"
+
 
 
 #print "************************************"
@@ -85,6 +93,8 @@ def get_duplicates(inputfile, outputfile, appendfile):
 arg_parser = argparse.ArgumentParser("Finds duplicates in genotype data and write them to filename '<input-prefix>.duplicates.txt' in the input dir. FURTHERMORE the script APPENDS to a file 'get_duplicates_append_file.txt' in the inputdir")
 arg_parser.add_argument("--input", help="input .bim file", required=True) # e.g. /home/projects/tp/childrens/snpsnap/data/step1/full_no_pthin/CEU_GBR_TSI_unrelated.phase1.bim
 args = arg_parser.parse_args()
+print "got some argument..."
+
 
 inputfile = args.input
 (root, ext) = os.path.splitext(inputfile) #Split the pathname path into a pair (root, ext) such that root + ext == path, and ext is empty or begins with a period and contains at most one period.
@@ -94,6 +104,9 @@ inputfile = args.input
 outputfile = root + '.duplicates.txt' # e.g. /home/projects/tp/childrens/snpsnap/data/step1/full_no_pthin/CEU_GBR_TSI_unrelated.phase1.duplicates.txt
 
 appendfile = os.path.dirname(inputfile) + '/get_duplicates_append_file.txt'
-
+print "appendfile={}".format(appendfile)
 
 get_duplicates(inputfile, outputfile, appendfile)
+
+
+print "script is done"

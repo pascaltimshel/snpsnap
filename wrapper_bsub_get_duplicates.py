@@ -30,9 +30,9 @@ def submit():
 			### INPUT dir params ###
 			input_bim = None # correct variable scope
 			if gen_test_data:
-				input_bim="/cvar/jhlab/snpsnap/data/step1/production_v2_QC_test/{super_population}/ALL.chr{chromosome}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.{ext}".format(super_population=super_population, chromosome=chromosome, ext='bim')
+				input_bim="/cvar/jhlab/snpsnap/data/step1/production_v2_QC_test/{super_population}/ALL.{chromosome}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.{ext}".format(super_population=super_population, chromosome=chromosome, ext='bim')
 			else:
-				input_bim="/cvar/jhlab/snpsnap/data/step1/production_v2_QC_full/{super_population}/ALL.chr{chromosome}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.{ext}".format(super_population=super_population, chromosome=chromosome, ext='bim')
+				input_bim="/cvar/jhlab/snpsnap/data/step1/production_v2_QC_full/{super_population}/ALL.{chromosome}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.{ext}".format(super_population=super_population, chromosome=chromosome, ext='bim')
 
 			if not os.path.exists(input_bim):
 				logger.critical( "%s | chr%s | input_bim: %s DOES NOT EXISTS.  Exiting..." % (super_population, chromosome, input_bim) )
@@ -42,9 +42,9 @@ def submit():
 			### CHECKING FOR EXISTENCE OF DUPLICATES TEXT FILE - will just give a WARNING. Files will be overwritten ###
 			file_duplicates = None
 			if gen_test_data:
-				file_duplicates="/cvar/jhlab/snpsnap/data/step1/production_v2_QC_test/{super_population}/ALL.chr{chromosome}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.{ext}".format(super_population=super_population, chromosome=chromosome, ext="duplicates.txt") # OBS MUST MATCH WITH WHAT get_duplicates.py produces!
+				file_duplicates="/cvar/jhlab/snpsnap/data/step1/production_v2_QC_test/{super_population}/ALL.{chromosome}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.{ext}".format(super_population=super_population, chromosome=chromosome, ext="duplicates.txt") # OBS MUST MATCH WITH WHAT get_duplicates.py produces!
 			else:
-				file_duplicates="/cvar/jhlab/snpsnap/data/step1/production_v2_QC_full/{super_population}/ALL.chr{chromosome}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.{ext}".format(super_population=super_population, chromosome=chromosome, ext="duplicates.txt") # OBS MUST MATCH WITH WHAT get_duplicates.py produces!
+				file_duplicates="/cvar/jhlab/snpsnap/data/step1/production_v2_QC_full/{super_population}/ALL.{chromosome}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.{ext}".format(super_population=super_population, chromosome=chromosome, ext="duplicates.txt") # OBS MUST MATCH WITH WHAT get_duplicates.py produces!
 
 			if os.path.exists(file_duplicates):
 				logger.warning( "%s | chr%s | file_duplicates: %s exists. THIS FILE WILL BE overwritten" % (super_population, chromosome, file_duplicates) )
@@ -54,9 +54,9 @@ def submit():
 
 			jobname = None
 			if gen_test_data:
-				jobname = "get_dup_test_" + super_population + "_chr_" + str(chromosome) # e.g get_dup_EUR_chr_21
+				jobname = "get_dup_test_" + super_population + "_" + chromosome # e.g get_dup_EUR_chr21
 			else:
-				jobname = "get_dup_full_" + super_population + "_chr_" + str(chromosome) # e.g get_dup_EUR_chr_21
+				jobname = "get_dup_full_" + super_population + "_" + chromosome # e.g get_dup_EUR_chr21
 
 			processes.append( pplaunch.LaunchBsub(cmd=cmd_get_duplicates, queue_name=queue_name, mem=mem, jobname=jobname, projectname='snpsnp', path_stdout=log_dir, file_output=None, no_output=False, email=email, email_status_notification=email_status_notification, email_report=email_report, logger=logger) ) #
 
@@ -152,10 +152,9 @@ logger.info( "INSTANTIATION NOTE: placeholder" )
 ############################# SWITCH ##########################################
 
 param_super_population = ["EUR", "EAS", "WAFR"]
-param_chromosome = range(1,23) # produces 1, 2, .., 21, 22
-
-#param_super_population = ["EUR", "WAFR"]
-#param_chromosome = [1, 21]
+#param_chromosome = range(1,23) # produces 1, 2, .., 21, 22
+param_chromosome = ["chr"+str(chrID) for chrID in range(1,23)+["X"]] 
+	# ---> *IMPORTANT NOTE* Y-chromosome removed. Plink2 (and plink1) fails to process it because all variants are removed after filtering
 
 ###################################### PARAMETERS ######################################
 
