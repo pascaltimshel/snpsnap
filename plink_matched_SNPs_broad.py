@@ -153,7 +153,7 @@ def get_plink_command(batch_id):
 	#TODO: make the args local and pass them to this function
 	command = "" # variable scope
 	snp_list = output_dir_path + "/snplists/"+ batch_id + ".rsID"
-	if args.distance_type == "kb":
+	if distance_type == "kb":
 		command = "/cvar/jhlab/timshel/bin/plink1.9_linux_x86_64/plink"\
 						" --bfile {0}"\
 						" --r2"\
@@ -166,7 +166,7 @@ def get_plink_command(batch_id):
 							snp_list, \
 							kb_cutoff, \
 							output_dir_path, batch_id)
-	if args.distance_type == "ld":
+	if distance_type == "ld":
 		command = "/cvar/jhlab/timshel/bin/plink1.9_linux_x86_64/plink"\
 						" --bfile {0}"\
 						" --r2"\
@@ -251,12 +251,14 @@ def submit(batch_ids):
 
 	processes = []
 	for batch_id in batch_ids:
+		#print "INSIDE LOOP IN submit(): running batch_id={}".format(batch_id)
+		
 		(command, snp_list) = get_plink_command(batch_id)
 		run = run_ldfile(batch_id, snp_list, unit_test_file)
 		if run: # run is True --> file is defect or does not exists
-			print "will submit job for batch_id: %s" % batch_id
+			print "will ===***===SUBMIT JOB===***=== for batch_id: %s" % batch_id
 			### BROAD ####
-			jobname = super_population + "_" + args.distance_type + "_" + args.distance_cutoff + "_" + batch_id # batch_id --> e.g. freq0-1-part-0-1000
+			jobname = super_population + "_" + distance_type + "_" + distance_cutoff + "_" + batch_id # batch_id --> e.g. freq0-1-part-0-1000
 			processes.append( pplaunch.LaunchBsub(cmd=command, queue_name=queue_name, mem=mem, jobname=jobname, projectname='snpsnp', path_stdout=log_dir_path, file_output=None, no_output=False, email=email, email_status_notification=email_status_notification, email_report=email_report, logger=None) ) # if "logger" evaluates to false in a boolean context, then a new logger will be created
 			
 
@@ -265,7 +267,6 @@ def submit(batch_ids):
 			#jobs.append( QueueJob(command, log_dir_path, queue_name, walltime, mem_per_job , flags, "plink_matched_SNPs_"+batch_id, script_name=current_script_name, job_name=batch_id) )
 		else: # file is exists and are ok
 			print "will NOT submit job for batch_id: %s" % batch_id
-			pass
 		#break ### TEMPORARY 06/13/2014 ####
 	
 	################## PRINT STATS ##########################
@@ -283,7 +284,7 @@ def submit(batch_ids):
 	################## NOW SUBMIT JOBS #######################
 	for p in processes:
 		p.run()
-	#return processes
+	return processes
 
 	################## PRINT FAILS ##########################
 	### UNCOMMENDTED FROM BROAD
@@ -293,6 +294,28 @@ def submit(batch_ids):
 	# for no, job_name in enumerate(QueueJob.QJ_job_fails_list, start=1):
 	# 	print "{}\t{}".format(no, job_name)
 	# print '\n'.join([block_str]*3)
+
+
+
+def check_jobs(processes, logger):
+	logger.info("PRINTING IDs")
+	list_of_pids = []
+	for p in processes:
+		logger.info(p.id)
+		list_of_pids.append(p.id)
+
+	logger.info( " ".join(list_of_pids) )
+
+	if args.multiprocess:
+		logger.info( "Running report_status_multiprocess " )
+		pplaunch.LaunchBsub.report_status_multiprocess(list_of_pids, logger) # MULTIPROCESS
+	else:
+		logger.info( "Running report_status" )
+		pplaunch.LaunchBsub.report_status(list_of_pids, logger) # NO MULTIPROCESS
+
+
+
+
 
 #
 # Fixed variables
@@ -308,7 +331,7 @@ def submit(batch_ids):
 
 max_snps_per_bin = float('Inf') # no limit - use all snps
 #batch_size = 10000 # ---> USED AT CBS Used to break down jobs for paralellization - DEFAULT VALUE
-batch_size = 10000000000 # 
+batch_size = 10000000000 # the maximal freq bin is about 1.2e6=1200000
 freq_bin_size = 1
 
 
@@ -317,6 +340,8 @@ freq_bin_size = 1
 #
 arg_parser = argparse.ArgumentParser(description="Get matched SNPs")
 #arg_parser.add_argument("--output_dir_path", help="Directory into which the output will be produced", required=True)
+arg_parser.add_argument("--multiprocess", help="Swtich; [default is false] if set use report_status_multiprocess. Requires interactive multiprocess session", action='store_true')
+
 arg_parser.add_argument("--distance_type", help="ld or kb", required=True)
 arg_parser.add_argument("--distance_cutoff", help="r2, or kb distance", required=True)
 arg_parser.add_argument("--super_population", help="[EUR,EAS,WARF]", required=True)
@@ -324,10 +349,28 @@ arg_parser.add_argument("--super_population", help="[EUR,EAS,WARF]", required=Tr
 #arg_parser.add_argument("--genotype_prefix", help="path and file prefix to genetype data", required=True) 
 args = arg_parser.parse_args()
 
+distance_type = args.distance_type
+distance_cutoff = args.distance_cutoff
+
+
 ### NEW BROAD PATH - dependent on super_population
 super_population = args.super_population
-
 genotype_prefix = "/cvar/jhlab/snpsnap/data/step1/production_v2_QC_full_merged_duplicate_rm/{super_population}/ALL.{chromosome}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes".format(super_population=super_population, chromosome="chr_merged")
+
+###################################### SETUP logging ######################################
+current_script_name = os.path.basename(__file__).replace('.py','')
+log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2/step2_plink_matched_SNPs_broad/{super_population}".format(super_population=super_population) #OBS
+if not os.path.exists(log_dir):
+	os.makedirs(log_dir)
+log_name = current_script_name + "_{super_population}_{distance_type}_{distance_cutoff}".format(super_population=super_population, distance_type=distance_type, distance_cutoff=distance_cutoff) #OBS
+
+logger = pplogger.Logger(name=log_name, log_dir=log_dir, log_format=1, enabled=True).get()
+def handleException(excType, excValue, traceback, logger=logger):
+	logger.error("Logging an uncaught exception", exc_info=(excType, excValue, traceback))
+#### TURN THIS ON OR OFF: must correspond to enabled='True'/'False'
+sys.excepthook = handleException
+logger.info( "INSTANTIATION NOTE: placeholder" )
+###########################################################################################
 
 
 
@@ -340,12 +383,12 @@ if not os.path.exists(output_dir_path):
 #
 #TODO: fix this structure! Not pretty!
 #ShellUtils.mkdirs(args.output_dir_path)
-if args.distance_type == "ld":
-	output_dir_path = output_dir_path+"/ld"+str(args.distance_cutoff)
-	ld_cutoff = args.distance_cutoff
-if args.distance_type == "kb":
-	output_dir_path = output_dir_path+"/kb"+str(args.distance_cutoff)
-	kb_cutoff = args.distance_cutoff
+if distance_type == "ld":
+	output_dir_path = output_dir_path+"/ld"+str(distance_cutoff)
+	ld_cutoff = distance_cutoff
+if distance_type == "kb":
+	output_dir_path = output_dir_path+"/kb"+str(distance_cutoff)
+	kb_cutoff = distance_cutoff
 
 
 
@@ -380,7 +423,7 @@ for path in [path_snplists, path_ldlists, log_dir_path]:
 # log_dir_path = output_dir_path + "/log" # Pascal - FIXED ERROR. : before it was /log/
 # ShellUtils.mkdirs(log_dir_path)
 
-print("Running with %s option, using cutoff %s"%(args.distance_type,args.distance_cutoff))
+print("Running with %s option, using cutoff %s"%(distance_type,distance_cutoff))
 
 
 ###################################### Global params ######################################
@@ -402,8 +445,23 @@ current_script_name = os.path.basename(__file__).replace('.py','')
 snps_by_freq = get_snps_by_freq(genotype_prefix+".frq")
 write_batch_size_distribution_file()
 
+
+################## Wrie batches ##################
+start_time_write_batches = time.time()
 batch_ids = write_batches()
+elapsed_time_write_batches = time.time() - start_time_write_batches
+print "Total Runtime for WRITING BATCHES: %s s (%s min)" % (elapsed_time_write_batches, elapsed_time_write_batches/60)
+
 #else:
 #	print "Path " + output_dir_path + "/snplists" + " is NOT empty. SKIPPING writing batches"
-submit(batch_ids)
+print "Will call submit()"
+processes = submit(batch_ids)
+
+start_time_check_jobs = time.time()
+check_jobs(processes, logger) # TODO: parse multiprocess argument?
+elapsed_time = time.time() - start_time_check_jobs
+logger.info( "Total Runtime for check_jobs: %s s (%s min)" % (elapsed_time, elapsed_time/60) )
+logger.critical( "%s: finished" % current_script_name)
+
+
 
