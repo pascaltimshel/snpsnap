@@ -53,7 +53,8 @@ def run_parse(snplist_prefix, outfilename, unit_test_file):
 			#pdb.set_trace()
 			#expected_cols = 10 ######################## OBS ##############################
 			#expected_cols = 13 ######################## OBS - NEW JUNE 18 2014 - after adding 2 x located within (dist and ID) + 1 x LD buddies ##############################
-			expected_cols = 15 ######################## OBS - NEW JUNE 19 2014 - after adding x2 SNPsnap distance (dist and ID) ##############################
+			#expected_cols = 15 ######################## OBS - NEW JUNE 19 2014 - after adding x2 SNPsnap distance (dist and ID) ##############################
+			expected_cols = 21 ######################## OBS - NEW FEBRUARY 26 2015 - after adding 6 new columns ##############################
 			for line in lines:
 				# Remove only trailing newline
 				cols = line.rstrip('\n').split('\t') # tab seperated - WE MUST KNOW THIS!
