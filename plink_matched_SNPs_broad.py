@@ -431,7 +431,7 @@ print("Running with %s option, using cutoff %s"%(distance_type,distance_cutoff))
 #queue_name = "hour" # [bhour, bweek] priority
 queue_name = "priority" # [bhour, bweek] priority
 # priority: This queue has a per-user limit of 10 running jobs, and a run time limit of three days.
-mem="10" #
+mem="20" # 10 GB also worked!
 email='pascal.timshel@gmail.com' # [use an email address 'pascal.timshel@gmail.com' or 'False'/'None']
 email_status_notification=True # [True or False]
 email_report=False # # [True or False]
@@ -458,6 +458,7 @@ print "Will call submit()"
 processes = submit(batch_ids)
 
 start_time_check_jobs = time.time()
+# OBS: CONSIDER NOT WAITING FOR JOBS. WAITING for jobs takes a lot of time from the validation ("run_multiple_plink_matched_SNPs_broad.py")
 check_jobs(processes, logger) # TODO: parse multiprocess argument?
 elapsed_time = time.time() - start_time_check_jobs
 logger.info( "Total Runtime for check_jobs: %s s (%s min)" % (elapsed_time, elapsed_time/60) )

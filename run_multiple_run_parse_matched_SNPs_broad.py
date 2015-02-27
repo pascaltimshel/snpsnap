@@ -22,8 +22,9 @@ import pplogger
 # ??
 
 ######################################  ######################################
-param_list_ld = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-param_list_kb = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
+param_list_ld = [0.5, 0.9]
+#param_list_ld = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+#param_list_kb = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
 
 ######################################  ######################################
 start_time = time.time()
@@ -41,7 +42,8 @@ output_dir_base = "/cvar/jhlab/snpsnap/data/step2/1KG_snpsnap_production_v2"
 processes = collections.defaultdict(dict)
 
 super_populations = ["EUR"]
-distance_types = ["ld", "kb"]
+#distance_types = ["ld", "kb"]
+distance_types = ["ld"]
 
 
 
