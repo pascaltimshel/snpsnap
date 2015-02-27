@@ -11,7 +11,6 @@ import os
 import sys
 import argparse
 import collections
-from queue import QueueJob,ArgparseAdditionalUtils
 
 
 import shutil
@@ -31,12 +30,19 @@ import pplogger
 def read_ld_buddy_count():
 	""" This function has all parameters hardcoded - no arguments is parsed to the function. 
 	NOTE: this function RENAMES the column"""
+
+	################# production_v1 ######################
 	#ld_buddy_file = "/cvar/jhlab/snpsnap/data/ld_buddy_counts/1KG_snpsnap_production_v1/test_tabs_compile/ld_buddy_count.tab_join_outer_head500" # TEST CASE - this is sorted and will not work for test case. It is sorted so all all the first indexes are 10:100115849...
 	#ld_buddy_file = "/cvar/jhlab/snpsnap/data/ld_buddy_counts/1KG_snpsnap_production_v1/test_tabs_compile/ld_buddy_count.tab_join_index_head500" # TEST CASE - USE THIS. Index are aligned. It works (only rsIDs in index)
 
-	ld_buddy_file = "/cvar/jhlab/snpsnap/data/ld_buddy_counts/1KG_snpsnap_production_v1/complete/ld_buddy_count.tab_join_outer" # USE THIS this file is sorted (gives same result every time)
+	#ld_buddy_file = "/cvar/jhlab/snpsnap/data/ld_buddy_counts/1KG_snpsnap_production_v1/complete/ld_buddy_count.tab_join_outer" # USE THIS this file is sorted (gives same result every time)
+		#---> USED IN PRODUCTION_V1
 	#ld_buddy_file = "/cvar/jhlab/snpsnap/data/ld_buddy_counts/1KG_snpsnap_production_v1/complete/ld_buddy_count.tab_join_index" # alternatively this could be used...
 	# NB: this files have rsID as 'index'
+
+	########## NEW FEB 2015* - production_v2 ############
+	ld_buddy_file = "/cvar/jhlab/snpsnap/data/ld_buddy_counts/1KG_snpsnap_production_v2/{super_population}/ld_buddy_count.tab_join_outer".format(super_population=super_population) # USE THIS this file is sorted (gives same result every time)	
+	#####################################################
 
 	## LD BUDDY COUNT FILE
 	#0=rsID
@@ -325,6 +331,8 @@ arg_parser.add_argument("--output_dir", \
 # arg_parser.add_argument("--dist_type", \
 # 	help="Type of distance used, e.g. ld0.5 or kb100", \
 # 	required=True)
+
+arg_parser.add_argument("--super_population", required=True, help="IMPORTANT: This argument is used to LOCATE THE ld_buddy_file in the function 'read_ld_buddy_count()'", required=True)
 arg_parser.add_argument("--distance_type", help="ld or kb. This argument is only used to construct sensable output files names", required=True)
 arg_parser.add_argument("--distance_cutoff", help="r2, or kb distance.  This argument is only used to construct sensable output files names", required=True)
 arg_parser.add_argument("--log_dir", help="Optional argument. If a dir (or any value) is given, the program will write out a log file to the given dir. The log filename will be {current_script_name}_{distance_type}{distance_cutoff}, e.g. tabs_compile_ld0.5", default=None) # Notice that argparse by uses 'default=None' by default
@@ -337,8 +345,11 @@ arg_parser.add_argument("--no_compression", \
 args = arg_parser.parse_args()
 
 ###################################### FIRST PARAMS - used for logger ######################################
+super_population = args.super_population
+
 distance_type = args.distance_type
 distance_cutoff = args.distance_cutoff
+
 
 ###################################### SETUP logging ######################################
 current_script_name = os.path.basename(__file__).replace('.py','')
