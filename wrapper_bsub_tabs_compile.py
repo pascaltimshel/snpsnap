@@ -115,7 +115,7 @@ queue_name = "week" # [bhour, bweek] priority
 # priority: This queue has a per-user limit of 10 running jobs, and a run time limit of three days.
 mem=25 # "15"--> production_v1 # gb # 25 gb used and I know this worked! (12 GB max mem + 12 GB max SWAP)
 email='pascal.timshel@gmail.com' # [use an email address 'pascal.timshel@gmail.com' or 'False'/'None']
-email_status_notification=True # [True or False]
+email_status_notification=False # [True or False]
 email_report=False # # [True or False]
 
 script2call = "/cvar/jhlab/snpsnap/snpsnap/tabs_compile.py"

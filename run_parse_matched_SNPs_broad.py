@@ -209,7 +209,7 @@ queue_name = "week" # [bhour, bweek] priority
 mem="20" # gb      
 	### RESULTS from EUR_chr_1 (largest chromosome)
 email='pascal.timshel@gmail.com' # [use an email address 'pascal.timshel@gmail.com' or 'False'/'None']
-email_status_notification=True # [True or False]
+email_status_notification=False # [True or False]
 email_report=False # # [True or False]
 
 current_script_name = os.path.basename(__file__).replace('.py','')
