@@ -41,7 +41,7 @@ current_script_name = os.path.basename(__file__)
 
 ############################ SETTING ZERO BUFFERING for STDOUT ######################################
 # Consider this for unbuffered output. This may be useful when the function is called via run_multiple_...py
-sys.stdout = os.fdopen(sys.stdout.fileno(), 'wb', 0)
+#sys.stdout = os.fdopen(sys.stdout.fileno(), 'wb', 0)
 #######################################################################
 
 
@@ -53,7 +53,7 @@ def get_freq_bin(f):
 	f_pct = float(f)*float(100) # just to make sure that f is float..
 	if f_pct > 50:
 		f_pct = 100 - f_pct
-		#TODO: print error code if f > 0.5	
+		#TODO: logger.info( error code if f > 0.5	 )
 	#bins = range(0,50,freq_bin_size) # Tune orig. [0,1,...,48,49] ==> len=50
 	bins = range(0,51,freq_bin_size) # NEW. [0,1,...,49,50] ==> len=51
 	bin = None # default value
@@ -62,8 +62,7 @@ def get_freq_bin(f):
 			bin = i
 			break
 	if bin == None:
-		sys.stderr.write( "ERROR: did not find any bin to put SNP with MAF=%s and (f_pct=%s). Bug in code or SNP freq. Exiting...\n" % (f, f_pct) )
-		sys.exit(1)
+		raise Exception( "ERROR: did not find any bin to put SNP with MAF=%s and (f_pct=%s). Bug in code or SNP freq. Raising execption...\n" % (f, f_pct) )
 	# REMEMBER: f_pct = 0 is NOT included in any bins since IT SHOULD NOT EXIST. (SNPs with freq = 0 does not make sense)
 	# Function returns "lower boundary" of bin, i.e:
 	# 0<f_pct<=1 ==> bin=0
@@ -77,12 +76,12 @@ def get_freq_bin(f):
 
 # Funciton to read in summary statiscs and bin SNPs into MAF percentiles
 def get_snps_by_freq(infilename):
-	print "called get_snps_by_freq()"
+	logger.info( "called get_snps_by_freq()" )
 	snps_by_freq = {} 
 	# @@TODO freq_bin_size is unnessesary
 	for bin in range(0,len(range(0,50,freq_bin_size)),1):
 		snps_by_freq[bin] = [] # TODO: use containers.defaultdict[list] instead
-	print "get_snps_by_freq(): now reading infilename %s" % infilename
+	logger.info( "get_snps_by_freq(): now reading infilename %s" % infilename )
 	infile = open(infilename,'r')
 	lines = infile.readlines()[1:] # skip header in frequency file
 	infile.close()
@@ -111,7 +110,7 @@ def get_snps_by_freq(infilename):
 			# Add to correct bin if still space
 			if len(snps_by_freq[bin]) < max_snps_per_bin:
 				snps_by_freq[bin].append(words[1])
-	print "get_snps_by_freq(): done"
+	logger.info( "get_snps_by_freq(): done" )
 	return snps_by_freq
 
 def write_batch_size_distribution_file():
@@ -125,7 +124,7 @@ def write_batch_size_distribution_file():
 
 # Funciton to save into files to be run in plink
 def write_batches():
-	print "called write_batches()"
+	logger.info( "called write_batches()" )
 	batches = []
 	# Construct batch for each frequency bin
 	bins = range(0,50,freq_bin_size)
@@ -138,7 +137,7 @@ def write_batches():
 			outfile_str = output_dir_path + "/snplists/" +  batch_id + ".rsID"
 			outfile = open(outfile_str,'w')
 
-			print "Bin %d | writing batch file: %s" % (bin, outfile_str)
+			logger.info( "Bin %d | writing batch file: %s" % (bin, outfile_str) )
 			for rsID_matched in snps_by_freq[bin][subbins[i]:min(subbins[i]+batch_size,len(snps_by_freq[bin]))]:
 				outfile.write("%s\n"%(rsID_matched))
 			outfile.close()
@@ -146,7 +145,7 @@ def write_batches():
 			# break ############### TEMPORARY 06/13/2014 ############################
 			############### NOTE: the outer loop should also be 'break'
 	# break ############### TEMPORARY 06/13/2014 ############################
-	print "write_batches(): function DONE"
+	logger.info( "write_batches(): function DONE" )
 	return batches
 
 def get_plink_command(batch_id):
@@ -187,9 +186,13 @@ def get_plink_command(batch_id):
 def run_ldfile(batch_id, snp_list, unit_test_file):
 	ldfile = output_dir_path + "/ldlists/" + batch_id + ".ld"
 	if not os.path.exists(ldfile): # Test if already run
-		unit_test_file['NO_PREVIOUS_FILE'].append(ldfile)
-		#print "%s: CREATING NEW" % ldfile ## USE THIS!!! June 2014
-		#print "*** LDfile %s\nNOT exists. Appending jobs for batch ID %s to QueueJob.py... ***" % (ldfile, batch_id)
+
+		status_string = "status = no previous ldfile | {ldfile}".format(ldfile=ldfile)
+		unit_test_file['NO_PREVIOUS_FILE'].append(status_string)
+		#unit_test_file['NO_PREVIOUS_FILE'].append(ldfile)
+		
+		#logger.info( "%s: CREATING NEW" % ldfile ## USE THIS!!! June 2014 )
+		#logger.info( "*** LDfile %s\nNOT exists. Appending jobs for batch ID %s to QueueJob.py... ***" % (ldfile, batch_id) )
 		return True # submit job is there is no existing ldfile
 	else:
 		batch_snplist = {}
@@ -211,9 +214,9 @@ def run_ldfile(batch_id, snp_list, unit_test_file):
 				if len(cols) == expected_cols:
 					existing_ld_snplist[cols[2]] = 1
 				else:
-					print "***OBS*** File %s did not contain %d columns as expected." % (ldfile, expected_cols)
-					print "Please check structure of file if you see the message repeatedly"
-					print 'Breaking out if loop'
+					logger.critical( "***OBS*** File %s did not contain %d columns as expected." % (ldfile, expected_cols) )
+					logger.critical( "Please check structure of file if you see the message repeatedly" )
+					logger.critical( 'Breaking out if loop' )
 					break
 		# Read batch SNP list file
 		with open(snp_list, 'r') as f:
@@ -225,17 +228,33 @@ def run_ldfile(batch_id, snp_list, unit_test_file):
 			for line in lines:
 				rs_no = line.strip()
 				batch_snplist[rs_no] = 1
-		if len(existing_ld_snplist) == len(batch_snplist):
-			unit_test_file['FILE_EXISTS_OK'].append(ldfile)
-			#print "%s: OK" % ldfile ## USE THIS!!! June 2014
+
+		LEN_batch_snplist = len(batch_snplist)
+		LEN_existing_ld_snplist = len(existing_ld_snplist)
+
+		if LEN_existing_ld_snplist == LEN_batch_snplist:
+			status_string = "status = existing ldfile is OK | {ldfile}".format(ldfile=ldfile)
+			unit_test_file['FILE_EXISTS_OK'].append(status_string)
 			
-			#print "LDfile %s\nExists and are validated for batch ID %s. Not appending any jobs to QueueJob.py..." % (ldfile, batch_id)
+			#unit_test_file['FILE_EXISTS_OK'].append(ldfile)
+			#logger.info( "%s: OK" % ldfile ## USE THIS!!! June 2014 )
+			
+			#logger.info( "LDfile %s\nExists and are validated for batch ID %s. Not appending any jobs to QueueJob.py..." % (ldfile, batch_id) )
 			return None # Do not submit new job if files are ok!
 		else:
-			unit_test_file['FILE_EXISTS_BAD'].append(ldfile)
-			#print "%s: BAD FILE EXISTS. MAKING NEW" % ldfile ## USE THIS!!! June 2014
+			DIFFERENCE = LEN_batch_snplist-LEN_existing_ld_snplist
+			status_string = "status = BAD existing ldfile | DIFFERENCE=[LEN_batch_snplist-LEN_existing_ld_snplist={DIFFERENCE}] | LEN_batch_snplist={LEN_batch_snplist} | LEN_existing_ld_snplist={LEN_existing_ld_snplist} | {ldfile}".format(DIFFERENCE=DIFFERENCE, LEN_batch_snplist=LEN_batch_snplist, LEN_existing_ld_snplist=LEN_existing_ld_snplist, ldfile=ldfile)
+			unit_test_file['FILE_EXISTS_BAD'].append(status_string)
 
-			#print "LDfile %s\n*** Exists but are NOT ok! Running job for batch ID %s ***" % (ldfile, batch_id)
+			logger.warning( "INSIDE run_parse() | FILE_EXISTS_BAD | ldfile={} did NOT pass criteria for a valid existing_ld_snplist | LEN_batch_snplist={} | LEN_existing_ld_snplist={}".format(ldfile, LEN_batch_snplist, LEN_existing_ld_snplist) )
+			logger.warning( "INSIDE run_parse() | used the following snplist_files to populate 'batch_snplist':\n{}".format("\n".join(snplist_files)) )
+
+
+
+			#unit_test_file['FILE_EXISTS_BAD'].append(ldfile)
+			#logger.info( "%s: BAD FILE EXISTS. MAKING NEW" % ldfile ## USE THIS!!! June 2014 )
+
+			#logger.info( "LDfile %s\n*** Exists but are NOT ok! Running job for batch ID %s ***" % (ldfile, batch_id) )
 			return True # Re-run job.
 
 
@@ -251,12 +270,12 @@ def submit(batch_ids):
 
 	processes = []
 	for batch_id in batch_ids:
-		#print "INSIDE LOOP IN submit(): running batch_id={}".format(batch_id)
+		#logger.info( "INSIDE LOOP IN submit(): running batch_id={}".format(batch_id) )
 		
 		(command, snp_list) = get_plink_command(batch_id)
 		run = run_ldfile(batch_id, snp_list, unit_test_file)
 		if run: # run is True --> file is defect or does not exists
-			print "will ===***===SUBMIT JOB===***=== for batch_id: %s" % batch_id
+			logger.info( "will ===***===SUBMIT JOB===***=== for batch_id: %s" % batch_id )
 			### BROAD ####
 			jobname = super_population + "_" + distance_type + "_" + distance_cutoff + "_" + batch_id # batch_id --> e.g. freq0-1-part-0-1000
 			processes.append( pplaunch.LaunchBsub(cmd=command, queue_name=queue_name, mem=mem, jobname=jobname, projectname='snpsnp', path_stdout=log_dir_path, file_output=None, no_output=False, email=email, email_status_notification=email_status_notification, email_report=email_report, logger=None) ) # if "logger" evaluates to false in a boolean context, then a new logger will be created
@@ -266,34 +285,34 @@ def submit(batch_ids):
 			# flags parameter not currenlty used because script is run on protein-s0
 			#jobs.append( QueueJob(command, log_dir_path, queue_name, walltime, mem_per_job , flags, "plink_matched_SNPs_"+batch_id, script_name=current_script_name, job_name=batch_id) )
 		else: # file is exists and are ok
-			print "will NOT submit job for batch_id: %s" % batch_id
+			logger.info( "will NOT submit job for batch_id: %s" % batch_id )
 		#break ### TEMPORARY 06/13/2014 ####
 	
-	################## PRINT STATS ##########################
-	print '\n'.join([block_str]*3)
-	print "#################### **** STATS from 'unit_test_file' **** ####################"
+	################## logger.info( STATS ########################## )
+	logger.info( '\n'.join([block_str]*3) )
+	logger.info( "#################### **** STATS from 'unit_test_file' **** ####################" )
 	for stat_key, stat_list in unit_test_file.items():
-		print "{}: {}".format( stat_key, len(stat_list) )
-	print block_str
+		logger.info( "{}: {}".format( stat_key, len(stat_list) ) )
+	logger.info( block_str )
 	for stat_key, stat_list in unit_test_file.items():
-		#print "{}: {}".format( stat_key, len(stat_list) )
+		#logger.info( "{}: {}".format( stat_key, len(stat_list) ) )
 		for ldfile in stat_list:
-			print "{}\t{}".format( stat_key, ldfile )
-		print block_str
+			logger.info( "{}\t{}".format( stat_key, ldfile ) )
+		logger.info( block_str )
 
 	################## NOW SUBMIT JOBS #######################
 	for p in processes:
 		p.run()
 	return processes
 
-	################## PRINT FAILS ##########################
+	################## logger.info( FAILS ########################## )
 	### UNCOMMENDTED FROM BROAD
-	# print '\n'.join([block_str]*3)
-	# print "#################### **** JOBS THAT COULD NOT BE SUBMITTED - from QueueJob **** ####################"
-	# print "Number of jobs that were not submitted: %s" % len(QueueJob.QJ_job_fails_list)
+	# logger.info( '\n'.join([block_str]*3) )
+	# logger.info( "#################### **** JOBS THAT COULD NOT BE SUBMITTED - from QueueJob **** ####################" )
+	# logger.info( "Number of jobs that were not submitted: %s" % len(QueueJob.QJ_job_fails_list) )
 	# for no, job_name in enumerate(QueueJob.QJ_job_fails_list, start=1):
-	# 	print "{}\t{}".format(no, job_name)
-	# print '\n'.join([block_str]*3)
+	# 	logger.info( "{}\t{}".format(no, job_name) )
+	# logger.info( '\n'.join([block_str]*3) )
 
 
 
@@ -393,22 +412,12 @@ if distance_type == "kb":
 
 
 ### Make sure that the genotype prefix is correct ###
-if False:
-	ans = ""
-	print "*** SAFETY CHECK! ***"
-	print "You specifed --output_dir_path to be: %s" % output_dir_path
-	print "The genotype_prefix is set to: %s" % genotype_prefix
-	print "You will overwrite files in /snplists and /ldlists if the parameters in step1/ and step2/ do not match"
-	print "Plese confirm that this is the correct paths to use by typing 'yes'"
-	while ans != 'yes':
-	 	ans = raw_input("Confirm: ")
-	print "Ok let's start..."
+# *** SAFETY CHECK! ***"
+# You specifed --output_dir_path to be: %s" % output_dir_path
+# The genotype_prefix is set to: %s" % genotype_prefix
+# You will overwrite files in /snplists and /ldlists if the parameters in step1/ and step2/ do not match"
+# Plese confirm that this is the correct paths to use by typing 'yes'"
 
-######### Non-finished statement for checking if /snplists path. #######
-# if True:
-# 	snp_list_dir = os.path.join(output_dir_path, "snplists")
-# 	if os.listdir(snp_list_dir):  # directory is NOT empty
-# 		print "It apears that the /snplists path is non-empty"
 #########################################################################
 
 path_snplists = output_dir_path + "/snplists/"
@@ -423,7 +432,7 @@ for path in [path_snplists, path_ldlists, log_dir_path]:
 # log_dir_path = output_dir_path + "/log" # Pascal - FIXED ERROR. : before it was /log/
 # ShellUtils.mkdirs(log_dir_path)
 
-print("Running with %s option, using cutoff %s"%(distance_type,distance_cutoff))
+logger.info(("Running with %s option, using cutoff %s"%(distance_type,distance_cutoff)) )
 
 
 ###################################### Global params ######################################
@@ -441,7 +450,7 @@ current_script_name = os.path.basename(__file__).replace('.py','')
 
 
 #if os.listdir(output_dir_path + "/snplists") == []: # 
-#	print "Path " + output_dir_path + "/snplists" + " is empty - going to write snp batches"
+#	logger.info( "Path " + output_dir_path + "/snplists" + " is empty - going to write snp batches" )
 snps_by_freq = get_snps_by_freq(genotype_prefix+".frq")
 write_batch_size_distribution_file()
 
@@ -450,11 +459,11 @@ write_batch_size_distribution_file()
 start_time_write_batches = time.time()
 batch_ids = write_batches()
 elapsed_time_write_batches = time.time() - start_time_write_batches
-print "Total Runtime for WRITING BATCHES: %s s (%s min)" % (elapsed_time_write_batches, elapsed_time_write_batches/60)
+logger.info( "Total Runtime for WRITING BATCHES: %s s (%s min)" % (elapsed_time_write_batches, elapsed_time_write_batches/60) )
 
 #else:
-#	print "Path " + output_dir_path + "/snplists" + " is NOT empty. SKIPPING writing batches"
-print "Will call submit()"
+#	logger.info( "Path " + output_dir_path + "/snplists" + " is NOT empty. SKIPPING writing batches" )
+logger.info( "Will call submit()" )
 processes = submit(batch_ids)
 
 start_time_check_jobs = time.time()
