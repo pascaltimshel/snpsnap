@@ -17,6 +17,13 @@ import pplogger
 import pdb
 
 
+###################################### THIS SCRIPT IS NO LONGER MAINTAINED ######################################
+# This script was last updated in Feb 2015 during production version 2.
+# Howver its use is DEPRECATED. The script "tab_gen_ld_buddy_counts.py" contains all the function of this script AND MORE.
+	# --> "tab_gen_ld_buddy_counts.py" is part of the official pipeline!
+
+######################################################################################################
+
 
 ###################################### Waiting - batch ######################################
 def wait_for_processes(processes):

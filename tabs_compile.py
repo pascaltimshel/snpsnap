@@ -335,7 +335,8 @@ arg_parser.add_argument("--output_dir", \
 arg_parser.add_argument("--super_population", required=True, help="IMPORTANT: This argument is used to LOCATE THE ld_buddy_file in the function 'read_ld_buddy_count()'", required=True)
 arg_parser.add_argument("--distance_type", help="ld or kb. This argument is only used to construct sensable output files names", required=True)
 arg_parser.add_argument("--distance_cutoff", help="r2, or kb distance.  This argument is only used to construct sensable output files names", required=True)
-arg_parser.add_argument("--log_dir", help="Optional argument. If a dir (or any value) is given, the program will write out a log file to the given dir. The log filename will be {current_script_name}_{distance_type}{distance_cutoff}, e.g. tabs_compile_ld0.5", default=None) # Notice that argparse by uses 'default=None' by default
+## SNPsnap production v1
+#arg_parser.add_argument("--log_dir", help="Optional argument. If a dir (or any value) is given, the program will write out a log file to the given dir. The log filename will be {current_script_name}_{distance_type}{distance_cutoff}, e.g. tabs_compile_ld0.5", default=None) # Notice that argparse by uses 'default=None' by default
 
 arg_parser.add_argument("--no_compression", \
 	help="If set, do NOT compress collection.tba and duplicate.tab files with gzip. Default is to compress files", \
@@ -351,25 +352,28 @@ distance_type = args.distance_type
 distance_cutoff = args.distance_cutoff
 
 
-###################################### SETUP logging ######################################
-current_script_name = os.path.basename(__file__).replace('.py','')
-logger = None # global space
-if args.log_dir:
-	log_dir=args.log_dir
-	log_name="{current_script_name}_{type}{cutoff}".format(current_script_name=current_script_name, type=distance_type, cutoff=distance_cutoff)
-	logger = pplogger.Logger(name=log_name, log_dir=log_dir, log_format=1, enabled=True).get()
-	def handleException(excType, excValue, traceback, logger=logger):
-		logger.error("Logging an uncaught exception", exc_info=(excType, excValue, traceback))
-	#### TURN THIS ON OR OFF: must correspond to enabled='True'/'False'
-	sys.excepthook = handleException
-	logger.info( "INSTANTIATION NOTE: placeholder" )
-else:
-	logger = pplogger.Logger(name=current_script_name, enabled=False).get()
-###########################################################################################
-
 ###################################### CONSTANTS ######################################
 start_time_script = time.time()
 batch_time = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H.%M.%S')
+
+
+###################################### SETUP logging ######################################
+current_script_name = os.path.basename(__file__).replace('.py','')
+
+log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2/step5_tabs_compile/{super_population}".format(super_population=super_population) #OBS VARIABLE
+if not os.path.exists(log_dir):
+	os.makedirs(log_dir)
+log_name = "{current_script_name}_{type}{cutoff}_{timestamp}".format(current_script_name=current_script_name, type=distance_type, cutoff=distance_cutoff, timestamp=batch_time)
+
+logger = pplogger.Logger(name=log_name, log_dir=log_dir, log_format=1, enabled=True).get()
+def handleException(excType, excValue, traceback, logger=logger):
+	logger.error("Logging an uncaught exception", exc_info=(excType, excValue, traceback))
+#### TURN THIS ON OR OFF: must correspond to enabled='True'/'False'
+sys.excepthook = handleException
+logger.info( "INSTANTIATION NOTE: placeholder" )
+else:
+	logger = pplogger.Logger(name=current_script_name, enabled=False).get()
+###########################################################################################
 
 
 if args.no_compression:

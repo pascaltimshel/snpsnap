@@ -63,6 +63,9 @@ def wait_for_processes(processes):
 
 
 def cat_tabs():
+	job_no = 0
+	processes = collections.defaultdict(dict) # initialization needed for cat_tabs()
+
 
 	for super_population in super_populations:
 		################## Distance type loop ##################
@@ -112,8 +115,9 @@ def cat_tabs():
 				# HGNC_nearest_gene_snpsnap_protein_coding
 				# flag_snp_within_gene
 				# flag_snp_within_gene_protein_coding
+				# snp_maf
 
-				header_str = "rsID freq_bin snp_chr snp_position gene_count dist_nearest_gene_snpsnap dist_nearest_gene_snpsnap_protein_coding dist_nearest_gene dist_nearest_gene_located_within loci_upstream loci_downstream ID_nearest_gene_snpsnap ID_nearest_gene_snpsnap_protein_coding ID_nearest_gene ID_nearest_gene_located_within HGNC_nearest_gene_snpsnap HGNC_nearest_gene_snpsnap_protein_coding LD_boddies flag_snp_within_gene flag_snp_within_gene_protein_coding ID_genes_in_matched_locus"
+				header_str = "rsID freq_bin snp_maf snp_chr snp_position gene_count dist_nearest_gene_snpsnap dist_nearest_gene_snpsnap_protein_coding dist_nearest_gene dist_nearest_gene_located_within loci_upstream loci_downstream ID_nearest_gene_snpsnap ID_nearest_gene_snpsnap_protein_coding ID_nearest_gene ID_nearest_gene_located_within HGNC_nearest_gene_snpsnap HGNC_nearest_gene_snpsnap_protein_coding LD_boddies flag_snp_within_gene flag_snp_within_gene_protein_coding ID_genes_in_matched_locus"
 				### *BEFORE FEB 2015* - old ENSEMBL file
 				#header_str = "rsID freq_bin snp_chr snp_position gene_count dist_nearest_gene_snpsnap dist_nearest_gene dist_nearest_gene_located_within loci_upstream loci_downstream ID_nearest_gene_snpsnap ID_nearest_gene ID_nearest_gene_located_within LD_boddies ID_genes_in_matched_locus"
 				header_str_tab_sep = "\t".join(header_str.split())
@@ -126,7 +130,7 @@ def cat_tabs():
 					logger.error( "Error: did not find 50 .tab files as expected in path: %s" % inpath_stat_gene_density )
 					logger.error( "Number of tabfiles found: %s" % len(tabfiles) )
 					logger.error( "Aborting script..." )
-					sys.exit(1)
+					raise Exception("See above")
 				# Sorting on freq bin
 				# It is EXTREMELY important to SORT the tab files before 
 				tabfiles.sort(key=lambda x: int(x.split('/')[-1].split('freq')[-1].split('-')[0]))
@@ -173,8 +177,11 @@ def create_ld_buddy_counts():
 	for super_population in super_populations:
 
 		################## *OBS*: specific for "create_ld_buddy_counts()" ##################
-		output_dir_base = "/cvar/jhlab/snpsnap/data/ld_buddy_counts/1KG_snpsnap_production_v2"
-		outfile_ld_buddy = "{base}/{super_population}/ld_buddy_count.tab".format(base=output_dir_base, super_population=super_population) # e.g /data/ld_buddy_counts/1KG_snpsnap_production_v2/EUR/ld_buddy_count.tab
+		output_dir_base = "/cvar/jhlab/snpsnap/data/ld_buddy_counts/1KG_snpsnap_production_v2/{super_population}".format(super_population=super_population) # e.g /data/ld_buddy_counts/1KG_snpsnap_production_v2/EUR
+		if not os.path.exists(output_dir_base):
+			os.makedirs(output_dir_base)
+
+		outfile_ld_buddy = "{base}/ld_buddy_count.tab".format(base=output_dir_base) # e.g /data/ld_buddy_counts/1KG_snpsnap_production_v2/EUR/ld_buddy_count.tab
 		
 
 		################## Distance type loop ##################
@@ -225,31 +232,40 @@ def create_ld_buddy_counts():
 
 
 				################## NEW FEB 2015 - production_v2 ##################
+				## *<--OBS-->*: REMEMBER TO UPDATE "cols2use"
+				## *<--OBS-->*: index column should be the column number where the rsID is positioned
+
 				#1=rsID
 				#2=freq_bin
-				#3=chromosome number of rsID
-				#4=position of rsID
-				#5=gene count in matched locus
-				#6=dist to nearest gene - SNPSNAP DISTANCE
-				#7=dist to nearest gene protein_coding - SNPSNAP DISTANCE
-				#8=dist to nearest gene
-				#9=dist to nearest gene LOCATED WITHIN
-				#10=boundary_upstream
-				#11=boundary_downstream
-				#12=nearest_gene SNPSNAP
-				#13=nearest_gene SNPSNAP protein_coding
-				#14=nearest_gene
-				#15=nearest_gene LOCATED WITHIN (may be empty)
-				#16=nearest_gene_HGNC
-				#17=nearest_gene_HGNC protein_coding
-				#18=ld buddies count
-				#19=flag_snp_within_gene
-				#20=flag_snp_within_gene_protein_coding
-				#21=genes in matches locus, multiple ENSEMBL IDs
+				#3=snp_maf
+				#4=chromosome number of rsID
+				#5=position of rsID
+				#6=gene count in matched locus
+				#7=dist to nearest gene - SNPSNAP DISTANCE
+				#8=dist to nearest gene protein_coding - SNPSNAP DISTANCE
+				#9=dist to nearest gene
+				#10=dist to nearest gene LOCATED WITHIN
+				#11=boundary_upstream
+				#12=boundary_downstream
+				#13=nearest_gene SNPSNAP
+				#14=nearest_gene SNPSNAP protein_coding
+				#15=nearest_gene
+				#16=nearest_gene LOCATED WITHIN (may be empty)
+				#17=nearest_gene_HGNC
+				#18=nearest_gene_HGNC protein_coding
+				#19=ld buddies count
+				#20=flag_snp_within_gene
+				#21=flag_snp_within_gene_protein_coding
+				#22=genes in matches locus, multiple ENSEMBL IDs
+
+				### ***IMPORTANT*** to keep in sync with parse_matched_SNPs.py and cat_tabs()! ###
+				#cols2use=[0, 13] # SNPsnap production version 1 
+				cols2use=[0, 18] # SNPsnap production version 2
+				###################################################################################
 
 				start_time = time.time()
 				logger.info( "Reading tabfile into DataFrame: %s" % outpath_combined_tab )
-				df = pd.read_csv( outpath_combined_tab, delimiter="\t", header=0, names=['rsID', 'ld_buddy_count_'+str(param)], index_col=0, usecols=[0, 13])
+				df = pd.read_csv( outpath_combined_tab, delimiter="\t", header=0, names=['rsID', 'ld_buddy_count_'+str(param)], index_col=0, usecols=cols2use)
 				# OBS: delim_whitespace=True does NOT work if some columns (in the middle) are blank/empty. 
 				# Pandas will skip these blank fields resulting in:
 				# 1) 'frameshift': shift of the next columns 
@@ -302,21 +318,34 @@ def create_ld_buddy_counts():
 				# 1) check that for each SNP the ld_boddy_count is MONOTONIC DECREASING as you INCREASE ld
 
 
+			########################################################################################
+			###################################### JOIN_OUTER ######################################
+			# SNPsnap production version 1: used "ld_buddy_count.tab_join_outer" #
+			# SNPsnap production version 2: used "ld_buddy_count.tab_join_outer" #
+			
 			# concatenate data frames horizontally
 			merged = pd.concat(df_list, axis=1, join='outer') 	# ---> row indexes will be unioned and sorted.
 																# ***OBS***: index name is NOT kept using 'outer' - I found out about this the hard way
-			merged.index.name = df_index_list[0].index.name # ADDED 07/04/2014 - **UNTESTED** - COPYING the index name from the first df in the df_list to fix that index_label is lost using join='outer'
+			
+			### Set name
+			#merged.index.name = df_index_list[0].index.name # ADDED 07/04/2014 - **UNTESTED** - COPYING the index name from the first df in the df_list to fix that index_label is lost using join='outer'
+			merged.index.name = df_index_list[0].name # COPYING the index name from the first df in the df_list to fix that index_label is lost using join='outer'
+			logger.info( "merged.index.name={}".format(merged.index.name) )
+
+			logger.info( "writing 'merged' data frame to csv..." )
 			merged.to_csv(outfile_ld_buddy+"_join_outer", sep='\t', header=True, index=True, index_label=None) # index_label=None ==> use index names from df
 			logger.info( 'JOIN_OUTER: len of data frame: %s' % len(merged) )
 
 			if merged.isnull().any(axis=0).any(axis=0): # same as merged.isnull().any().any()
 				df_null = merged[merged.isnull().any(axis=1)]
-				logger.warning( 'JOIN_OUTER isnull(): len of data frame: %s' % len(df_null) )
+				logger.warning( 'JOIN_OUTER isnull(): *FOUND NULL VALUES* len of data frame: %s' % len(df_null) )
 				logger.warning( df_null )
 			else:
 				logger.warning( 'JOIN_OUTER: there is NO null values' )
 
 
+			########################################################################################
+			###################################### JOIN_INDEX ######################################
 			start_time = time.time()
 			logger.info( 'JOIN_INDEX: start concat and writing csv' )
 			merged = pd.concat(df_list, axis=1, join_axes=[df_index_list[0]]) # index name is kept this way
@@ -334,26 +363,31 @@ def create_ld_buddy_counts():
 			if merged.isnull().any(axis=0).any(axis=0): # same as merged.isnull().any().any()
 			#you could potenitally also use: merged.notnull().all()
 				df_null = merged[merged.isnull().any(axis=1)]
-				logger.warning( 'JOIN_INDEX isnull(): len of data frame: %s' % len(df_null) )
+				logger.warning( 'JOIN_INDEX isnull(): *FOUND NULL VALUES* len of data frame: %s' % len(df_null) )
 				logger.warning( df_null )
 			else:
-				logger.warning( 'JOIN_index: there is NO null values' )
+				logger.warning( 'JOIN_INDEX: there is NO null values' )
+
+			########################################################################################
+			########################################################################################
 
 
 
 
 
 
-
-
-
+###################################### CONSTANTS ######################################
+start_time_script = time.time()
+batch_time = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H.%M.%S')
 
 ###################################### SETUP logging ######################################
 current_script_name = os.path.basename(__file__).replace('.py','')
-log_dir='/cvar/jhlab/snpsnap/snpsnap/logs_step5_tabs_ld_buddy_counts'
+
+log_dir='/cvar/jhlab/snpsnap/logs_pipeline/production_v2/step4_tabs_ld_buddy_counts'
 if not os.path.exists(log_dir):
 	os.makedirs(log_dir)
-logger = pplogger.Logger(name=current_script_name, log_dir=log_dir, log_format=0, enabled=True).get() #
+log_name = "{script}_{timestamp}".format(script=current_script_name, timestamp=batch_time)
+logger = pplogger.Logger(name=, log_dir=log_dir, log_format=0, enabled=True).get() #
 def handleException(excType, excValue, traceback, logger=logger):
 	logger.error("Logging an uncaught exception", exc_info=(excType, excValue, traceback))
 #### TURN THIS ON OR OFF: must correspond to enabled='True'/'False'
@@ -361,9 +395,6 @@ sys.excepthook = handleException
 logger.info( "INSTANTIATION NOTE: placeholder" )
 ###########################################################################################
 
-###################################### CONSTANTS ######################################
-start_time_script = time.time()
-batch_time = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H.%M.%S')
 
 ############################# PARAM LIST ##########################################
 super_populations = ["EUR"]
@@ -386,7 +417,10 @@ input_dir_base = "/cvar/jhlab/snpsnap/data/step2/1KG_snpsnap_production_v2"
 
 
 ############################# FUNCTION CALLS ##########################################
+
 cat_tabs()
+
+
 create_ld_buddy_counts()
 ###################################################################################
 

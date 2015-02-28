@@ -51,7 +51,7 @@ def submit():
 					os.mkdir(compile_out)
 
 				#./tabs_compile.py --combined_tabfile /cvar/jhlab/snpsnap/data/step2/1KG_snpsnap_production_v1/ld0.5/combined.tab --output_dir /cvar/jhlab/snpsnap/data/step3/1KG_snpsnap_production_v1/ld0.5 --distance_type ld --distance_cutoff 0.5 --log_dir /cvar/jhlab/snpsnap/snpsnap/logs_step5_tabs_compile --no_compression
-				cmd = "python tabs_compile.py --combined_tabfile {input} --output_dir {output} --distance_type {type} --distance_cutoff {cutoff} --super_population {super_population} --log_dir {log_dir} --no_compression".format(input=compile_in, output=compile_out, type=distance_type, cutoff=param, super_population=super_population, log_dir=log_dir)
+				cmd = "python tabs_compile.py --combined_tabfile {input} --output_dir {output} --distance_type {type} --distance_cutoff {cutoff} --super_population {super_population} --no_compression".format(input=compile_in, output=compile_out, type=distance_type, cutoff=param, super_population=super_population)
 				#OBS: --no_compression set
 				logger.info( "making command:\n%s" % cmd )
 				
@@ -125,12 +125,19 @@ current_script_name = os.path.basename(__file__).replace('.py','')
 ###################################### ARGUMENTS ######################################
 args = ParseArguments()
 
-###################################### SETUP logging ######################################
+###################################### CONSTANTS ######################################
+batch_time = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H.%M.%S')
+
 current_script_name = os.path.basename(__file__).replace('.py','')
+
+###################################### SETUP logging ######################################
 #log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/logs_bsub_tabs_compile_priority" #OBS VARIABLE
-log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/logs_bsub_tabs_compile_week" #OBS VARIABLE
+log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2/step5_wrapper_tabs_compile_week" #OBS VARIABLE
 if not os.path.exists(log_dir):
 	os.makedirs(log_dir)
+
+log_name = "{current_script_name}_{timestamp}".format(current_script_name=current_script_name, timestamp=batch_time)
+
 logger = pplogger.Logger(name=current_script_name, log_dir=log_dir, log_format=1, enabled=True).get()
 def handleException(excType, excValue, traceback, logger=logger):
 	logger.error("Logging an uncaught exception", exc_info=(excType, excValue, traceback))
