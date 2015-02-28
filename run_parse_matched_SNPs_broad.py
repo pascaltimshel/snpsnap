@@ -39,7 +39,8 @@ batch_time = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H.
 def run_parse(snplist_prefix, outfilename, unit_test_file):
 	snplist_files = glob.glob(snplist_prefix+"*.rsID") # catching all files with CORRECT prefix
 	if not os.path.exists(outfilename): # Test if already run
-		unit_test_file['NO_PREVIOUS_FILE'].append(outfilename)
+		status_string = "status = no previous file | {outfilename}".format(outfilename=outfilename)
+		unit_test_file['NO_PREVIOUS_FILE'].append(status_string)
 		#print "%s: CREATING NEW" % outfilename # OUTCOMMENTED JUNE 18 2014
 		
 		return True
@@ -54,7 +55,8 @@ def run_parse(snplist_prefix, outfilename, unit_test_file):
 			#expected_cols = 10 ######################## OBS ##############################
 			#expected_cols = 13 ######################## OBS - NEW JUNE 18 2014 - after adding 2 x located within (dist and ID) + 1 x LD buddies ##############################
 			#expected_cols = 15 ######################## OBS - NEW JUNE 19 2014 - after adding x2 SNPsnap distance (dist and ID) ##############################
-			expected_cols = 21 ######################## OBS - NEW FEBRUARY 26 2015 - after adding 6 new columns ##############################
+			#expected_cols = 21 ######################## OBS - NEW FEBRUARY 26 2015 - after adding 6 new columns ##############################
+			expected_cols = 22 ######################## OBS - NEW FEBRUARY 27 2015 - added snp_maf ##############################
 			for line in lines:
 				# Remove only trailing newline
 				cols = line.rstrip('\n').split('\t') # tab seperated - WE MUST KNOW THIS!
@@ -78,14 +80,21 @@ def run_parse(snplist_prefix, outfilename, unit_test_file):
 					rs_no = line.strip()
 					batch_snplist[rs_no] = 1
 		#pdb.set_trace()
-		if len(batch_snplist) == len(existing_outfile):
-			unit_test_file['FILE_EXISTS_OK'].append(outfilename)
+		LEN_batch_snplist = len(batch_snplist)
+		LEN_existing_outfile = len(existing_outfile)
+		if LEN_batch_snplist == LEN_existing_outfile:
+			status_string = "status = existing outfile is OK | {outfilename}".format(outfilename=outfilename)
+			unit_test_file['FILE_EXISTS_OK'].append(status_string)
 			#print "%s: OK" % outfilename # OUTCOMMENTED JUNE 18 2014
 
 			return None # Do not submit new job if files are ok!
 		else:
-			unit_test_file['FILE_EXISTS_BAD'].append(outfilename)
-			#print "%s: BAD FILE EXISTS. MAKING NEW" % outfilename # OUTCOMMENTED JUNE 18 2014
+			DIFFERENCE = LEN_batch_snplist-LEN_existing_outfile
+			status_string = "status = BAD existing outfile | DIFFERENCE=[LEN_batch_snplist-LEN_existing_outfile={DIFFERENCE}] | LEN_batch_snplist={LEN_batch_snplist} | LEN_existing_outfile={LEN_existing_outfile} | {outfilename}".format(DIFFERENCE=DIFFERENCE, LEN_batch_snplist=LEN_batch_snplist, LEN_existing_outfile=LEN_existing_outfile, outfilename=outfilename)
+			unit_test_file['FILE_EXISTS_BAD'].append(status_string)
+
+			logger.warning( "INSIDE run_parse() | FILE_EXISTS_BAD | outfilename={} did NOT pass criteria for a valid existing_outfile | LEN_batch_snplist={} | LEN_existing_outfile={}".format(outfilename, LEN_batch_snplist, LEN_existing_outfile) )
+			logger.warning( "INSIDE run_parse() | used the following snplist_files to populate 'batch_snplist':\n{}".format("\n".join(snplist_files)) )
 
 			return True # Re-run job.
 
@@ -114,7 +123,7 @@ def submit(path, stat_gene_density_path):
 		run = run_parse(snplist_prefix, outfilename, unit_test_file)
 		
 		#command = "%s --ldfiles_prefix %s --outfilename %s"%(script,"%s%s"%(prefix,suffix),outfilename) # e.g. --ldfiles_prefix becomes freq0-1
-		command = "python {script2call} --ldfiles_prefix {ldfiles_prefix} --outfilename {outfilename}".format(script2call=script2call, ldfiles_prefix=ldfiles_prefix, outfilename=outfilename) #
+		command = "python {script2call} --ldfiles_prefix {ldfiles_prefix} --super_population {super_population} --outfilename {outfilename}".format(script2call=script2call, ldfiles_prefix=ldfiles_prefix, super_population=super_population, outfilename=outfilename) #
 				
 		jobname = super_population + "_" + distance_measure + "_run_parse_matched_SNPs_" + suffix # e.g. ??
 
@@ -241,8 +250,6 @@ super_population = os.path.basename(os.path.dirname(os.path.abspath(path))) # e.
 
 # The "pipeline_identifier" should contain information to form a UNIQUE identifier. This IDENTIFIER IS ONLY CONVENIENT FOR LOGGING/DEBUGGING purposes.
 	# Relevant information needed --> super_population, distance_type and 
-
-###################################### .... ######################################
 
 
 

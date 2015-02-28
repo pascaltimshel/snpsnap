@@ -18,6 +18,39 @@ import pplogger
 def makehash():
 	return collections.defaultdict(makehash) 
 
+# Function to read frq file
+def read_file_frq(file_frq):
+	print "Reading file_frq file into hashes: {}".format(file_frq)
+	### File snippet
+	### NB: ALL SNPs (rsIDs) should be unique at this stage
+	# CHR                                  SNP   A1   A2          MAF  NCHROBS
+	#   1                              1:11008    G    C      0.08847     1006
+	#   1                              1:11012    G    C      0.08847     1006
+	#   1                              1:13110    A    G      0.05666     1006
+	#   1                          rs201725126    G    T       0.1869     1006
+	#   1                          rs200579949    G    A       0.1869     1006
+	#   1                              1:13273    C    G       0.1471     1006
+	#   1                              1:14464    T    A       0.1859     1006
+	#   1                              1:14599    A    T        0.161     1006
+	#   1                              1:14604    G    A        0.161     1006
+	snp_maf_dict = {}
+	with open(file_frq, 'r') as f:
+		for line in f: # reading line by line
+			fields = line.strip().split()
+			SNP = fields[1]
+			MAF = fields[4]
+			
+			### Additional check - REMEMBER: all rsID should be unique at this point.
+			if SNP in snp_maf_dict: # we have seen this rsID before
+				print "Have seen rsID={SNP} before. Old MAF will be overwriten. Now you know... THIS SHOULD NOT HAPPEN THOUGH. Check the plink .frq file for duplicate rsIDs."
+
+			### Saving MAF in dict
+			snp_maf_dict[SNP] = MAF
+
+	print "Done reading file_frq"
+	return snp_maf_dict
+
+
 # Function to read gene positions
 def read_gene_info(infile):
 	print "Reading ENSEMBL file into hashes"
@@ -43,8 +76,8 @@ def read_gene_info(infile):
 	# 8: Status (gene)
 	infile = open(infile,"r")
 	lines = infile.readlines()[1:] #REMEMBER: skip head line
-	info = makehash()
-	info_red = makehash()
+	gene_info = makehash()
+	gene_info_red = makehash()
 	chr_pattern = re.compile('^([1-9]|1[0-9]|2[0-4]|[X,Y])$', re.IGNORECASE) # this should match the numeric range 1-24 and X,Y. Match case insensitive.
 	for line in lines:
 		words = line.strip().split(',') # comma separated file
@@ -69,11 +102,11 @@ def read_gene_info(infile):
 		# 	chromosome = "24"
 
 		############# Saving ENSEMBLE ID in dict ###################
-		info[chromosome][ensembl_gene_id] = 1
+		gene_info[chromosome][ensembl_gene_id] = 1
 
 		############# Saving gene "METADATA" ###################
-		info_red[ensembl_gene_id]['gene_type'] = gene_type # we are looking for "protein_coding" later in the script
-		info_red[ensembl_gene_id]['hgnc_symbol'] = hgnc_symbol
+		gene_info_red[ensembl_gene_id]['gene_type'] = gene_type # we are looking for "protein_coding" later in the script
+		gene_info_red[ensembl_gene_id]['hgnc_symbol'] = hgnc_symbol
 
 		########################## USING TRANSCRIPTION START/END ######################
 		### OBS: that there may be many different Transcript Start/End FOR THE SAME ENSEMBL ID
@@ -82,11 +115,11 @@ def read_gene_info(infile):
 		#if ensembl_gene_id == 'ENSG00000176771': pdb.set_trace()
 		########################## USING GENE START/END ######################
 		if strand == '1': # Strand is FORWARD
-			info_red[ensembl_gene_id]['sta'] = int(gene_start) # ===> Gene Start (bp)
-			info_red[ensembl_gene_id]['end'] = int(gene_end) # ===> Gene End (bp)
+			gene_info_red[ensembl_gene_id]['sta'] = int(gene_start) # ===> Gene Start (bp)
+			gene_info_red[ensembl_gene_id]['end'] = int(gene_end) # ===> Gene End (bp)
 		elif strand == '-1': # Strand is REVERSE - then START should be END by ENSEMBL convention
-			info_red[ensembl_gene_id]['sta'] = int(gene_end) # ===> Gene End (bp)
-			info_red[ensembl_gene_id]['end'] = int(gene_start) # ===> Gene Start (bp)
+			gene_info_red[ensembl_gene_id]['sta'] = int(gene_end) # ===> Gene End (bp)
+			gene_info_red[ensembl_gene_id]['end'] = int(gene_start) # ===> Gene Start (bp)
 		else:
 			print "Warning: strange 'Strand' column entry in ENSEMBL file. Expected '1' or '-1' got [%s]. The below shows the full line:\n%s" % ( strand, line )
 			#TODO: make some exeption or print
@@ -98,14 +131,14 @@ def read_gene_info(infile):
 	infile.close()
 	print "done reading ENSEMBL file"
 
-	return info,info_red
+	return gene_info,gene_info_red
 
 # Function that reads ld files and prints matches SNPs
 def get_matched_snps(path,outfilename):
 	#TODO: gene_info,gene_info_red are NOT parsed as arguments to this function.
 	#	- instead they are global variables. BAD PRACTICE!!!! 
-	# gene_info == info
-	# gene_info_red == info_red
+	# gene_info == gene_info
+	# gene_info_red == gene_info_red
 	outfile = open(outfilename,'w')
 	# outfile = open(outfilename,'w', buffering=0) # JUNE 18 2014 - only for TEST - do not use without buffer
 	ldfiles = glob.glob(path+"*.ld")
@@ -195,6 +228,7 @@ def get_matched_snps(path,outfilename):
 			### processing
 			snp_chr = matched_snps_boundaries[matched_rsID]['chr'] # *TYPE=integer* [all Chromosomes are NUMERIC, converted by PLINK]
 			snp_position = matched_snps_boundaries[matched_rsID]['pos'] # *TYPE=integer*
+			snp_maf = snp_maf_dict[matched_rsID] #snp_maf_dict.get(matched_rsID, '') # We could also use .get() method so the script does not crash if the the SNP for some weird reason did not exist in the .frq file
 
 			genes_in_matched_locus = {} # orig
 		
@@ -343,7 +377,8 @@ def get_matched_snps(path,outfilename):
 			#OK - matched_nearest_gene_snpsnap_HGNC_symbol | HGNC symbol
 			#OK - flag_snp_within_gene | flag
 			#OK - flag_snp_within_gene_protein_coding | flag
-			
+			#OK - snp_maf
+
 			#TODO: 
 			# - consider printing 'NA' instead of nothing if genes_in_matched_locus is empty.
 			# - this will give a nicer human readble output
@@ -353,9 +388,10 @@ def get_matched_snps(path,outfilename):
 			# - REMEMBER THAT THE NUMBER OF COLUMS MUST BE UPDATED IN THE VALIDATION IN run_parse_matched_SNPs.py
 			# - First column MUST be rs_ID
 			### NEW FEB 2015 - added 6 columns [HGNC_snpsnap; dist+gene+HGNC for protein coding; 2x SNP location flags]
-			outfile.write("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t{10}\t{11}\t{12}\t{13}\t{14}\t{15}\t{16}\t{17}\t{18}\t{19}\t{20}\n".format( \
+			outfile.write("{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\t{8}\t{9}\t{10}\t{11}\t{12}\t{13}\t{14}\t{15}\t{16}\t{17}\t{18}\t{19}\t{20}\t{21}\n".format( \
 				matched_rsID, \
 				freq_bin, \
+				snp_maf, \
 				snp_chr, \
 				snp_position, \
 				matched_gene_count, \
@@ -399,9 +435,13 @@ def get_matched_snps(path,outfilename):
 	outfile.close()
 	
 ################################# ENSEMBL Gene file #######################################################
+### Production v1 ###
 #gene_information_file="/home/projects/tp/childrens/snpsnap/data/misc/ensg_mart_ensembl64_buildGRCh37.p5.tab"
 #gene_information_file="/cvar/jhlab/snpsnap/data/misc/ensg_mart_ensembl64_buildGRCh37.p5.tab"
-gene_information_file="/cvar/jhlab/snpsnap/data/misc/biomart_download-2015-02-26-snpsnap_production_v2-ensembl-release_GRCh37.p13_processed-GENCODE.csv"
+
+### FEB 2015 - Production v2 ###
+#gene_information_file="/cvar/jhlab/snpsnap/data/misc/biomart_download-2015-02-26-snpsnap_production_v2-ensembl-release_GRCh37.p13_processed-GENCODE.csv"
+gene_information_file="/cvar/jhlab/snpsnap/data/misc/biomart_download-2015-02-26-snpsnap_production_v2-ensembl-release_GRCh37.p13_processed-GENCODE.chrosome_clean.unique-ENSG_ID.csv"
 # Ensembl Gene ID,Chromosome Name,Gene Start (bp),Gene End (bp),Strand,Gene type,HGNC symbol,Source (gene),Status (gene)
 # ENSG00000261657,HG991_PATCH,66119285,66465398,1,protein_coding,SLC25A26,havana,KNOWN
 # ENSG00000223116,13,23551994,23552136,-1,miRNA,,ensembl,NOVEL
@@ -413,14 +453,25 @@ gene_information_file="/cvar/jhlab/snpsnap/data/misc/biomart_download-2015-02-26
 # Parse arguments  
 #
 arg_parser = argparse.ArgumentParser(description="Parse plink output and construct loci")
-arg_parser.add_argument("--ldfiles_prefix", help="Prefix to Plink .ld files ('*' suffixed in above method)")
-arg_parser.add_argument("--outfilename", help="Filename for outfile") # e.g e.g. .;long_path../ld0.5/stat_gene_density/freq0-1.tab
+arg_parser.add_argument("--ldfiles_prefix", required=True, help="Prefix to Plink .ld files ('*' suffixed in above method)")
+arg_parser.add_argument("--super_population", required=True, help="Super population") # e.g. EUR
+arg_parser.add_argument("--outfilename", required=True, help="Filename for outfile") # e.g. .;long_path../ld0.5/stat_gene_density/freq0-1.tab
 args = arg_parser.parse_args()
 
-#
-# Analysis
-#
+### get arguments
+super_population = args.super_population
+ldfiles_prefix = args.ldfiles_prefix
+outfilename = args.outfilename
+
+
+###################################### *OBS* HARDCODED PATH - setting file_frq ######################################
+file_frq = "/cvar/jhlab/snpsnap/data/step1/production_v2_QC_full_merged_duplicate_rm/{super_population}/ALL.chr_merged.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.frq".format(super_population=super_population)
+# e.g. /cvar/jhlab/snpsnap/data/step1/production_v2_QC_full_merged_duplicate_rm/EUR/ALL.chr_merged.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.frq
+
+### read .frq file
+snp_maf_dict = read_file_frq(file_frq)
+
 gene_info,gene_info_red = read_gene_info(gene_information_file) # Finds position of each gene
 # saves hashes global
 
-get_matched_snps(args.ldfiles_prefix,args.outfilename)
+get_matched_snps(ldfiles_prefix, outfilename)
