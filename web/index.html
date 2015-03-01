@@ -49,20 +49,33 @@
 		<!-- <ul class="nav nav-pills navbar-right"> --> <!-- does not work at all! -->
 		<ul class="nav nav-pills">
 			<li class="active"><a href="index.html">Home</a></li>
+			<li><a href="about.html">About</a></li>
 			<li><a href="match_snps.html">Match SNPs</a></li>
 			<li><a href="faq.html">FAQ</a></li>
 			<li><a href="documentation.html">Documentation</a></li>
 			<li><a href="contact.html">Contact</a></li>
+			<li><a href="feedback.html">Feedback</a></li>
 		</ul>
 	</div>
 
-	<div class="row margin_bottom0">
+<!-- 	<div class="row margin_bottom0">
 		<div class="jumbotron col-xs-offset-1 col-xs-9">
 			<h2>Match your SNPs with SNPsnap!</h2>
-			<!-- <p class="lead"></p> -->
+			<p><a class="btn btn-lg btn-success" href="match_snps.html" role="button">Start now</a></p>
+		</div>
+	</div> -->
+
+	<!-- <p class="lead"></p> -->
+
+	<!-- align="center" -->
+	<div class="row jumbotron_snpsnap" >
+		<div class="col-xs-offset-1 col-xs-9">
+			<h2>Match your SNPs with SNPsnap!</h2>
+			<div style="margin-bottom:10px"><i>A fast and easy entry point to matching and annotation of 1000 Genome SNPs.</i></div>
 			<p><a class="btn btn-lg btn-success" href="match_snps.html" role="button">Start now</a></p>
 		</div>
 	</div>
+
 
 <!-- TEMPORARY OUTCOMMENTED -->
 <!-- 	<div class="row">
@@ -78,46 +91,63 @@
 	<div class="row">
 		<div class="col-xs-offset-1 col-xs-9">
 			<h2>What's New?</h2>
-			<div class="scrollable_news">
-			<div class="panel panel-default"> <!-- START feed -->
-				<div class="panel-heading">
-					<div class="text-right">September 15, 2014</div>
-					<h3 class="panel-title">Let SNPsnap check the independence of your input SNPs</h3>
-				</div>
-				<div class="panel-body">
-					Checking indepence of SNPs have never been easier: we have integrated an option for reporting the independence of your input SNPs. You can adjust the threshold of clumping (both LD and physical distance) after selecting the checkbox <span class="code_settings">Report input loci independence</span>. This will generate the file <span class="code_files">input_snps_clumped.txt</span> where researches can inspect the clumping in more details.
-				</div>
-			</div> <!-- END feed -->
-			<div class="panel panel-default"> <!-- START feed -->
-				<div class="panel-heading">
-					<div class="text-right">September 11, 2014</div>
-					<h3 class="panel-title">Accepting rs-numbers</h3>
-				</div>
-				<div class="panel-body">
-					SNPsnap now accepts rs-numbers as SNP input. In addition SNPsnap generates the file <span class="code_files">input_snps_identifer_mapping.txt</span> to ease the mapping to/from chromosomal coordinates and rs-numbers.
-				</div>
-			</div> <!-- END feed -->
-			<div class="panel panel-default"> <!-- START feed -->
-				<div class="panel-heading">
-					<div class="text-right">July 14, 2014</div>
-					<h3 class="panel-title">Maching Bias</h3>
-				</div>
-				<div class="panel-body">
-					SNPsnap now includes a matching bias calculation to determine differences between the mean genetic properties of input and matched SNPs.<br>
-					This helps the user to balance the trade-off between requesting a large number of matched SNPs while avoiding systematic differences between input and matched SNPs.
-					<!-- Users that request a large number of matched SNPs may find this helpful in choosing the proper matching criteria. -->
-				</div>
-			</div> <!-- END feed -->
-			<div class="panel panel-default"> <!-- START feed -->
-				<div class="panel-heading">
-					<div class="text-right">July 8, 2014</div>
-					<h3 class="panel-title">Option for excluding HLA SNPs</h3>
-				</div>
-				<div class="panel-body">
-					SNPsnap now supports a new exclusion feature <span class="code_settings">Exclude HLA SNPs</span>. <br>
-					Enabling this option will exclude all input SNPs mapping to the HLA region (chr 6 25Mb-35Mb) in both input and matched SNPs. <br>
-				</div>
-			</div> <!-- END feed -->
+			<!-- <div class="scrollable_news"> -->
+				<div class="panel panel-default"> <!-- START feed -->
+					<div class="panel-heading">
+						<div class="text-right">February 30, 2015</div>
+						<h3 class="panel-title"><div class="text-danger">Major SNPsnap update: 1000G Phase 3 Data</div></h3>
+					</div>
+					<div class="panel-body">
+						SNPsnap have undergone a major update. Here is the list of new features:
+						<ul>
+						  <li>SNPsnap is now based on <strong><a href="http://www.1000genomes.org/about#ProjectSamples">1000 Genome Phase 3</a></strong> data. The old Phase 1 data is no longer supported.</li>
+						  <li>Super populations for Europe (EUR), East Asian (EAS) and West African (WAFR) are added to allow more specific SNP matching based on your study population.</li>
+						  <li>X chromosome included.</li>
+						  <li>Geneset updated to <a href="http://www.gencodegenes.org/">GENCODE</a> geneset.</li>
+						  <li>New SNPsnap annotation features: MAF, HGNC symbols, distance to nearest protein coding gene, flag for SNP within gene and more.</li>
+						</ul>
+					We hope you enjoy the new and improved version! Please do not hesitate to <a href="feedback.html">give us feedback</a>.
+					</div>
+				</div> <!-- END feed -->
+				<div class="panel panel-default"> <!-- START feed -->
+					<div class="panel-heading">
+						<div class="text-right">September 15, 2014</div>
+						<h3 class="panel-title">Let SNPsnap check the independence of your input SNPs</h3>
+					</div>
+					<div class="panel-body">
+						Checking indepence of SNPs have never been easier: we have integrated an option for reporting the independence of your input SNPs. You can adjust the threshold of clumping (both LD and physical distance) after selecting the checkbox <span class="code_settings">Report input loci independence</span>. This will generate the file <span class="code_files">input_snps_clumped.txt</span> where researches can inspect the clumping in more details.
+					</div>
+				</div> <!-- END feed -->
+				<div class="panel panel-default"> <!-- START feed -->
+					<div class="panel-heading">
+						<div class="text-right">September 11, 2014</div>
+						<h3 class="panel-title">Accepting rs-numbers</h3>
+					</div>
+					<div class="panel-body">
+						SNPsnap now accepts rs-numbers as SNP input. In addition SNPsnap generates the file <span class="code_files">input_snps_identifer_mapping.txt</span> to ease the mapping to/from chromosomal coordinates and rs-numbers.
+					</div>
+				</div> <!-- END feed -->
+				<div class="panel panel-default"> <!-- START feed -->
+					<div class="panel-heading">
+						<div class="text-right">July 14, 2014</div>
+						<h3 class="panel-title">Maching Bias</h3>
+					</div>
+					<div class="panel-body">
+						SNPsnap now includes a matching bias calculation to determine differences between the mean genetic properties of input and matched SNPs.<br>
+						This helps the user to balance the trade-off between requesting a large number of matched SNPs while avoiding systematic differences between input and matched SNPs.
+						<!-- Users that request a large number of matched SNPs may find this helpful in choosing the proper matching criteria. -->
+					</div>
+				</div> <!-- END feed -->
+				<div class="panel panel-default"> <!-- START feed -->
+					<div class="panel-heading">
+						<div class="text-right">July 8, 2014</div>
+						<h3 class="panel-title">Option for excluding HLA SNPs</h3>
+					</div>
+					<div class="panel-body">
+						SNPsnap now supports a new exclusion feature <span class="code_settings">Exclude HLA SNPs</span>. <br>
+						Enabling this option will exclude all input SNPs mapping to the HLA region (chr 6 25Mb-35Mb) in both input and matched SNPs. <br>
+					</div>
+				</div> <!-- END feed -->
 				<div class="panel panel-default"> <!-- START feed -->
 					<div class="panel-heading">
 						<div class="text-right">June 25, 2014</div>
@@ -128,7 +158,7 @@
 						We strongly encourage you to provide feedback for any improvements to the website or SNP matching parameters. <br>
 					</div>
 				</div> <!-- END feed -->
-			</div>
+			<!-- </div> -->
 		</div>
 	</div>
 

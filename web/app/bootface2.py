@@ -516,11 +516,11 @@ def run():
 	</i></p>"""
 	
 	### Give the user a warning about the instability of SNPsnap emailing server
+	# <p class="text-danger">SNPsnap have been experiencing issues with the email notification server. 
+	# We encourage all users to copy the above result download link and store it temporarily. 
+	# This will enable users to fetch the results even if the email does not reach the user's inbox.
+	# <br>
 	print """
-	<p class="text-danger">SNPsnap have been experiencing issues with the email notification server. 
-	We encourage all users to copy the above result download link and store it temporarily. 
-	This will enable users to fetch the results even if the email does not reach the user's inbox.
-	<br>
 	SNPsnap is sometimes 'hanging' in the initialization phase of a job. Please allow a few minutes for the job to get started before you do anything.
 	<br>
 	Typical jobs finish within 10-60 minutes after which the download link becomes active and you can download the results.

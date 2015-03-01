@@ -46,14 +46,40 @@
 <div class="header">
 	<ul class="nav nav-pills">
 		<li><a href="index.html">Home</a></li>
+		<li><a href="about.html">About</a></li>
 		<li><a href="match_snps.html">Match SNPs</a></li>
 		<li><a href="faq.html">FAQ</a></li>
 		<li class="active"><a href="documentation.html">Documentation</a></li>
 		<li><a href="contact.html">Contact</a></li>
+		<li><a href="feedback.html">Feedback</a></li>
 	</ul>
 </div>
 
-	<h2 class="documentation_header">Methodology</h2>
+	<!-- ####################### TABLE OF CONTENTS #######################  -->
+
+	<h2 class="documentation_header">Table of Contents</h2>
+	<dl>
+		<dt class="toc_title1"><a href="#doc_methodology">Methodology</a></dt>
+			<ul style="list-style-type:none">
+				<li class="toc_title2"><a href="#doc_data">Data</a></li>
+				<li class="toc_title2"><a href="#genetic_properties">Genetic properties used matched SNPs</a></li>
+				<li class="toc_title2"><a href="#doc_algorithm">Algorithm</a></li>
+			</ul>
+		<dt class="toc_title1"><a href="#doc_webserver">Webserver</a></dt>
+			<ul style="list-style-type:none">
+				<li class="toc_title2"><a href="#snpsnap_score">SNPsnap score</a></li>
+				<li class="toc_title2"><a href="#snpsnap_matching_bias">SNPsnap matching bias</a></li>
+				<li class="toc_title2"><a href="#doc_output_files">Output files</a></li>
+				<li class="toc_title2"><a href="#snp_annotation_input_snps_annotated">SNP Annotations - <span class="code_files">input_snps_annotated.txt</span></a></li>
+				<li class="toc_title2"><a href="#snp_annotation_matched_snps_annotated">SNP Annotations - <span class="code_files">matched_snps_annotated.txt</span></a></li>
+			</ul>
+	</dl>
+
+
+	<!-- ####################### MAIN DOCUMENTATION #######################  -->
+
+	<h2 class="documentation_header"><a name="doc_methodology" class="documentation_header_link">Methodology</a></h2>
+	<!-- <h2 class="documentation_header">Methodology</h2> -->
 
 	<h3>Aim</h3>
 	The SNPsnap webserver enables SNP-based enrichment analysis by providing matched sets of SNPs that can be used to calibrate background expectations. Specifically, SNPsnap efficiently identifies sets of randomly drawn SNPs that are matched to a set of query SNPs based on 
@@ -63,21 +89,69 @@
 		<li>Distance to nearest gene</li>
 		<li>Gene density</li>
 	</ul>
+
+	<!-- PRODUCTION VERSION 2 -->
+	<h3><a name="doc_data" class="documentation_header_link">Data</a></h3>
+
+	SNPsnap uses  <strong>1000 Genomes Project Phase 3</strong> variants from the <strong>three different ancestral cohorts</strong>. SNPsnap uses 1000G Project's definition of the super populations for European and East Asian (see below), but defines West Africa as a subset of the 1000G African samples. Super populations are defined using the <a href="ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/integrated_call_samples_v3.20130502.ALL.panel">1000G panel file</a>.<br>
+	Specifically our database contains biallelic, uniquely mapped SNPs derived from preprocessing the phase 3 genotype data.
+	SNPsnap's database only holds <strong>common variants</strong> (>1% MAF). SNPsnap contains <strong>all types of variants listed by 1000 Genomes Project</strong>: single nucleotide variants (SNPs), indels and larger structural variants (as assigned with evs-numbers).<br>
+	SNPsnap contains SNPs for chromosome 1-22 and the X-chromosome.<br>
+
+	<h4>SNPsnap Super Population Definitions</h4>
+	SNPsnap's super population definitions are based on the following <a href="http://www.1000genomes.org/about#ProjectSamples">1000G cohorts</a>:
+	<ul>
+		<li><strong>European (EUR)</strong>
+			<ul>
+				<li>British in England and Scotland (GBR)</li>
+				<li>Finnish in Finland (FIN)</li>
+				<li>Iberian populations in Spain (IBS)</li>
+				<li>Toscani in Italy (TSI)</li>
+				<li>Utah residents with Northern and Western European ancestry (CEU)</li>
+			</ul>
+		</li>
+		<li><strong>East Asian (EAS)</strong>
+			<ul>
+				<li>Chinese Dai in Xishuangbanna, China(CDX)</li>
+				<li>Han Chinese in Bejing, China (CHB)</li>
+				<li>Japanese in Tokyo, Japan (JPT)</li>
+				<li>Kinh in Ho Chi Minh City, Vietnam (KHV)</li>
+				<li>Southern Han Chinese, China (CHS)</li>
+			</ul>
+		</li>
+		<li><strong>West Africa (WAFR)</strong>
+			<ul>
+				<li>Esan in Nigeria (ESN)</li>
+				<li>Yoruba in Ibadan, Nigeria (YRI)</li>
+				<li>Gambian in Western Division, The Gambia (GWD)</li>
+				<li>Mende in Sierra Leone (MSL)</li>
+			</ul>
+		</li>
+	</ul>
+
 	
-	<h3>Data</h3>
+	<!-- PRODUCTION VERSION 1 -->
+<!-- 	<h3>Data</h3>
 	SNPsnap currently uses 1000 Genomes Project Phase 1 variants from the <strong>European ancestral cohorts</strong>. Specifically our database contains 9,239,614 biallelic, uniquely mapped SNPs derived from preprocessing the phase 1 genotype data for 268 samples from the CEU, GBR and TSI populations.
 	SNPsnap's database only holds <strong>common variants</strong> (>1% MAF). SNPsnap contains <strong>all types of variants listed by 1000 Genomes Project</strong>: single nucleotide variants (SNPs), indels and larger structural variants (as assigned with evs-numbers).
 	<span class="text-danger">SNPsnap will soon be updated with 1000 Genomes Phase 3 variants. The update will also include more populations.</span>
+ -->
+	<h4>SNPsnap Gene Sets</h4>
+	SNPsnap uses genes from the <a href="http://www.gencodegenes.org/">GENCODE</a> consortium downloaded via ENSEMBL Biomart.
+	SNPsnap uses any genes within the GENCODE gene set to define the <span class="code_settings">Distance to Nearest Gene</span> and <span class="code_settings">Gene Density</span>. Please note that not all these genes are coding genes.
+	The SNPsnap GENCODE gene set contains 57737 genes of which 20314 are protein coding genes. SNPsnap provides the annotation feature <span class="code_column">dist_nearest_gene_snpsnap_protein_coding</span> as the distance to the nearest protein coding gene.
+	Finaly, SNPsnap uses Ensembl's mapping to HGNC symbols whenever a HGNC symbol is provided.
 
 	<h3><a name="genetic_properties" class="documentation_header_link">Genetic properties used to sample random but matched SNPs</a></h3>
 	<ul>
 	  <li ><strong>Minor allele frequency</strong>: SNPs are partitioned into minor allele frequency bins of 1-2, 2-3, ..., 49-50% strata.</li>
 	  <li ><strong>LD buddies</strong>: the number of “buddy” (or "proxy") SNPs in LD at various thresholds. SNPsnap currently offers LD buddy counts for thresholds using r&#178 > 0.1, 0.2, ..., 0.9</li>
-	  <li ><strong>Distance to nearest gene</strong>: the distance to the nearest 5’ start site using Ensembl gene coordinates (Flicek et al., 2014). If the SNP is within a gene, the distance to that gene’s start site is used. </li>
+	  <li ><strong>Distance to nearest gene</strong>: the distance to the nearest 5’ start site using <a href="http://www.gencodegenes.org/">GENCODE</a> gene coordinates. If the SNP is within a gene, the distance to that gene’s start site is used. </li>
 	  <li ><strong>Gene density</strong>: the number of genes in loci around the SNP, using LD (r&#178 > 0.1, 0.2, ..., 0.9) and physical distance (100, 200, ..., 1000 kb) to define loci. </li>
 	</ul>
 	
 	The genetic properties of the SNPs in the current version of SNPsnap's database is left-skewed (see below histograms).
+	<span class="text-danger">*The below plots are based on the older version of SNPsnap using 1000 Genomes Phase 1 variants from European ancestry.</span>
 	<div class="row">
 		<div class="col-xs-offset-1 col-xs-10">
 			<img class="img-responsive" src="img/documentation/Supp_Fig_1_web_edition.png">
@@ -85,8 +159,7 @@
 	</div>
 
 
-
-	<h3>Algorithm</h3>
+	<h3><a name="doc_algorithm" class="documentation_header_link">Algorithm</a></h3>
 	<div class="row">
 		<div class="col-xs-offset-1 col-xs-10">
 			<img class="img-responsive" src="img/documentation/Figure_1.png">
@@ -118,7 +191,8 @@
 	</ol>
  -->
 
-	<h2 class="documentation_header">Webserver</h2>
+	<h2 class="documentation_header"><a name="doc_webserver" class="documentation_header_link">Webserver</a></h2>
+	<!-- <h2 class="documentation_header">Webserver</h2> -->
 
 	<h3>User input</h3>
 	Chromosomal coordinates of SNPs e.g. 3:20145787 for a SNP on chromosome 3 at bp 20,145,787. 
@@ -174,6 +248,7 @@
 	Large allowable deviation of the genetic properties and a large number of requested SNPs are the primary causes for the matching bias. Bias of the matched SNPs may be reduced or eliminated by lowering one or both of these parameters.
 	We recommend reducing any matched bias because it may hamper downstream genetic enrichment analysis.
 
+	<span class="text-danger">*The below plots are based on the older version of SNPsnap using 1000 Genomes Phase 1 variants from European ancestry.</span>
 	<div class="row">
 		<div class="col-xs-offset-1 col-xs-10">
 			<img class="img-responsive" src="img/documentation/ratio_v4_multiplot2x2_dim1200x800.png">
@@ -186,7 +261,7 @@
 	SNPsnap uses PLINK's (Purcell et al. 2007) algorithm for clumping SNPs (see <a href="http://pngu.mgh.harvard.edu/~purcell/plink/clump.shtml" target="_blank">PLINKs documentation</a> for details).
 
 
-	<h3>Output files</h3>
+	<h3><a name="doc_output_files" class="documentation_header_link">Output files</a></h3>
 	<ul>
 	  <li ><span class="code_files">matched_snps.txt</span><br>Primary output of SNPsnap; a matrix with dimension [N_input_SNPs x (Requested number of SNPs + 1)]. The first column lists the input SNPs. Each of the following columns contains a matched set of SNPs.</li>
 	  <li ><span class="code_files">input_snps_excluded.txt</span><br>File listing the input SNPs excluded from analysis. There may be two reasons for an input SNP being excluded: 1) the SNP does not exist in the SNPsnap database; 2) the SNP maps to the HLA region and the <span class="code_settings">Exclude HLA SNPs</span> is enabled. First column in the file is input SNP identifier; second column is the reason for exclusion.</li>
@@ -230,96 +305,131 @@
 			</tr>
 			<tr>
 				<th>4</th>
+				<td class="code_column">snp_maf</td>
+				<td>Minor Allele Frequency (MAF) for the SNP</td>
+			</tr>
+			<tr>
+				<th>5</th>
 				<td class="code_column">gene_count</td>
 				<td>The number of genes in the locus (gene density)</td>
 			</tr>
 			<tr>
-				<th>5</th>
+				<th>6</th>
 				<td class="code_column">dist_nearest_gene_snpsnap</td>
 				<td>Distance to the start site of nearest gene the SNP is located within. If this distance is not defined (<code>"inf"</code>), the distance to the start site of nearest gene is used. That is, <span class="code_column">dist_nearest_gene_snpsnap</span> is equal to either <span class="code_column">dist_nearest_gene</span> or <span class="code_column">dist_nearest_gene_located_within</span>. Distance is in base pairs</td>
 			</tr>
 			<tr>
-				<th>6</th>
+				<th>7</th>
+				<td class="code_column">dist_nearest_gene_snpsnap_protein_coding</td>
+				<td>Same as <span class="code_column">dist_nearest_gene_snpsnap</span> but distance to nearest protein coding gene start site.</td>
+			</tr>
+			<tr>
+				<th>8</th>
 				<td class="code_column">dist_nearest_gene</td>
 				<td>Distance to the start site of nearest gene. Distance is in base pairs</td>
 			</tr>
 			<tr>
-				<th>7</th>
+				<th>9</th>
 				<td class="code_column">dist_nearest_gene_located_within</td>
 				<td>Distance to the start site of nearest gene the SNP is located within. Distance is in base pairs. If the SNP is not located within any genes the distance is <code>"inf"</code></td>
 			</tr>
 			<tr>
-				<th>8</th>
+				<th>10</th>
 				<td class="code_column">loci_upstream</td>
 				<td>Upstream locus boundary</td>
 			</tr>
 			<tr>
-				<th>9</th>
+				<th>11</th>
 				<td class="code_column">loci_downstream</td>
 				<td>Downstream locus boundary</td>
 			</tr>
 			<tr>
-				<th>10</th>
+				<th>12</th>
 				<td class="code_column">ID_nearest_gene_snpsnap</td>
 				<td><code>Ensembl Gene ID</code> for the gene used in the calculation of <span class="code_column">dist_nearest_gene_snpsnap</span></td>
 			</tr>
 			<tr>
-				<th>11</th>
+				<th>13</th>
+				<td class="code_column">ID_nearest_gene_snpsnap_protein_coding</td>
+				<td><code>Ensembl Gene ID</code> for the gene used in the calculation of <span class="code_column">dist_nearest_gene_snpsnap_protein_coding</span></td>
+			</tr>
+			<tr>
+				<th>14</th>
 				<td class="code_column">ID_nearest_gene</td>
 				<td><code>Ensembl Gene ID</code> for the gene used in the calculation of <span class="code_column">dist_nearest_gene</span></td>
 			</tr>
 			<tr>
-				<th>12</th>
+				<th>15</th>
 				<td class="code_column">ID_nearest_gene_located_within</td>
 				<td><code>Ensembl Gene ID</code> for the gene used in the calculation of <span class="code_column">dist_nearest_gene_located_within</span>. Note that this column may be <span class="documentation_important">empty</span> if <span class="code_column">dist_nearest_gene_located_within</span> has the value <code>"inf"</code>.</td>
 			</tr>
 			<tr>
-				<th>13</th>
+				<th>16</th>
+				<td class="code_column">HGNC_nearest_gene_snpsnap</td>
+				<td><code>HGNC Symbol</code> for the gene used in the calculation of <span class="code_column">dist_nearest_gene_snpsnap</span>. Note that this column may be <span class="documentation_important">empty</span> if Ensembl does not provide a mapping from ENSG_ID to HGNC Symbol.</td>
+			</tr>
+			<tr>
+				<th>17</th>
+				<td class="code_column">HGNC_nearest_gene_snpsnap_protein_coding</td>
+				<td><code>HGNC Symbol</code> for the gene used in the calculation of <span class="code_column">dist_nearest_gene_snpsnap_protein_coding</span>. Note that this column may be <span class="documentation_important">empty</span> if Ensembl does not provide a mapping from ENSG_ID to HGNC Symbol.</td>
+			</tr>
+			<tr>
+				<th>18</th>
+				<td class="code_column">flag_snp_within_gene</td>
+				<td>Value indicates of the SNP is located within a gene. Value can be <code>True</code> or <code>False</code>.</td>
+			</tr>
+			<tr>
+				<th>19</th>
+				<td class="code_column">flag_snp_within_gene_protein_coding</td>
+				<td>Value indicates of the SNP is located within a protein coding gene. Value can be <code>True</code> or <code>False</code>.</td>
+			</tr>
+			<tr>
+				<th>20</th>
 				<td class="code_column">ID_genes_in_matched_locus</td>
 				<td><code>Ensembl Gene ID</code> of genes overlaping with the locus boundaries. Note that this column may be <span class="documentation_important">empty</span> if <span class="code_column">gene_count</span> has the value <code>"0"</code>.</td>
 			</tr>
 			<tr>
-				<th>14</th>
+				<th>21</th>
 				<td class="code_column">friends_ld01</td>
 				<td>Number of LD buddies using cutoff r&#178 > 0.1</td>
 			</tr>
 			<tr>
-				<th>15</th>
+				<th>22</th>
 				<td class="code_column">friends_ld02</td>
 				<td>Number of LD buddies using cutoff r&#178 > 0.2</td>
 			</tr>
 			<tr>
-				<th>16</th>
+				<th>23</th>
 				<td class="code_column">friends_ld03</td>
 				<td>Number of LD buddies using cutoff r&#178 > 0.3</td>
 			</tr>
 			<tr>
-				<th>17</th>
+				<th>24</th>
 				<td class="code_column">friends_ld04</td>
 				<td>Number of LD buddies using cutoff r&#178 > 0.4</td>
 			</tr>
 			<tr>
-				<th>18</th>
+				<th>25</th>
 				<td class="code_column">friends_ld05</td>
 				<td>Number of LD buddies using cutoff r&#178 > 0.5</td>
 			</tr>
 			<tr>
-				<th>19</th>
+				<th>26</th>
 				<td class="code_column">friends_ld06</td>
 				<td>Number of LD buddies using cutoff r&#178 > 0.6</td>
 			</tr>
 			<tr>
-				<th>20</th>
+				<th>27</th>
 				<td class="code_column">friends_ld07</td>
 				<td>Number of LD buddies using cutoff r&#178 > 0.7</td>
 			</tr>
 			<tr>
-				<th>21</th>
+				<th>28</th>
 				<td class="code_column">friends_ld08</td>
 				<td>Number of LD buddies using cutoff r&#178 > 0.8</td>
 			</tr>
 			<tr>
-				<th>22</th>
+				<th>29</th>
 				<td class="code_column">friends_ld09</td>
 				<td>Number of LD buddies using cutoff r&#178 > 0.9</td>
 			</tr>
@@ -351,7 +461,7 @@
 				<td>The chromosomal coordinates for the input SNPs that were matched</td>
 			</tr>
 			<tr>
-				<th>3...24</th>
+				<th>3...31</th>
 				<td>...</td>
 				<td>... same as for  <span class="code_files">input_snps_annotated.txt</span> but annotation is for the matched SNP</td>
 			</tr>

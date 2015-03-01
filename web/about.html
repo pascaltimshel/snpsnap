@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>SNPsnap</title>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="description" content="SNPsnap - matching SNPs based on genetic properties. Enhance your SNP-based enrichment analysis.">
+	<meta name="author" content="Broad Institute of MIT and Harvard">
+	<meta name="keywords" content="Broad Institute of MIT and Harvard, history, Genome Center, Whitehead Institute/MIT Center for Genome Research, Human Genome Project, Eric Lander, Institute of Chemistry and Cell Biology, Stuart Schreiber, Initiative for Chemical Genetics, Harvard University, Harvard medical School, MIT, Massachusetts Institute of Technology, Human Genome Project" />
+
+	<!-- FAVICON -->
+	<link rel="shortcut icon" href="img/broad_logo/BroadSeal-20140621-favicon.ico">
+	<link rel="icon" type="image/png" href="img/broad_logo/favicon-32x32.png" sizes="32x32">
+
+	<!-- Custom styles for SNPsnap -->
+	<link href="css/jumbotron-narrow.css" rel="stylesheet">
+	<link href="css/snpsnap.css" rel="stylesheet">
+
+	<!-- GOOGLE FONTS -->
+	<link href="http://fonts.googleapis.com/css?family=Crimson+Text" rel="stylesheet" type="text/css">
+
+	<!-- GOOGLE ANALYTICS -->
+	<script src="js/snpsnap_googleanalytics.js"></script>
+
+	<!-- jQuery -->
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+
+	<!-- Bootstrap core CSS -->
+	<link href="static/css/bootstrap.min.css" rel="stylesheet">
+	<!-- Bootstrap core JavaScript - must come AFTER jQuery -->
+	<script src="static/js/bootstrap.min.js"></script>
+</head>
+
+
+<body>
+
+
+
+	<div class="container-non-responsive">
+
+	<div class="row">
+		<div class="col-xs-6"><h1 class='allerta'>SNPsnap</h1></div>
+		<div class="col-xs-6"><img class="img-responsive min-limits" src="img/broad_logo/BroadLogo.png"></div>
+	</div>
+	<br>
+		
+	<div class="header">
+		<!-- <ul class="nav nav-pills pull-right"> -->
+		<!-- <ul class="nav nav-pills navbar-right"> --> <!-- does not work at all! -->
+		<ul class="nav nav-pills">
+			<li><a href="index.html">Home</a></li>
+			<li class="active"><a href="about.html">About</a></li>
+			<li><a href="match_snps.html">Match SNPs</a></li>
+			<li><a href="faq.html">FAQ</a></li>
+			<li><a href="documentation.html">Documentation</a></li>
+			<li><a href="contact.html">Contact</a></li>
+			<li><a href="feedback.html">Feedback</a></li>
+		</ul>
+	</div>
+
+	<div class="row">
+		<div class="col-xs-offset-1 col-xs-9">
+			<div class="panel panel-default"> <!-- START feed -->
+				<div class="panel-heading">
+					<h3 class="panel-title">SNPsnap main usage</h3>
+				</div>
+				<div class="panel-body">
+					<!-- A description list -->
+					<dl>
+						<dt>Match input SNPs</dt>
+					  		<dd>SNPsnap can be used to generate matched sets of SNPs that can be used to calibrate background expectations in SNP-based enrichment analysis.</dd>
+					  	<br>
+					  	<dt>Annotate input SNPs using 1000 Genome data</dt>
+					  		<dd>SNPsnap allows users to quickly retrieve 1000 Genome population specific information about loci bounderies, nearest genes and genes in loci, minor allele frequency and much more.</dd>
+<!-- 					SNPsnap has two main features:
+					<ol>
+					  <li>Match input SNPs: generate matched sets of SNPs that can be used to calibrate background expectations in SNP-based enrichment analysis.</li>
+					  <li>Annotate input SNPs: quickly retrieve 1000 Genome population specific information about loci bounderies, nearest genes and genes in loci, minor allele frequency and much more.</li>
+					</ol> -->
+				</div>
+			</div> <!-- END feed -->
+			<div class="panel panel-default"> <!-- START feed -->
+				<div class="panel-heading">
+					<h3 class="panel-title">Tips &amp; Tricks</h3>
+				</div>
+				<div class="panel-body">
+					<!-- A description list -->
+					<dl>
+						<dt>Tip #1: fast input annotation</dt>
+							<dd>SNPsnap main purpose is to match input SNPs. However, many users are often only interested in annotating their input SNPs using 1000 Genome population specific data. If you are only interested in annotatating your input SNPs, 
+							setting <span class="code_settings">Number of matched SNPs</span> to a low value (e.g. <code>1</code>) will highly speed up the runtime for your job. 
+							Of course you should also make sure to enable <span class="code_settings">Annotate input SNPs</span>.
+							</dd>
+<!-- 						<dt>Tip #2</dt>
+							<dd>White cold drink</dd> -->
+					</dl>
+				</div>
+			</div> <!-- END feed -->
+
+		</div>
+	</div>
+
+
+			
+
+ <!-- ############## FOOTER ################### -->
+<div class="footer">
+	<div class="col-xs-3"><p>&copy; Broad 2014</p></div>
+	<div class="col-xs-8"></div>
+	<div class="col-xs-1"><img class="img-responsive footer_min_limits" src="img/broad_logo/BroadSeal.png"></div>
+</div>
+ <!-- end FOOTER -->
+
+
+</div> <!-- /container -->
+
+
+</body>
+</html>
+
