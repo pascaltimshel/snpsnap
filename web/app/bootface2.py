@@ -172,6 +172,11 @@ def run():
 		      <td>{snplist_input_type}</td>
 		    </tr>
 		    <tr>
+		      <th>Population</th>
+		      <td>Super Population</td>
+		      <td>{super_population}</td>
+		    </tr>
+		    <tr>
 		      <th>Loci definition</th>
 		      <td>Distance type</td>
 		      <td>{distance_type}</td>
@@ -255,6 +260,7 @@ def run():
 		</table>
 		</div>
 		""".format(	snplist_input_type=snplist_input_type,
+					super_population=super_population,
 					distance_type=distance_type,
 					distance_cutoff=distance_cutoff,
 					max_freq_deviation=max_freq_deviation, 
@@ -305,6 +311,9 @@ def run():
 
 	snplist_input_type = get_snplist() # read input snplist and write to file in /tmp
 	# Now get more arguments
+	super_population = form.getvalue('super_population', '')
+
+	# Distance measure
 	distance_type = form.getvalue('distance_type', '')
 	distance_cutoff = form.getvalue('distance_cutoff', '')
 
@@ -360,6 +369,10 @@ def run():
 					}
 	report_obj.report['options'].update(report_news)
 
+	################## SUPER POPULATION ##################
+	report_news =	{'super_population':super_population}
+	report_obj.report['super_population'].update(report_news)
+
 	################## LOCI DEFINITION ##################
 	report_news =	{'distance_type':distance_type,
 					'distance_cutoff':distance_cutoff
@@ -376,7 +389,7 @@ def run():
 	report_obj.report['match_criteria'].update(report_news)
 	
 	################## CLUMPING ##################
-	report_news =	{'clump':clump,
+	report_news =	{'clump':'yes' if clump else 'no',
 					'clump_r2':clump_r2,
 					'clump_kb':clump_kb
 					}
@@ -399,7 +412,7 @@ def run():
 
 	script2call = "/cvar/jhlab/snpsnap/snpsnap/snpsnap_query.py"	
 	## this is the base for all the sub options that can be added to SNPsnap
-	cmd_base = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --distance_type {distance_type} --distance_cutoff {distance_cutoff} --web {file_prefix_web_tmp}".format(program=script2call, snplist=file_snplist, outputdir=path_session_output, distance_type=distance_type, distance_cutoff=distance_cutoff, file_prefix_web_tmp=file_prefix_web_tmp)
+	cmd_base = "python {program:s} --user_snps_file {snplist:s} --output_dir {outputdir:s} --super_population {super_population} --distance_type {distance_type} --distance_cutoff {distance_cutoff} --web {file_prefix_web_tmp}".format(program=script2call, snplist=file_snplist, outputdir=path_session_output, super_population=super_population, distance_type=distance_type, distance_cutoff=distance_cutoff, file_prefix_web_tmp=file_prefix_web_tmp)
 	## REMEMBER: cmd_base is modfied 'globally', so all addon's MUST be true for the rest of commands
 	##### Adding more stuff to cmd_base ####
 	if exclude_HLA_SNPs:

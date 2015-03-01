@@ -135,18 +135,20 @@
 	</fieldset>
 
 
-
 	<!-- ############# POPULATION ############## -->
 	<fieldset>
 		<legend class="margin_bottom5">Population</legend>
 		<p class="help-block">Choose population genotype data</p>
 		<div class="input_box"> <!-- START input box -->
 			<div class="form-group">
-				<label class="col-xs-2 control-label" for="population_dropdown">Population*</label>
+				<label class="col-xs-2 control-label" for="super_population">Population*</label>
 					<div class="input-group">
-						<select class="form-control" id="population_dropdown">
+						<select class="form-control" id="super_population" name="super_population">
 							<option value="" disabled>Select population</option>
-							<option value="phase1_EUR" selected="selected">1000G Phase1 European (CEU, GBR, TSI)</option>
+							<!-- <option value="phase1_EUR" selected="selected">1000G Phase1 European (CEU, GBR, TSI)</option> -->
+							<option value="EUR" selected="selected">1000G Phase 3 European</option>
+							<!-- <option value="EAS">1000G Phase 3 East Asia</option> -->
+							<!-- <option value="WAFR">1000G Phase 3 West Africa</option> -->
 						</select>
 					</div>
 			</div> <!-- form-group -->
