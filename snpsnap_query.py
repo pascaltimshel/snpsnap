@@ -834,8 +834,10 @@ def write_set_file(path_output, df_collection):
 
 
 
-def clump_snps(user_snps_df, path_output, clump_r2, clump_kb):
+def clump_snps(user_snps_df, path_output, clump_r2, clump_kb, path_genotype):
 	""" Function for clumping SNPs """
+
+	logger.info( "clump_snps(): will use path_genotype={path_genotype} for clumping".format(path_genotype=path_genotype) )
 
 	file_user_snps_clumped = path_output+"/input_snps_clumped.txt"
 	file_plink_input_tmp_assoc = path_output + "/tmp.assoc"
@@ -1184,7 +1186,7 @@ def run_annotate(path_data, path_output, prefix, user_snps_file):
 	status_obj.update_pct('annotate', float(100) )
 	status_obj.update_status('annotate', 'complete')
 
-def run_clump(path_data, path_output, prefix, user_snps_file, clump_r2, clump_kb):
+def run_clump(path_data, path_output, prefix, user_snps_file, clump_r2, clump_kb, path_genotype):
 	logger.info( "running clump" )
 	file_db = locate_db_file(path_data, prefix) # Locate DB files. TODO: make function more robust
 	file_collection = locate_collection_file(path_data, prefix) # Locate DB files. TODO: make function more robust
@@ -1194,7 +1196,7 @@ def run_clump(path_data, path_output, prefix, user_snps_file, clump_r2, clump_kb
 	
 	status_obj.update_status('clump', 'running')
 	status_obj.update_pct('clump', float(20) )
-	clump_snps(user_snps_df, path_output, clump_r2, clump_kb)
+	clump_snps(user_snps_df, path_output, clump_r2, clump_kb, path_genotype)
 
 	status_obj.update_status('clump', 'complete')
 	status_obj.update_pct('clump', float(100) )
@@ -1347,7 +1349,9 @@ def main():
 	#path_genotype = "/cvar/jhlab/snpsnap/data/step1/test_thin0.02_rmd/CEU_GBR_TSI_unrelated.phase1_dup_excluded" # TEST DATA SET!!!
 
 	################## path_data - SNPsnap production v2 *ENABLE ME!* ##################
+	### Path to collections, HDF5, etc
 	#path_data = os.path.abspath("/cvar/jhlab/snpsnap/data/step3/1KG_snpsnap_production_v2/{super_population}".format(super_population=super_population)) ## BROAD - version: production_v2
+	### Path to genotype data - needed for clumping
 	#path_genotype = "/cvar/jhlab/snpsnap/data/step1/production_v2_QC_full_merged_duplicate_rm/{super_population}/ALL.chr_merged.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes".format(super_population=super_population)
 	
 
@@ -1392,7 +1396,7 @@ def main():
 	elif args.subcommand == "clump":
 		clump_r2 = args.clump_r2
 		clump_kb = args.clump_kb
-		run_clump(path_data, path_output, prefix, user_snps_file, clump_r2, clump_kb)
+		run_clump(path_data, path_output, prefix, user_snps_file, clump_r2, clump_kb, path_genotype)
 		## Remember: if clump is called we should not create a report. REASON: see explanation for annotate
 	else:
 		logger.error( "Error in command line arguments - raising exception" )
