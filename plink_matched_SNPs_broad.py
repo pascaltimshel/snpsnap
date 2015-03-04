@@ -184,37 +184,43 @@ def get_plink_command(batch_id):
 
 
 def run_ldfile(batch_id, snp_list, unit_test_file):
-	ldfile = output_dir_path + "/ldlists/" + batch_id + ".ld"
-	if not os.path.exists(ldfile): # Test if already run
+	""" 
+	One-to-One mapping: 
+	One batch_snplist gives rise to one outfilename (ld file)
+	"""
 
-		status_string = "status = no previous ldfile | {ldfile}".format(ldfile=ldfile)
+	outfilename = output_dir_path + "/ldlists/" + batch_id + ".ld"
+	if not os.path.exists(outfilename): # Test if already run
+
+		status_string = "status = no previous outfilename | {outfilename}".format(outfilename=outfilename)
 		unit_test_file['NO_PREVIOUS_FILE'].append(status_string)
-		#unit_test_file['NO_PREVIOUS_FILE'].append(ldfile)
+		#unit_test_file['NO_PREVIOUS_FILE'].append(outfilename)
 		
-		#logger.info( "%s: CREATING NEW" % ldfile ## USE THIS!!! June 2014 )
-		#logger.info( "*** LDfile %s\nNOT exists. Appending jobs for batch ID %s to QueueJob.py... ***" % (ldfile, batch_id) )
-		return True # submit job is there is no existing ldfile
+		#logger.info( "%s: CREATING NEW" % outfilename ## USE THIS!!! June 2014 )
+		#logger.info( "*** outfilename %s\nNOT exists. Appending jobs for batch ID %s to QueueJob.py... ***" % (outfilename, batch_id) )
+		return True # submit job is there is no existing outfilename
 	else:
 		batch_snplist = {}
-		existing_ld_snplist = {}
+		existing_outfile = {}
 		# Read existing ld file
-		with open(ldfile, 'r') as f:
+		with open(outfilename, 'r') as f:
 			# CHR_A         BP_A        SNP_A  CHR_B         BP_B        SNP_B           R2
  			# 1      1011095   rs11810785      1      1011095   rs11810785            1
  			# 1      1011095   rs11810785      1      1025301    rs9442400      0.61996
 			
 			# plink ALWAYS outputs a line containing with input SNP, i.e. a line with an LD buddy to itself. SEE above example. 
-			# this enables us to assume len(existing_ld_snplist) == len(batch_snplist)
-			lines = f.readlines()[1:] # SKIP HEADER!!
+			# this enables us to assume len(existing_outfile) == len(batch_snplist)
+			#lines = f.readlines()[1:] # SKIP HEADER!! # <-- BEFORE SNPsnap production v2 | *STUPID LEGACY FROM TUNE: READ WHOLE FILE INTO MEMORY!*
 			expected_cols = 7
-			for line in lines:
+			next(f) # SKIP HEADER!
+			for line in f:
 				cols = line.strip().split()
 				# cols[2] ==> input SNP rs-number
 				# cols[5] ==> LD buddy rs-number
 				if len(cols) == expected_cols:
-					existing_ld_snplist[cols[2]] = 1
+					existing_outfile[cols[2]] = 1
 				else:
-					logger.critical( "***OBS*** File %s did not contain %d columns as expected." % (ldfile, expected_cols) )
+					logger.critical( "***OBS*** File %s did not contain %d columns as expected." % (outfilename, expected_cols) )
 					logger.critical( "Please check structure of file if you see the message repeatedly" )
 					logger.critical( 'Breaking out if loop' )
 					break
@@ -224,38 +230,35 @@ def run_ldfile(batch_id, snp_list, unit_test_file):
 			# rs184229306
 			# rs115111187
 			# rs12361890
-			lines = f.readlines()
-			for line in lines:
+			# lines = f.readlines()
+			for line in f:
 				rs_no = line.strip()
 				batch_snplist[rs_no] = 1
 
+
+		MAX_SNP_DEVIATION = 100 # Number of SNPs allowed to deviate | PLEASE USE THE SAME NUMBER THORUGHOUT THE PIPELINE
+
 		LEN_batch_snplist = len(batch_snplist)
-		LEN_existing_ld_snplist = len(existing_ld_snplist)
+		LEN_existing_outfile = len(existing_outfile)
+		DIFFERENCE = LEN_batch_snplist - LEN_existing_outfile
 
-		if LEN_existing_ld_snplist == LEN_batch_snplist:
-			status_string = "status = existing ldfile is OK | {ldfile}".format(ldfile=ldfile)
+		if LEN_batch_snplist == LEN_existing_outfile:
+			status_string = "FILE_EXISTS_OK | {outfilename}".format(outfilename=outfilename)
 			unit_test_file['FILE_EXISTS_OK'].append(status_string)
-			
-			#unit_test_file['FILE_EXISTS_OK'].append(ldfile)
-			#logger.info( "%s: OK" % ldfile ## USE THIS!!! June 2014 )
-			
-			#logger.info( "LDfile %s\nExists and are validated for batch ID %s. Not appending any jobs to QueueJob.py..." % (ldfile, batch_id) )
 			return None # Do not submit new job if files are ok!
+		elif LEN_batch_snplist - MAX_SNP_DEVIATION <= LEN_existing_outfile <= LEN_batch_snplist + MAX_SNP_DEVIATION:
+			logger.warning( "INSIDE run_parse() | FILE_EXISTS_DEVIATE | outfilename={outfilename}| LEN_batch_snplist={LEN_batch_snplist} | LEN_existing_outfile={LEN_existing_outfile}".format(outfilename=outfilename, LEN_batch_snplist=LEN_batch_snplist, LEN_existing_outfile=LEN_existing_outfile) )
+			
+			status_string = "FILE_EXISTS_DEVIATE | DIFFERENCE={DIFFERENCE} | LEN_batch_snplist={LEN_batch_snplist} | LEN_existing_outfile={LEN_existing_outfile} | {outfilename}".format(DIFFERENCE=DIFFERENCE, LEN_batch_snplist=LEN_batch_snplist, LEN_existing_outfile=LEN_existing_outfile, outfilename=outfilename)
+			unit_test_file['FILE_EXISTS_DEVIATE'].append(status_string)
+			return None # Do NOT submit new job if files are SEMI ok!
 		else:
-			DIFFERENCE = LEN_batch_snplist-LEN_existing_ld_snplist
-			status_string = "status = BAD existing ldfile | DIFFERENCE=[LEN_batch_snplist-LEN_existing_ld_snplist={DIFFERENCE}] | LEN_batch_snplist={LEN_batch_snplist} | LEN_existing_ld_snplist={LEN_existing_ld_snplist} | {ldfile}".format(DIFFERENCE=DIFFERENCE, LEN_batch_snplist=LEN_batch_snplist, LEN_existing_ld_snplist=LEN_existing_ld_snplist, ldfile=ldfile)
+			logger.warning( "INSIDE run_parse() | FILE_EXISTS_DEVIATE | outfilename={outfilename}| LEN_batch_snplist={LEN_batch_snplist} | LEN_existing_outfile={LEN_existing_outfile}".format(outfilename=outfilename, LEN_batch_snplist=LEN_batch_snplist, LEN_existing_outfile=LEN_existing_outfile) )
+
+			status_string = "*FILE_EXISTS_BAD* | DIFFERENCE={DIFFERENCE} | LEN_batch_snplist={LEN_batch_snplist} | LEN_existing_outfile={LEN_existing_outfile} | {outfilename}".format(DIFFERENCE=DIFFERENCE, LEN_batch_snplist=LEN_batch_snplist, LEN_existing_outfile=LEN_existing_outfile, outfilename=outfilename)
 			unit_test_file['FILE_EXISTS_BAD'].append(status_string)
-
-			logger.warning( "INSIDE run_parse() | FILE_EXISTS_BAD | ldfile={} did NOT pass criteria for a valid existing_ld_snplist | LEN_batch_snplist={} | LEN_existing_ld_snplist={}".format(ldfile, LEN_batch_snplist, LEN_existing_ld_snplist) )
-			logger.warning( "INSIDE run_parse() | used the following snplist_files to populate 'batch_snplist':\n{}".format("\n".join(snplist_files)) )
-
-
-
-			#unit_test_file['FILE_EXISTS_BAD'].append(ldfile)
-			#logger.info( "%s: BAD FILE EXISTS. MAKING NEW" % ldfile ## USE THIS!!! June 2014 )
-
-			#logger.info( "LDfile %s\n*** Exists but are NOT ok! Running job for batch ID %s ***" % (ldfile, batch_id) )
 			return True # Re-run job.
+
 
 
 # Function to submit jobs to queue
@@ -266,6 +269,7 @@ def submit(batch_ids):
 	# Initialyzing keys
 	unit_test_file['NO_PREVIOUS_FILE']
 	unit_test_file['FILE_EXISTS_OK']
+	unit_test_file['FILE_EXISTS_DEVIATE']
 	unit_test_file['FILE_EXISTS_BAD']
 
 	processes = []
@@ -436,11 +440,12 @@ logger.info(("Running with %s option, using cutoff %s"%(distance_type,distance_c
 
 
 ###################################### Global params ######################################
-#queue_name = "week" # [bhour, bweek] priority
+queue_name = "week" # [bhour, bweek] priority
 #queue_name = "hour" # [bhour, bweek] priority
-queue_name = "priority" # [bhour, bweek] priority
+#queue_name = "priority" # [bhour, bweek] priority
+#queue_name = "MEDPOP" # OBS: ONLY RUN THIS ON RHEL6 System!
 # priority: This queue has a per-user limit of 10 running jobs, and a run time limit of three days.
-mem="20" # 10 GB also worked!
+mem="30" # 20 GB worked?!
 email='pascal.timshel@gmail.com' # [use an email address 'pascal.timshel@gmail.com' or 'False'/'None']
 email_status_notification=False # [True or False]
 email_report=False # # [True or False]
@@ -468,7 +473,7 @@ processes = submit(batch_ids)
 
 start_time_check_jobs = time.time()
 # OBS: CONSIDER NOT WAITING FOR JOBS. WAITING for jobs takes a lot of time from the validation ("run_multiple_plink_matched_SNPs_broad.py")
-check_jobs(processes, logger) # TODO: parse multiprocess argument?
+#check_jobs(processes, logger) # TODO: parse multiprocess argument?
 elapsed_time = time.time() - start_time_check_jobs
 logger.info( "Total Runtime for check_jobs: %s s (%s min)" % (elapsed_time, elapsed_time/60) )
 logger.critical( "%s: finished" % current_script_name)

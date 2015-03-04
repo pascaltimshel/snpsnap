@@ -37,6 +37,11 @@ batch_time = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H.
 
 
 def run_parse(snplist_prefix, outfilename, unit_test_file):
+	""" 
+	One outfilename may origin from MULTIPLE batch_snplists. This is dependent on the batch_size. 
+	NOTICE THE LOOP 'for snp_list in snplist_files:' 
+	"""
+
 	snplist_files = glob.glob(snplist_prefix+"*.rsID") # catching all files with CORRECT prefix
 	if not os.path.exists(outfilename): # Test if already run
 		status_string = "status = no previous file | {outfilename}".format(outfilename=outfilename)
@@ -50,14 +55,14 @@ def run_parse(snplist_prefix, outfilename, unit_test_file):
 		# Read existing outfile. .tab is a 6 column file. First column is rs-number for matched_rsID
 		#rs16823904      9-10    3       154081865       7       11940   ENSG00000240048 ENSG00000240068,ENSG00000174953,ENSG00000174948
 		with open(outfilename, 'r') as f:
-			lines = f.readlines() # No header...
+			# lines = f.readlines() # No header... # <-- BEFORE SNPsnap production v2 | *STUPID LEGACY FROM TUNE: READ WHOLE FILE INTO MEMORY!*
 			#pdb.set_trace()
 			#expected_cols = 10 ######################## OBS ##############################
 			#expected_cols = 13 ######################## OBS - NEW JUNE 18 2014 - after adding 2 x located within (dist and ID) + 1 x LD buddies ##############################
 			#expected_cols = 15 ######################## OBS - NEW JUNE 19 2014 - after adding x2 SNPsnap distance (dist and ID) ##############################
 			#expected_cols = 21 ######################## OBS - NEW FEBRUARY 26 2015 - after adding 6 new columns ##############################
 			expected_cols = 22 ######################## OBS - NEW FEBRUARY 27 2015 - added snp_maf ##############################
-			for line in lines:
+			for line in f:
 				# Remove only trailing newline
 				cols = line.rstrip('\n').split('\t') # tab seperated - WE MUST KNOW THIS!
 				# cols[0] ==> "input SNP rs-number" (matched_rsID)
@@ -75,27 +80,33 @@ def run_parse(snplist_prefix, outfilename, unit_test_file):
 				# rs184229306
 				# rs115111187
 				# rs12361890
-				lines = f.readlines()
-				for line in lines:
+				# lines = f.readlines()
+				for line in f:
 					rs_no = line.strip()
 					batch_snplist[rs_no] = 1
 		#pdb.set_trace()
+
+		MAX_SNP_DEVIATION = 100 # Number of SNPs allowed to deviate | PLEASE USE THE SAME NUMBER THORUGHOUT THE PIPELINE
+
 		LEN_batch_snplist = len(batch_snplist)
 		LEN_existing_outfile = len(existing_outfile)
+		DIFFERENCE = LEN_batch_snplist - LEN_existing_outfile
+
 		if LEN_batch_snplist == LEN_existing_outfile:
-			status_string = "status = existing outfile is OK | {outfilename}".format(outfilename=outfilename)
+			status_string = "FILE_EXISTS_OK | {outfilename}".format(outfilename=outfilename)
 			unit_test_file['FILE_EXISTS_OK'].append(status_string)
-			#print "%s: OK" % outfilename # OUTCOMMENTED JUNE 18 2014
-
 			return None # Do not submit new job if files are ok!
+		elif LEN_batch_snplist - MAX_SNP_DEVIATION <= LEN_existing_outfile <= LEN_batch_snplist + MAX_SNP_DEVIATION:
+			logger.warning( "INSIDE run_parse() | FILE_EXISTS_DEVIATE | outfilename={outfilename}| LEN_batch_snplist={LEN_batch_snplist} | LEN_existing_outfile={LEN_existing_outfile}".format(outfilename=outfilename, LEN_batch_snplist=LEN_batch_snplist, LEN_existing_outfile=LEN_existing_outfile) )
+			
+			status_string = "FILE_EXISTS_DEVIATE | DIFFERENCE={DIFFERENCE} | LEN_batch_snplist={LEN_batch_snplist} | LEN_existing_outfile={LEN_existing_outfile} | {outfilename}".format(DIFFERENCE=DIFFERENCE, LEN_batch_snplist=LEN_batch_snplist, LEN_existing_outfile=LEN_existing_outfile, outfilename=outfilename)
+			unit_test_file['FILE_EXISTS_DEVIATE'].append(status_string)
+			return None # Do NOT submit new job if files are SEMI ok!
 		else:
-			DIFFERENCE = LEN_batch_snplist-LEN_existing_outfile
-			status_string = "status = BAD existing outfile | DIFFERENCE=[LEN_batch_snplist-LEN_existing_outfile={DIFFERENCE}] | LEN_batch_snplist={LEN_batch_snplist} | LEN_existing_outfile={LEN_existing_outfile} | {outfilename}".format(DIFFERENCE=DIFFERENCE, LEN_batch_snplist=LEN_batch_snplist, LEN_existing_outfile=LEN_existing_outfile, outfilename=outfilename)
+			logger.warning( "INSIDE run_parse() | FILE_EXISTS_DEVIATE | outfilename={outfilename}| LEN_batch_snplist={LEN_batch_snplist} | LEN_existing_outfile={LEN_existing_outfile}".format(outfilename=outfilename, LEN_batch_snplist=LEN_batch_snplist, LEN_existing_outfile=LEN_existing_outfile) )
+
+			status_string = "*FILE_EXISTS_BAD* | DIFFERENCE={DIFFERENCE} | LEN_batch_snplist={LEN_batch_snplist} | LEN_existing_outfile={LEN_existing_outfile} | {outfilename}".format(DIFFERENCE=DIFFERENCE, LEN_batch_snplist=LEN_batch_snplist, LEN_existing_outfile=LEN_existing_outfile, outfilename=outfilename)
 			unit_test_file['FILE_EXISTS_BAD'].append(status_string)
-
-			logger.warning( "INSIDE run_parse() | FILE_EXISTS_BAD | outfilename={} did NOT pass criteria for a valid existing_outfile | LEN_batch_snplist={} | LEN_existing_outfile={}".format(outfilename, LEN_batch_snplist, LEN_existing_outfile) )
-			logger.warning( "INSIDE run_parse() | used the following snplist_files to populate 'batch_snplist':\n{}".format("\n".join(snplist_files)) )
-
 			return True # Re-run job.
 
 
@@ -110,6 +121,7 @@ def submit(path, stat_gene_density_path):
 	# Initialyzing keys
 	unit_test_file['NO_PREVIOUS_FILE']
 	unit_test_file['FILE_EXISTS_OK']
+	unit_test_file['FILE_EXISTS_DEVIATE']
 	unit_test_file['FILE_EXISTS_BAD']
 
 	processes = []
@@ -214,6 +226,7 @@ def LogArguments():
 #queue_name = "hour" # [bhour, bweek] priority
 #queue_name = "priority" # [bhour, bweek] priority
 queue_name = "week" # [bhour, bweek] priority
+#queue_name = "MEDPOP" # *<--ONLY ON RHEL6-->* <-- DO NOT USE THIS QUEUE. One population generates *1900 JOBS*
 # priority: This queue has a per-user limit of 10 running jobs, and a run time limit of three days.
 mem="20" # gb      
 	### RESULTS from EUR_chr_1 (largest chromosome)

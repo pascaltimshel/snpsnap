@@ -170,9 +170,9 @@ def get_matched_snps(path,outfilename):
 			for line_no, line in enumerate(infile, start=1):
 				
 				### Some stats
-				if line_no % 10000 == 0:
+				if line_no % 100000 == 0:
 					time_elapsed_loop = time.time() - time_start_loop # <type 'float'>
-					print "Main loop | #{line_no}/#{n_lines} | {pct_complete:.2f} % done | {sec:.2f} sec [{min:.2f} min]".format(line_no=line_no, n_lines=n_lines_ldfile, pct_complete=(line_no/float(n_lines_ldfile))*100, sec=time_elapsed_loop, min=time_elapsed_loop/60)
+					print "Main loop - looping over LD-file | #{line_no}/#{n_lines} | {pct_complete:.2f} % done | {sec:.2f} sec [{min:.2f} min]".format(line_no=line_no, n_lines=n_lines_ldfile, pct_complete=(line_no/float(n_lines_ldfile))*100, sec=time_elapsed_loop, min=time_elapsed_loop/60)
 				
 				### Split and process
 				words = line.strip().split()
@@ -222,7 +222,7 @@ def get_matched_snps(path,outfilename):
 			### Some stats
 			if count_now % 1000 == 0:
 				time_elapsed_loop = time.time() - time_start_loop # <type 'float'>
-				print "Main loop | #{count_now}/#{count_total} | {pct_complete:.2f} % done | {sec:.2f} sec [{min:.2f} min]".format(count_now=count_now, count_total=count_total, pct_complete=(count_now/float(count_total))*100, sec=time_elapsed_loop, min=time_elapsed_loop/60)
+				print "Main loop - looping over Matched SNPs | #{count_now}/#{count_total} | {pct_complete:.2f} % done | {sec:.2f} sec [{min:.2f} min]".format(count_now=count_now, count_total=count_total, pct_complete=(count_now/float(count_total))*100, sec=time_elapsed_loop, min=time_elapsed_loop/60)
 			
 
 			### processing

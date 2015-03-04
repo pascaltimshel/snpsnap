@@ -33,8 +33,11 @@ batch_time = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H.
 
 processes = collections.defaultdict(dict)
 
-
-super_populations = ["EUR"]
+#super_populations = ["EUR"]
+#super_populations = ["EUR", "EAS", "WAFR"]
+#super_populations = ["EAS", "WAFR"]
+#super_populations = ["EAS"]
+super_populations = ["WAFR"]
 distance_types = ["ld", "kb"]
 
 
@@ -130,6 +133,9 @@ for super_population in super_populations:
 				print "resetting processes by re-initialyzing the defauldict"
 				processes = collections.defaultdict(dict) # resetting processes
 
+	print "Waiting for last round of processes"
+	wait_for_processes(processes)
+	print "Done waiting"
 			# ################## NEW - ADDED FROM BROAD ##################
 			# start_time_process = time.time()
 			# print "waiting for pid=%s [param=%s]" % (p.pid, param)
