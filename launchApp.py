@@ -27,6 +27,10 @@ import zipfile
 # 		threading.Thread.__init__(self)
 
 class Processor(object):
+	url_snpsnap_contact = "http://www.broadinstitute.org/mpg/snpsnap/contact.html" # class attribute. Access by "Processor.url_snpsnap_contact". If the object is an "Processor" instance, the following should also work: Processor.url_snpsnap_contact
+	#About accessing Class attributes: "The instance namespace takes supremacy over the class namespace"
+	#REF: http://www.toptal.com/python/python-class-attributes-an-overly-thorough-guide
+
 	def __init__(self, session_id, email_address, job_name, cmd_annotate, cmd_match, cmd_clump):
 		#self.script2call = "/cvar/jhlab/snpsnap/snpsnap/snpsnap_query.py"
 		self.session_id = session_id
@@ -265,12 +269,18 @@ class Processor(object):
 		  <head></head>
 		  <body>
 		    <h2>Your job {job} could not be completed</h2>
-		    <p>An internal error caused your job to crash. Please re-run the job and report to the SNPsnap team if you keep getting this error message. </p>
+		    <p>An internal error caused your job to crash. Please re-run the job.<br>
+		   	If you keep getting this error message, please report the bug to the <a href='{url_snpsnap_contact}'>SNPsnap team</a> using the below references to your job:
+			<p>
+				session id: {session_id}<br>
+				job name  : {job}
+			</p>
+		   	</p>
 		    <p>We apologize for the inconvenience.</p>
 		    <p><i>SNPsnap Team</i></p>
 		  </body>
 		</html>
-		""".format( job=self.job_name)
+		""".format( job=self.job_name, session_id=self.session_id, url_snpsnap_contact=Processor.url_snpsnap_contact)
 
 		part1 = MIMEText(text, 'plain')
 		part2 = MIMEText(html, 'html')
@@ -324,11 +334,16 @@ class Processor(object):
 		    <p>
 		    	{report}
 		    </p>
+		    For any issues or other inquiries about the results of your job, please contact the <a href='{url_snpsnap_contact}'>SNPsnap team</a> using the below references to your job:
+		    <p>
+		    	session id: {session_id}<br>
+		    	job name  : {job}
+		    </p>
 		    </br>
 		    <p><i>SNPsnap Team</i></p>
 		  </body>
 		</html>
-		""".format( job=self.job_name, link=self.link_result, report=self.generate_report_for_email() )
+		""".format( job=self.job_name, link=self.link_result, report=self.generate_report_for_email(), url_snpsnap_contact=Processor.url_snpsnap_contact, session_id=self.session_id )
 
 		# Record the MIME types of both parts - text/plain and text/html.
 		part1 = MIMEText(text, 'plain')
