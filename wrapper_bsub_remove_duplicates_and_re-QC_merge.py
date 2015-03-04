@@ -68,8 +68,13 @@ def submit():
 			#continue
 
 		###################################### PLINK CALL - --make-bed and QC ######################################
-		cmd_plink = "/cvar/jhlab/timshel/bin/plink_linux_x86_64_v1.90b3d/plink --bfile {input_bed} --exclude {file_duplicates} --make-bed --out {out_prefix}".format(input_bed=input_bed, file_duplicates=file_duplicates, out_prefix=out_prefix)
-		# --biallelic-only strict list
+		
+		#cmd_plink = "/cvar/jhlab/timshel/bin/plink_linux_x86_64_v1.90b3d/plink --bfile {input_bed} --exclude {file_duplicates} --make-bed --out {out_prefix}".format(input_bed=input_bed, file_duplicates=file_duplicates, out_prefix=out_prefix)
+			# --> THIS COMMAND WAS USED FOR SNPsnap Production v2 for EUR and EAS.
+			# However, due to errors in WAFR with "NA" in .frq file I substituted the command with the below.
+			# THE BELOW HAS NOT BEEN TESTED, but I BELEIVE IT WORKS!
+		cmd_plink = "/cvar/jhlab/timshel/bin/plink_linux_x86_64_v1.90b3d/plink --bfile {input_bed} --exclude {file_duplicates} --maf {pmaf} --geno {pgeno} --hwe {phwe} --biallelic-only strict list --make-bed --out {out_prefix}".format(input_bed=input_bed, file_duplicates=file_duplicates, pmaf=pmaf, pgeno=pgeno, phwe=phwe, out_prefix=out_prefix)
+
 
 		logger.info( "Making call --exclude {file_duplicates} and --make-bed:\n%s" % cmd_plink )
 
@@ -145,6 +150,13 @@ current_script_name = os.path.basename(__file__).replace('.py','')
 
 ###################################### ARGUMENTS ######################################
 args = ParseArguments()
+
+##################### *PLEASE KEEP THESE PARAMS IN SYNC WITH "wrapper_bsub_gen_QCbed.py" 
+pmaf=0.01 # Only include SNPs with MAF >= 0.01.
+pgeno=0.1
+phwe=0.000001 #10^-6 [phwe=0.001 default value]
+
+###################################### ... ######################################
 
 #gen_test_data = True ### SUPER IMPORTANT - controls generation of test data.
 gen_test_data = False ### SUPER IMPORTANT - controls generation of test data.
