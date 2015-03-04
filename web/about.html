@@ -68,10 +68,10 @@
 					<!-- A description list -->
 					<dl>
 						<dt>Match input SNPs</dt>
-					  		<dd>SNPsnap can be used to generate matched sets of SNPs that can be used to calibrate background expectations in SNP-based enrichment analysis.</dd>
+					  		<dd>SNPsnap is designed to generate matched sets of SNPs that can be used to calibrate background expectations in SNP-based enrichment analysis.</dd>
 					  	<br>
 					  	<dt>Annotate input SNPs using 1000 Genome data</dt>
-					  		<dd>SNPsnap allows users to quickly retrieve 1000 Genome population specific information about loci bounderies, nearest genes and genes in loci, minor allele frequency and much more.</dd>
+					  		<dd>SNPsnap allows users to quickly retrieve 1000 Genome population specific annotation about loci bounderies, nearest genes, genes in loci, minor allele frequency and <a href="http://www.broadinstitute.org/mpg/snpsnap/documentation.html#snp_annotation_input_snps_annotated">much more</a>.</dd>
 <!-- 					SNPsnap has two main features:
 					<ol>
 					  <li>Match input SNPs: generate matched sets of SNPs that can be used to calibrate background expectations in SNP-based enrichment analysis.</li>
@@ -86,13 +86,16 @@
 				<div class="panel-body">
 					<!-- A description list -->
 					<dl>
-						<dt>Tip #1: fast input annotation</dt>
+						<dt>Tip #1: fast SNP input annotation</dt>
 							<dd>SNPsnap main purpose is to match input SNPs. However, many users are often only interested in annotating their input SNPs using 1000 Genome population specific data. If you are only interested in annotatating your input SNPs, 
 							setting <span class="code_settings">Number of matched SNPs</span> to a low value (e.g. <code>1</code>) will highly speed up the runtime for your job. 
 							Of course you should also make sure to enable <span class="code_settings">Annotate input SNPs</span>.
 							</dd>
-<!-- 						<dt>Tip #2</dt>
-							<dd>White cold drink</dd> -->
+						<br>
+						<dt>Tip #2: independence of SNPs (clumping)</dt>
+							<dd>SNPsnap has a nifty extra feature to check the independence of your input SNPs. 
+							This feature was originally designed to facilitate proper use of the SNP-matching results.
+							However, many of our users find it useful on its own - just as a quick way to clump your SNPs using <a href="http://pngu.mgh.harvard.edu/~purcell/plink/clump.shtml">PLINK's</a> algorithm.</dd>
 					</dl>
 				</div>
 			</div> <!-- END feed -->

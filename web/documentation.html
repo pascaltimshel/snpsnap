@@ -61,15 +61,18 @@
 	<dl>
 		<dt class="toc_title1"><a href="#doc_methodology">Methodology</a></dt>
 			<ul style="list-style-type:none">
+				<li class="toc_title2"><a href="#doc_aim">Aim</a></li>
 				<li class="toc_title2"><a href="#doc_data">Data</a></li>
-				<li class="toc_title2"><a href="#genetic_properties">Genetic properties used matched SNPs</a></li>
+				<li class="toc_title2"><a href="#genetic_properties">Genetic Properties used to Matching SNPs</a></li>
 				<li class="toc_title2"><a href="#doc_algorithm">Algorithm</a></li>
 			</ul>
 		<dt class="toc_title1"><a href="#doc_webserver">Webserver</a></dt>
 			<ul style="list-style-type:none">
-				<li class="toc_title2"><a href="#snpsnap_score">SNPsnap score</a></li>
-				<li class="toc_title2"><a href="#snpsnap_matching_bias">SNPsnap matching bias</a></li>
-				<li class="toc_title2"><a href="#doc_output_files">Output files</a></li>
+				<li class="toc_title2"><a href="#doc_user_input">User Input</a></li>
+				<li class="toc_title2"><a href="#snpsnap_score">SNPsnap Score</a></li>
+				<li class="toc_title2"><a href="#snpsnap_matching_bias">SNPsnap Matching Bias</a></li>
+				<li class="toc_title2"><a href="#doc_clumping">SNP Clumping</a></li>
+				<li class="toc_title2"><a href="#doc_output_files">Output Files</a></li>
 				<li class="toc_title2"><a href="#snp_annotation_input_snps_annotated">SNP Annotations - <span class="code_files">input_snps_annotated.txt</span></a></li>
 				<li class="toc_title2"><a href="#snp_annotation_matched_snps_annotated">SNP Annotations - <span class="code_files">matched_snps_annotated.txt</span></a></li>
 			</ul>
@@ -81,7 +84,7 @@
 	<h2 class="documentation_header"><a name="doc_methodology" class="documentation_header_link">Methodology</a></h2>
 	<!-- <h2 class="documentation_header">Methodology</h2> -->
 
-	<h3>Aim</h3>
+	<h3><a name="doc_aim" class="documentation_header_link">Aim</a></h3>
 	The SNPsnap webserver enables SNP-based enrichment analysis by providing matched sets of SNPs that can be used to calibrate background expectations. Specifically, SNPsnap efficiently identifies sets of randomly drawn SNPs that are matched to a set of query SNPs based on 
 	<ul>
 		<li>Minor allele frequency</li>
@@ -92,11 +95,13 @@
 
 	<!-- PRODUCTION VERSION 2 -->
 	<h3><a name="doc_data" class="documentation_header_link">Data</a></h3>
-
-	SNPsnap uses  <strong>1000 Genomes Project Phase 3</strong> variants from the <strong>three different ancestral cohorts</strong>. SNPsnap uses 1000G Project's definition of the super populations for European and East Asian (see below), but defines West Africa as a subset of the 1000G African samples. Super populations are defined using the <a href="ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/integrated_call_samples_v3.20130502.ALL.panel">1000G panel file</a>.<br>
+	SNPsnap uses  <strong>1000 Genomes Project Phase 3</strong> variants from the <strong>three different ancestral cohorts</strong>. (<span class="snpsnap_new_feature">March 2015: SNPsnap was updated from 1000G Phase 1 to Phase 3 variants</span>.
+	SNPsnap uses 1000G Project's definition of the super populations for European and East Asian (see below), but defines West Africa as a subset of the 1000G African samples. 
+	Super populations are defined using the <a href="ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/integrated_call_samples_v3.20130502.ALL.panel">1000G panel file</a>.<br>
 	Specifically our database contains biallelic, uniquely mapped SNPs derived from preprocessing the phase 3 genotype data.
-	SNPsnap's database only holds <strong>common variants</strong> (>1% MAF). SNPsnap contains <strong>all types of variants listed by 1000 Genomes Project</strong>: single nucleotide variants (SNPs), indels and larger structural variants (as assigned with evs-numbers).<br>
-	SNPsnap contains SNPs for chromosome 1-22 and the X-chromosome.<br>
+	SNPsnap's database only holds <strong>common variants</strong> (>1% MAF). 
+	SNPsnap contains <strong>all types of variants listed by 1000 Genomes Project</strong>: single nucleotide variants (SNPs), indels and larger structural variants (as assigned with evs-numbers).<br>
+	<span class="documentation_important">SNPsnap contains SNPs located on chromosomes 1-22 and the X-chromosome</span> (<span class="snpsnap_new_feature">March 2015: X chromosome included in SNPsnap</span>).<br>
 
 	<h4>SNPsnap Super Population Definitions</h4>
 	SNPsnap's super population definitions are based on the following <a href="http://www.1000genomes.org/about#ProjectSamples">1000G cohorts</a>:
@@ -137,7 +142,7 @@
 	<span class="text-danger">SNPsnap will soon be updated with 1000 Genomes Phase 3 variants. The update will also include more populations.</span>
  -->
 	<h4>SNPsnap Gene Sets</h4>
-	SNPsnap uses genes from the <a href="http://www.gencodegenes.org/">GENCODE</a> consortium downloaded via ENSEMBL Biomart.
+	SNPsnap uses genes from the <a href="http://www.gencodegenes.org/">GENCODE</a> consortium downloaded via <a href="http://grch37.ensembl.org">Ensembl GRCh37 Biomart</a> (Homo sapiens genes, GRCh37.p13). <span class="snpsnap_new_feature">March 2015: Gene set updated to GENCODE genes.</span>.
 	SNPsnap uses any genes within the GENCODE gene set to define the <span class="code_settings">Distance to Nearest Gene</span> and <span class="code_settings">Gene Density</span>. Please note that not all these genes are coding genes.
 	The SNPsnap GENCODE gene set contains 57737 genes of which 20314 are protein coding genes. SNPsnap provides the annotation feature <span class="code_column">dist_nearest_gene_snpsnap_protein_coding</span> as the distance to the nearest protein coding gene.
 	Finaly, SNPsnap uses Ensembl's mapping to HGNC symbols whenever a HGNC symbol is provided.
@@ -194,12 +199,23 @@
 	<h2 class="documentation_header"><a name="doc_webserver" class="documentation_header_link">Webserver</a></h2>
 	<!-- <h2 class="documentation_header">Webserver</h2> -->
 
-	<h3>User input</h3>
+	<h3><a name="doc_user_input" class="documentation_header_link">User input</a></h3>
 	Chromosomal coordinates of SNPs e.g. 3:20145787 for a SNP on chromosome 3 at bp 20,145,787. 
-	SNPsnap also accepts rs-numbers as assigned by the 1000 Genomes Project. Please note that not all variants in the 1000 Genomes Project have been assigned a rs-number and thus only can be identified by their chromosomal coordinate.
-	We recommend using chromosomal identifers for eaiser downstream processing of SNPsnap's output. Also, SNPsnap is speed optimized for chromosomal coordinates identifier inputs.
-	<span class="documentation_important"> SNPsnap uses genome build GRCh37/hg19 for SNP coordinates.</span>
+	SNPsnap uses numeric codes 1-22 for autosomal chromosomes. The X chromosome is assigned the numeric code of 23 (following PLINK's encoding). <br>
+	SNPsnap also accepts rs-numbers as assigned by the 1000 Genomes Project. Please note that not all variants in the 1000 Genomes Project have been assigned a rs-number and thus only can be identified by their chromosomal coordinate. <br>
+	<strong>We recommend using chromosomal identifers for easier downstream processing of SNPsnap's output. Also, SNPsnap is speed optimized for chromosomal coordinates identifier inputs</strong>. <br>
+	<span class="documentation_important">SNPsnap uses genome build GRCh37/hg19 for SNP coordinates.</span> <br>
+	<span class="text-muted">Technical note: all input SNPs are internally mapped to chromosomal coordinate identifiers (chr:pos). The mapping can be inspected in the file <span class="code_files">input_snps_identifer_mapping.txt</span>.</span>
 	
+	<h4>Input format</h4>
+	SNPsnap accepts the below SNP list input format as text file or copy/paste into the browser:
+		<ul>
+			<li>One SNP per line</li>
+			<li>SNP identifers can consists of chromosomal coordinates, rs-numbers or a mixture of the two.</li>
+		</ul>
+	Please note that SNPs not formatted correctly, SNPs that does not exists in the database and SNPs excluded from matching will be written to the file <span class="code_files">input_snps_excluded.txt</span>. Please inspect this file to make sure all your SNPs are formatted correctly.
+	<!-- REFERENCE: http://getbootstrap.com/css/#code -->
+
 	
 	<h3><a name="snpsnap_score" class="documentation_header_link">SNPsnap score</a></h3> <!-- OBS: this link is used in report_html.py. MAKE SURE THAT THE NAMES ARE IN SYNC! -->
 	SNPsnap reports two scores that serve as guidelines for selecting proper matching settings.
@@ -255,11 +271,15 @@
 		</div>
 	</div>
 
-	<h3>Clumping</h3>
-	The input SNPs to SNPsnap should be independent if enrichment analysis is the goal of downstream investigations. Failing to input independent SNPs will lead to unintended bias in the matched SNPs, which may cause an impropper background distribution.
+	<h3><a name="doc_clumping" class="documentation_header_link">Clumping</a></h3>
+	<span class="documentation_important">The input SNPs to SNPsnap should be independent if enrichment analysis is the goal of downstream investigations</span>. Failing to input independent SNPs will lead to unintended bias in the matched SNPs, which may cause an impropper background distribution.
 	SNPsnap offers users to check independence of input SNPs by selecting <span class="code_settings">Report input loci independence</span>. SNPs can be clumped based on LD and physical distance thresholds.
-	SNPsnap uses PLINK's (Purcell et al. 2007) algorithm for clumping SNPs (see <a href="http://pngu.mgh.harvard.edu/~purcell/plink/clump.shtml" target="_blank">PLINKs documentation</a> for details).
-
+	SNPsnap uses PLINK's (Purcell et al. 2007) algorithm for clumping SNPs (see <a href="http://pngu.mgh.harvard.edu/~purcell/plink/clump.shtml" target="_blank">PLINKs documentation</a> for details). <br>
+	SNPsnap will report one of the following messages on the result site, dependent on the outcome of the clumping:
+	<ul>
+		<li><span class='bg-success'>Your input SNPs are independent</span></li>
+		<li><span class='bg-danger'>Your input SNPs are <i>not</i> independent</span></li>
+	</ul>
 
 	<h3><a name="doc_output_files" class="documentation_header_link">Output files</a></h3>
 	<ul>

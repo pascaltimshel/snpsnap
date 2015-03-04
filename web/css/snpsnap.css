@@ -1,6 +1,15 @@
 
 
+/*###################################### MIXTURE ######################################*/
 
+.snpsnap_new_feature {
+  /*color: #FF6666;*/ /*orange*/
+  color: #B232B2;
+  background: rgba(232, 207, 44, 0.5); /*yellow*/
+  /*background: rgba(54, 25, 25, .5);*/
+  /*background-color: #00ff00;*/
+  /*opacity: 0.1;*/
+}
 
 
 /* ########################################## Index.html ########################################## */
@@ -218,7 +227,15 @@ dd.faq_answer:before {
     padding-right: 1em;
 }*/
 
-
+/*THIS IS NOT USED - EXPERIMENT 2015 March*/
+/*.pre-scrollable_snpsnap {
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 150px;
+  max-height: 100px;
+  overflow-y: scroll;
+}
+*/
 
 /* This class is intended to use for removing the style from the links in the documentation header */
 a.documentation_header_link {
