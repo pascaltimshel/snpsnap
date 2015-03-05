@@ -835,7 +835,20 @@ def write_set_file(path_output, df_collection):
 
 
 def clump_snps(user_snps_df, path_output, clump_r2, clump_kb, path_genotype):
-	""" Function for clumping SNPs """
+	"""
+	Function for clumping SNPs
+
+	### PLINK2 defaults ###
+	Index variants are chosen greedily starting with the lowest p-value.
+	--clump-p1: 0.0001
+	--clump-kb: 250 kb
+	--clump-r2: r2 < 0.5 
+	--clump-p2: 0.01 
+
+	By default, variant IDs are expected to be in the 'SNP' column.
+	By default, p-values are expected to be in the 'P' column
+
+	"""
 
 	logger.info( "clump_snps(): will use path_genotype={path_genotype} for clumping".format(path_genotype=path_genotype) )
 
@@ -854,6 +867,7 @@ def clump_snps(user_snps_df, path_output, clump_r2, clump_kb, path_genotype):
 	rsID2chrpos_map_dict = {} 	# This dict will have rsID as keys [NOTE: they are ALL UNIQUE] and chrposID as values. THIS MUST BE A 1-1 MAPPING!!
 								# This dict is a convenient way of mapping rsIDs back to their corresponding chrposIDs
 	chrpos2rsID_map_dict = {} # this dict is created to ensure a 1-1 mapping. THIS WILL NOT BE USED FURTHER (only for asserting about the data type)
+	rsID_list = [] # This list will contain rsIDs that will be written to the .assoc file. If you sort this list, the clumping will not be in the order of the user input
 	with open(file_plink_input_tmp_assoc, 'w') as f_assoc:
 		f_assoc.write("SNP\tP\n") # Writing header - must be detectable by PLINK
 		for index, rsID in user_snps_df.ix[:,'rsID'].iteritems(): #iteratable object is a Series object
@@ -876,22 +890,34 @@ def clump_snps(user_snps_df, path_output, clump_r2, clump_kb, path_genotype):
 				logger.critical( "Will raise Exception now..." )
 				raise Exception( "Detected that rsID and chrposID is not a 1-1 mapping" )
 
+			rsID_list.append(rsID) # We append the rsIDs to a list.
+		
+		#### WRITING rsIDs to .assoc file [I recommend not sorting it, to let the clumping be in the same order it same in.]
+		### The below notes apply only if you sort:
+		# This will make the .assoc FILE SORTED ALPHABETICALLY BASED rsID.
+		# This should make the clumping results "MORE CONSISTENT", but also more confusion to the user because he/she cannot recognize the order. That is they will *NOT* be dependent on the ORDER OF THE USER INPUT
+		for rsID in rsID_list:
 			f_assoc.write(rsID + "\t" + p_val + "\n")
-			### Example of file_plink_input_tmp_assoc (tmp.assoc)
-			# SNP     P
-			# rs6602381       0.00001
-			# rs7899632       0.00001
+		### Example of file_plink_input_tmp_assoc (tmp.assoc)
+		# SNP     P
+		# rs6602381       0.00001
+		# rs7899632       0.00001
 
 	### Updating status ###
 	status_obj.update_pct( 'clump', float(30) )
 
+	################## SNPsnap production v1 ##################
 	## OBS: plink --out is the 'output root filename', e.g. 
 	# Linux snpsnap 2.6.32-431.5.1.el6.x86_64 #1 SMP Fri Jan 10 14:46:43 EST 2014 x86_64 x86_64 x86_64 GNU/Linux
 	#/cvar/jhlab/snpsnap/bin/plink-1.07-x86_64/plink
 	#cmd_plink = "source /broad/software/scripts/useuse && use .plink-1.07 && plink --bfile {geno} --clump {assoc} --clump-r2 {clump_r2} --clump-kb {clump_kb} --out {file_plink_output_tmp_prefix} --noweb --silent".format(geno=path_genotype, assoc=file_plink_input_tmp_assoc, clump_r2=clump_r2, clump_kb=clump_kb, file_plink_output_tmp_prefix=file_plink_output_tmp_prefix)
-	cmd_plink = "/cvar/jhlab/snpsnap/bin/plink-1.07-x86_64/plink --bfile {geno} --clump {assoc} --clump-r2 {clump_r2} --clump-kb {clump_kb} --out {file_plink_output_tmp_prefix} --noweb --silent".format(geno=path_genotype, assoc=file_plink_input_tmp_assoc, clump_r2=clump_r2, clump_kb=clump_kb, file_plink_output_tmp_prefix=file_plink_output_tmp_prefix)
+	#cmd_plink = "/cvar/jhlab/snpsnap/bin/plink-1.07-x86_64/plink --bfile {geno} --clump {assoc} --clump-r2 {clump_r2} --clump-kb {clump_kb} --out {file_plink_output_tmp_prefix} --noweb --silent".format(geno=path_genotype, assoc=file_plink_input_tmp_assoc, clump_r2=clump_r2, clump_kb=clump_kb, file_plink_output_tmp_prefix=file_plink_output_tmp_prefix)
 	### REMEMBER plink likely needs to be called as:
 	#source /broad/software/scripts/useuse && use .plink-1.07 && plink <plink arguments>
+
+	################## SNPsnap production v2 ##################
+	cmd_plink = "/cvar/jhlab/timshel/bin/plink_linux_x86_64_v1.90b3d/plink --bfile {geno} --clump {assoc} --clump-r2 {clump_r2} --clump-kb {clump_kb} --out {file_plink_output_tmp_prefix}".format(geno=path_genotype, assoc=file_plink_input_tmp_assoc, clump_r2=clump_r2, clump_kb=clump_kb, file_plink_output_tmp_prefix=file_plink_output_tmp_prefix)
+
 	logger.info( "Making plink call: %s" % cmd_plink )
 	fnull = open(os.devnull, "w")
 	p_plink = subprocess.Popen(cmd_plink, stdout = fnull, stderr = subprocess.STDOUT, shell=True)

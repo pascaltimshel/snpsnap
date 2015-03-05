@@ -274,12 +274,27 @@
 	<h3><a name="doc_clumping" class="documentation_header_link">Clumping</a></h3>
 	<span class="documentation_important">The input SNPs to SNPsnap should be independent if enrichment analysis is the goal of downstream investigations</span>. Failing to input independent SNPs will lead to unintended bias in the matched SNPs, which may cause an impropper background distribution.
 	SNPsnap offers users to check independence of input SNPs by selecting <span class="code_settings">Report input loci independence</span>. SNPs can be clumped based on LD and physical distance thresholds.
-	SNPsnap uses PLINK's (Purcell et al. 2007) algorithm for clumping SNPs (see <a href="http://pngu.mgh.harvard.edu/~purcell/plink/clump.shtml" target="_blank">PLINKs documentation</a> for details). <br>
+	SNPsnap's clumping function is a wrapper around <a href="https://www.cog-genomics.org/plink2/" target="_blank">PLINK 1.9</a> (Chang et al. GigaScience, 2015) greedy algorithm for clumping SNPs. 
+	See <a href="https://www.cog-genomics.org/plink2/postproc#clump" target="_blank">PLINK 1.9's documentation</a> for details.
+	<br>
 	SNPsnap will report one of the following messages on the result site, dependent on the outcome of the clumping:
 	<ul>
 		<li><span class='bg-success'>Your input SNPs are independent</span></li>
 		<li><span class='bg-danger'>Your input SNPs are <i>not</i> independent</span></li>
 	</ul>
+
+	<p><span class="text-muted">
+		Technical note: 
+		SNPsnap writes a temporary .assoc file (two column file with the field headers "SNP" and "P") for the input SNPs. 
+		The values in the "P" column is set to a fixed value for all input SNPs.
+		Since all the p-values have the same value the <strong>clumping will be based on the input order of the SNPs</strong>, which makes the index SNPs rather arbitrary. We use the following command:
+		<br>
+		<samp class="text-muted">
+		plink --bfile [prefix to population specific genotypes] --clump [tmp assoc file] --clump-r2 [user_r2] --clump-kb [user_kb]
+		</samp>
+	</p></span> <!-- END span TECHNICAL NOTE -->
+	<!-- clumping suffers from a nontransitivity problem -->
+
 
 	<h3><a name="doc_output_files" class="documentation_header_link">Output files</a></h3>
 	<ul>
