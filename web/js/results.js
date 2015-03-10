@@ -178,6 +178,7 @@ $(document).ready(function(){
 					$("#progress_bar_match").removeClass('active')
 				}
 				// Update the bias calculation
+				// TODO: consider being more cautionate about trying to set these properties - they might cause an expection and the script to crash 
 				$("#progress_bar_bias .progress-bar").css('width', res.bias.pct_complete+'%');
 				$("#progress_bar_bias .progress-bar").html(res.bias.pct_complete + "%");
 				$("#row_progress_bias .text-info").html(res.bias.status);

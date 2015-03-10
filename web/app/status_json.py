@@ -48,18 +48,24 @@ try:
 		# This enables me to set the 'overall' completion status
 
 	if annotate:
-		with open(file_status_annotate, 'r') as json_data:
-			tmp = json.load(json_data)
-			status_obj['annotate'] = tmp['annotate'] ## OBS: key must be in sync with snpsnap_query.py status keywords!
+		try:
+			with open(file_status_annotate, 'r') as json_data:
+				tmp = json.load(json_data)
+				status_obj['annotate'] = tmp['annotate'] ## OBS: key must be in sync with snpsnap_query.py status keywords!
+		except IOError: # if file does not exists, e.g. the subprocess is waiting
+			status_obj['annotate'] = {'pct_complete':0, 'status':'job waiting in queue'} 
 	else:
 		## ***OBS: HACK
 		status_obj['annotate'] = {'pct_complete':0, 'status':'complete'} ## OBS: dirty code. 
 		# This enables me to set the 'overall' completion status  
 
 	if clump:
-		with open(file_status_clump, 'r') as json_data:
-			tmp = json.load(json_data)
-			status_obj['clump'] = tmp['clump'] ## OBS: key must be in sync with snpsnap_query.py status keywords!
+		try:
+			with open(file_status_clump, 'r') as json_data:
+				tmp = json.load(json_data)
+				status_obj['clump'] = tmp['clump'] ## OBS: key must be in sync with snpsnap_query.py status keywords!
+		except IOError: # if file does not exists, e.g. the subprocess is waiting
+			status_obj['clump'] = {'pct_complete':0, 'status':'job waiting in queue'} 
 	else:
 		## ***OBS: HACK
 		status_obj['clump'] = {'pct_complete':0, 'status':'complete'} ## OBS: dirty code. 
@@ -69,7 +75,7 @@ try:
 
 	#### FORMATTING PROCENTATGE COMPLETE
 	for val in status_obj.values():
-		val['pct_complete'] = int(val['pct_complete']) ### Formatting numbers
+		val['pct_complete'] = int(val['pct_complete']) ### Formatting numbers. TODO: consider changing this to a string formatting call to avoid expection int() cannot convert.
 
 	## ***OBS: BAD CODE
 	## TODO: rewrite this later
@@ -97,6 +103,7 @@ except Exception as e: # DIRTY: but properly the file(s) does not exists
 	# we need the below lines to avoid getting errors in Javascripts about undefined values for e.g. res.bias.pct_complete and res.bias.status
 	status_obj = {}
 	status_obj['match'] = {'pct_complete':0, 'status':'initialyzing'} ## OBS: dirty code.
+	status_obj['bias'] = {'pct_complete':0, 'status':'initialyzing'} ## OBS: dirty code.
 	status_obj['set_file'] = {'pct_complete':0, 'status':'initialyzing'} ## OBS: dirty code.
 	status_obj['annotate'] = {'pct_complete':0, 'status':'initialyzing'} ## OBS: dirty code.
 	status_obj['clump'] = {'pct_complete':0, 'status':'initialyzing'} ## OBS: dirty code.

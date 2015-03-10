@@ -58,6 +58,30 @@
 		</ul>
 	</div>
 
+	<div class="row jumbotron_snpsnap" >
+		<div class="col-xs-offset-1 col-xs-9">
+			<h3><a target="_blank" href="http://bioinformatics.oxfordjournals.org/content/31/3/418">SNPsnap: a Web-based tool for identification and annotation of matched SNPs</a></h3>
+			<p><strong>Tune H. Pers*, Pascal Timshel* and Joel N. Hirschhorn</strong></p>
+			<!-- *Equal contributions -->
+			<div class="text-left"> <!-- *HACK*! -->
+			<p>
+			An important computational step following genome-wide association studies (GWAS) is to assess whether disease or trait-associated single-nucleotide polymorphisms (SNPs) enrich for particular biological annotations. 
+			SNP-based enrichment analysis needs to account for biases such as co-localization of GWAS signals to gene-dense and high linkage disequilibrium (LD) regions, and correlations of gene size, location and function. 
+			The SNPsnap Web server enables SNP-based enrichment analysis by providing matched sets of SNPs that can be used to calibrate background expectations. 
+			Specifically, SNPsnap efficiently identifies sets of randomly drawn SNPs that are matched to a set of query SNPs based on allele frequency, number of SNPs in LD, distance to nearest gene and gene density.
+			</p>
+			<!-- <div style="margin-bottom:10px"><i>A fast and easy entry point to matching and annotation of 1000 Genomes SNPs.</i></div> -->
+			<!-- <p><a class="btn btn-lg btn-success" href="match_snps.html" role="button">Start now</a></p> -->
+		<i><a target="_blank" href="http://bioinformatics.oxfordjournals.org/content/31/3/418">Bioinformatics, first published online October 13, 2014 doi:10.1093/bioinformatics/btu655</a></i>
+		</div> <!-- END div col -->
+		</div> <!-- END div text-left -->
+	</div>
+
+	<!-- Applications Note -->
+	<!-- *** 31/3/418 *** -->
+	<!-- Bioinformatics (2015) 31 (3): 418-420 first published online October 13, 2014 doi:10.1093/bioinformatics/btu655 -->
+	<br>
+
 	<div class="row">
 		<div class="col-xs-offset-1 col-xs-9">
 			<div class="panel panel-default"> <!-- START feed -->
@@ -70,12 +94,12 @@
 						<dt>Match input SNPs</dt>
 					  		<dd>SNPsnap is designed to generate matched sets of SNPs that can be used to calibrate background expectations in SNP-based enrichment analysis.</dd>
 					  	<br>
-					  	<dt>Annotate input SNPs using 1000 Genome data</dt>
-					  		<dd>SNPsnap allows users to quickly retrieve 1000 Genome population specific annotation about loci bounderies, nearest genes, genes in loci, minor allele frequency and <a href="http://www.broadinstitute.org/mpg/snpsnap/documentation.html#snp_annotation_input_snps_annotated">much more</a>.</dd>
+					  	<dt>Annotate input SNPs using 1000 Genomes data</dt>
+					  		<dd>SNPsnap allows users to quickly retrieve 1000 Genomes population specific annotation about SNP locus bounderies, nearest genes, genes in loci, minor allele frequencies and <a href="http://www.broadinstitute.org/mpg/snpsnap/documentation.html#snp_annotation_input_snps_annotated">much more</a>.</dd>
 <!-- 					SNPsnap has two main features:
 					<ol>
 					  <li>Match input SNPs: generate matched sets of SNPs that can be used to calibrate background expectations in SNP-based enrichment analysis.</li>
-					  <li>Annotate input SNPs: quickly retrieve 1000 Genome population specific information about loci bounderies, nearest genes and genes in loci, minor allele frequency and much more.</li>
+					  <li>Annotate input SNPs: quickly retrieve 1000 Genomes population specific information about loci bounderies, nearest genes and genes in loci, minor allele frequency and much more.</li>
 					</ol> -->
 				</div>
 			</div> <!-- END feed -->
@@ -87,15 +111,16 @@
 					<!-- A description list -->
 					<dl>
 						<dt>Tip #1: fast SNP input annotation</dt>
-							<dd>SNPsnap main purpose is to match input SNPs. However, many users are often only interested in annotating their input SNPs using 1000 Genome population specific data. If you are only interested in annotatating your input SNPs, 
-							setting <span class="code_settings">Number of matched SNPs</span> to a low value (e.g. <code>1</code>) will highly speed up the runtime for your job. 
+							<dd>SNPsnap's main purpose is to match input SNPs. However, many users are often only interested in annotating their input SNPs using 1000 Genomes population specific genotypes. 
+							If this is also your main goal, you can set <span class="code_settings">Number of matched SNPs</span> to a low value (e.g. <code>1</code>), which will highly speed up the runtime for your job. 
 							Of course you should also make sure to enable <span class="code_settings">Annotate input SNPs</span>.
 							</dd>
 						<br>
 						<dt>Tip #2: independence of SNPs (clumping)</dt>
 							<dd>SNPsnap has a nifty extra feature to check the independence of your input SNPs. 
 							This feature was originally designed to facilitate proper use of the SNP-matching results.
-							However, many of our users find it useful on its own - just as a quick way to clump your SNPs using <a href="http://pngu.mgh.harvard.edu/~purcell/plink/clump.shtml">PLINK's</a> algorithm.</dd>
+							However, many of our users find it useful on its own - just as a quick way to clump your SNPs using <a href="https://www.cog-genomics.org/plink2/postproc#clump" target="_blank">PLINK 1.9</a>'s algorithm.
+							</dd>
 					</dl>
 				</div>
 			</div> <!-- END feed -->

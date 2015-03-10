@@ -68,14 +68,16 @@ snpsnap_match_nav = """
 	<div class="col-xs-6"><img class="img-responsive min-limits" src="img/broad_logo/BroadLogo.png"></div>
 </div>
 <br>
-	
+
 <div class="header">
 	<ul class="nav nav-pills">
 		<li><a href="index.html">Home</a></li>
+		<li><a href="about.html">About</a></li>
 		<li class="active"><a href="match_snps.html">Match SNPs</a></li>
 		<li><a href="faq.html">FAQ</a></li>
 		<li><a href="documentation.html">Documentation</a></li>
 		<li><a href="contact.html">Contact</a></li>
+		<li><a href="feedback.html">Feedback</a></li>
 	</ul>
 </div>
 """
@@ -514,6 +516,7 @@ def run():
 
 
 	print "<h2 class='text-center'>SNPsnap is now matching your SNPs</h2>"
+	print "<h6 class='text-center'><i>Please remember to <a target='_blank' href='{link_citation}'>cite SNPsnap</a></i></h6>".format(link_citation="http://www.broadinstitute.org/mpg/snpsnap/about.html")
 
 	#print "<p>Your session ID is: %s</p>" % session_id
 	print "<p> An email will be sent to <strong>%s</strong> when the job is completed.<br>You will be able to download the results as soon your job finish. You can download the results from the bottom of this page or via the below link.</p>" % email_address

@@ -63,7 +63,7 @@
 			<ul style="list-style-type:none">
 				<li class="toc_title2"><a href="#doc_aim">Aim</a></li>
 				<li class="toc_title2"><a href="#doc_data">Data</a></li>
-				<li class="toc_title2"><a href="#genetic_properties">Genetic Properties used to Matching SNPs</a></li>
+				<li class="toc_title2"><a href="#genetic_properties">Genetic Properties used to Match SNPs</a></li>
 				<li class="toc_title2"><a href="#doc_algorithm">Algorithm</a></li>
 			</ul>
 		<dt class="toc_title1"><a href="#doc_webserver">Webserver</a></dt>
@@ -95,13 +95,35 @@
 
 	<!-- PRODUCTION VERSION 2 -->
 	<h3><a name="doc_data" class="documentation_header_link">Data</a></h3>
-	SNPsnap uses  <strong>1000 Genomes Project Phase 3</strong> variants from the <strong>three different ancestral cohorts</strong>. (<span class="snpsnap_new_feature">March 2015: SNPsnap was updated from 1000G Phase 1 to Phase 3 variants</span>.
+	SNPsnap uses  <strong>1000 Genomes Project Phase 3</strong> variants from the <strong>three different ancestral cohorts</strong>. (<span class="snpsnap_new_feature">March 2015: SNPsnap was updated from 1000G Phase 1 to Phase 3 variants</span>).
 	SNPsnap uses 1000G Project's definition of the super populations for European and East Asian (see below), but defines West Africa as a subset of the 1000G African samples. 
 	Super populations are defined using the <a href="ftp://ftp.1000genomes.ebi.ac.uk/vol1/ftp/release/20130502/integrated_call_samples_v3.20130502.ALL.panel">1000G panel file</a>.<br>
 	Specifically our database contains biallelic, uniquely mapped SNPs derived from preprocessing the phase 3 genotype data.
 	SNPsnap's database only holds <strong>common variants</strong> (>1% MAF). 
 	SNPsnap contains <strong>all types of variants listed by 1000 Genomes Project</strong>: single nucleotide variants (SNPs), indels and larger structural variants (as assigned with evs-numbers).<br>
 	<span class="documentation_important">SNPsnap contains SNPs located on chromosomes 1-22 and the X-chromosome</span> (<span class="snpsnap_new_feature">March 2015: X chromosome included in SNPsnap</span>).<br>
+
+	<br>
+	<span class="text-muted">
+	Technical note: we preprocess all 1000G variants before building SNPsnap's database using the following QC criteria:
+	<ol>
+		<li>Remove SNPs flagged by PLINK as merge conflicts when merging per chromosome 1000G genotypes. See more information at <a target="_blank" href="https://www.cog-genomics.org/plink2/data#merge3">PLINK 1.9 Merge failures</a>.</li>
+		<li>Remove SNPs with duplicate rsIDs.</li>
+		<li>Run PLINK variant filtering:
+			<br>
+			<samp class="text-muted">
+			plink --bfile [prefix to population specific genotypes] --maf 0.01 --hwe 10e-6 --geno 0.1 --make-bed --out [SNPsnap QC PLINK files]
+			</samp>
+			<br>
+			see details for commando at PLINK 1.9's documentation for 
+			<samp><a target="_blank" href="https://www.cog-genomics.org/plink2/filter#maf">maf</a></samp>, 
+			<samp><a target="_blank" href="https://www.cog-genomics.org/plink2/filter#hwe">hwe</a></samp> and 
+			<samp><a target="_blank" href="https://www.cog-genomics.org/plink2/filter#missing">geno</a></samp>.
+		</li>
+		<li>Remove SNPs with duplicate chromosomal coordinates.</li>
+	</ol>
+	</span>
+
 
 	<h4>SNPsnap Super Population Definitions</h4>
 	SNPsnap's super population definitions are based on the following <a href="http://www.1000genomes.org/about#ProjectSamples">1000G cohorts</a>:
@@ -117,7 +139,7 @@
 		</li>
 		<li><strong>East Asian (EAS)</strong>
 			<ul>
-				<li>Chinese Dai in Xishuangbanna, China(CDX)</li>
+				<li>Chinese Dai in Xishuangbanna, China (CDX)</li>
 				<li>Han Chinese in Bejing, China (CHB)</li>
 				<li>Japanese in Tokyo, Japan (JPT)</li>
 				<li>Kinh in Ho Chi Minh City, Vietnam (KHV)</li>
@@ -134,6 +156,34 @@
 		</li>
 	</ul>
 
+
+	<h4>SNPsnap Database Summary</h4>
+	After several QC steps of the 1000G data, the SNPsnap's SNP database is build. The below table summarizes the number of SNPs in the database:
+	<br>
+
+	<table class='table table-hover'>
+		<thead>
+			<tr>
+				<th class="col-xs-3"><p class="text-left" style='font-size:115%;'>Super Population</p></th>
+				<th class="col-xs-8"><p class="text-left" style='font-size:115%;'>Number of SNPs in Database</p></th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<th>EUR</th>
+				<td>9,535,060</td>
+			</tr>
+			<tr>
+				<th>EAS</th>
+				<td>8,433,735</td>
+			</tr>
+			<tr>
+				<th>WAFR</th>
+				<td>16,191,783</td>
+			</tr>
+		</tbody>
+	</table>
+
 	
 	<!-- PRODUCTION VERSION 1 -->
 <!-- 	<h3>Data</h3>
@@ -142,12 +192,12 @@
 	<span class="text-danger">SNPsnap will soon be updated with 1000 Genomes Phase 3 variants. The update will also include more populations.</span>
  -->
 	<h4>SNPsnap Gene Sets</h4>
-	SNPsnap uses genes from the <a href="http://www.gencodegenes.org/">GENCODE</a> consortium downloaded via <a href="http://grch37.ensembl.org">Ensembl GRCh37 Biomart</a> (Homo sapiens genes, GRCh37.p13). <span class="snpsnap_new_feature">March 2015: Gene set updated to GENCODE genes.</span>.
+	SNPsnap uses genes from the <a href="http://www.gencodegenes.org/">GENCODE</a> consortium downloaded via <a href="http://grch37.ensembl.org">Ensembl GRCh37 Biomart</a> (Homo sapiens genes, GRCh37.p13). (<span class="snpsnap_new_feature">March 2015: Gene set updated to GENCODE genes</span>).
 	SNPsnap uses any genes within the GENCODE gene set to define the <span class="code_settings">Distance to Nearest Gene</span> and <span class="code_settings">Gene Density</span>. Please note that not all these genes are coding genes.
 	The SNPsnap GENCODE gene set contains 57737 genes of which 20314 are protein coding genes. SNPsnap provides the annotation feature <span class="code_column">dist_nearest_gene_snpsnap_protein_coding</span> as the distance to the nearest protein coding gene.
 	Finaly, SNPsnap uses Ensembl's mapping to HGNC symbols whenever a HGNC symbol is provided.
 
-	<h3><a name="genetic_properties" class="documentation_header_link">Genetic properties used to sample random but matched SNPs</a></h3>
+	<h3><a name="genetic_properties" class="documentation_header_link">Genetic Properties used to Match SNPs</a></h3>
 	<ul>
 	  <li ><strong>Minor allele frequency</strong>: SNPs are partitioned into minor allele frequency bins of 1-2, 2-3, ..., 49-50% strata.</li>
 	  <li ><strong>LD buddies</strong>: the number of “buddy” (or "proxy") SNPs in LD at various thresholds. SNPsnap currently offers LD buddy counts for thresholds using r&#178 > 0.1, 0.2, ..., 0.9</li>
