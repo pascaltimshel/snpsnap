@@ -1086,7 +1086,7 @@ def ParseArguments():
 	arg_parser.add_argument("--user_snps_file", help="Path to file with user-defined SNPs", required=True) # TODO: make the program read from STDIN via '-'
 	arg_parser.add_argument("--output_dir", type=check_if_path_is_writable, help="Directory in which output files, i.e. random SNPs will be written", required=True)
 	#arg_parser.add_argument("--output_dir", type=ArgparseAdditionalUtils.check_if_writable, help="Directory in which output files, i.e. random SNPs will be written", required=True)
-	arg_parser.add_argument("--super_population", help="Super Population", required=True, choices=['EUR', 'EAS', 'WARF'])
+	arg_parser.add_argument("--super_population", help="Super Population", required=True, choices=['EUR', 'EAS', 'WAFR'])
 	arg_parser.add_argument("--distance_type", help="ld or kb", required=True, choices=['ld', 'kb'])
 	
 	### Distance cutoff - including choices - gives problem with the need for converting distance_cutoff to str (that is, str(distance_cutoff) is needed at some point) 
@@ -1368,17 +1368,17 @@ def main():
 	################## path_data - SNPsnap production v1 ##################
 	#path_data = os.path.abspath("/Users/pascaltimshel/snpsnap/data/step3") ## OSX - HARD CODED PATH!!
 	#path_data = os.path.abspath("/cvar/jhlab/snpsnap/data/step3/ld0.5") ## BROAD - HARD CODED PATH - BEFORE June 2014 (before production_v1)!!
-	path_data = os.path.abspath("/cvar/jhlab/snpsnap/data/step3/1KG_snpsnap_production_v1_uncompressed_incl_rsID") ## BROAD - version: production_v1
-	#path_data = os.path.abspath("/cvar/jhlab/snpsnap/data/step3/1KG_snpsnap_production_v1_single_ld") ## SINGLE LD BROAD - version: production_v1
+	#path_data = os.path.abspath("/cvar/jhlab/snpsnap/data/step3/1KG_snpsnap_production_v1_single_ld")
+	#path_data = os.path.abspath("/cvar/jhlab/snpsnap/data/step3/1KG_snpsnap_production_v1_uncompressed_incl_rsID") ## ***** BROAD - version: production_v1 *****
 	
-	path_genotype = "/cvar/jhlab/snpsnap/data/step1/full_no_pthin_rmd/CEU_GBR_TSI_unrelated.phase1_dup_excluded"
+	#path_genotype = "/cvar/jhlab/snpsnap/data/step1/full_no_pthin_rmd/CEU_GBR_TSI_unrelated.phase1_dup_excluded" ## ***** BROAD - version: production_v1 *****
 	#path_genotype = "/cvar/jhlab/snpsnap/data/step1/test_thin0.02_rmd/CEU_GBR_TSI_unrelated.phase1_dup_excluded" # TEST DATA SET!!!
 
 	################## path_data - SNPsnap production v2 *ENABLE ME!* ##################
 	### Path to collections, HDF5, etc
-	#path_data = os.path.abspath("/cvar/jhlab/snpsnap/data/step3/1KG_snpsnap_production_v2/{super_population}".format(super_population=super_population)) ## BROAD - version: production_v2
+	path_data = os.path.abspath("/cvar/jhlab/snpsnap/data/step3/1KG_snpsnap_production_v2/{super_population}".format(super_population=super_population)) ## BROAD - version: production_v2
 	### Path to genotype data - needed for clumping
-	#path_genotype = "/cvar/jhlab/snpsnap/data/step1/production_v2_QC_full_merged_duplicate_rm/{super_population}/ALL.chr_merged.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes".format(super_population=super_population)
+	path_genotype = "/cvar/jhlab/snpsnap/data/step1/production_v2_QC_full_merged_duplicate_rm/{super_population}/ALL.chr_merged.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes".format(super_population=super_population)
 	
 
 	################## ... ##################

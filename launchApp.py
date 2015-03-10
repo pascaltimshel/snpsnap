@@ -121,30 +121,33 @@ class Processor(object):
 
 		self.report_obj = None ## Needed for correct variable scope
 		#### READING match ######
-		try:
-			with open(file_report_match, 'r') as json_data: ## TODO: make try: execpt: block
-				self.report_obj = json.load(json_data)
-		except:
-			logger.warning( "Could not read match report: %s" % file_report_match )
+		if self.cmd_match:
+			try:
+				with open(file_report_match, 'r') as json_data: ## TODO: make try: execpt: block
+					self.report_obj = json.load(json_data)
+			except:
+				logger.warning( "Could not read match report: %s" % file_report_match )
 
 		
 		#### READING annotate ######
 		# OBS: there is really not that much to read from this json file. I think that runtime is the only thing of interest.
-		try:
-			with open(file_report_annotate, 'r') as json_data: ## TODO: make try: execpt: block
-				tmp_json = json.load(json_data)
-	 			self.report_obj.update(tmp_json) #update() uses last-one-wins conflict-handling
-		except:
-			logger.warning( "Could not read annotate report: %s" % file_report_annotate )
+		if self.cmd_annotate:
+			try:
+				with open(file_report_annotate, 'r') as json_data: ## TODO: make try: execpt: block
+					tmp_json = json.load(json_data)
+		 			self.report_obj.update(tmp_json) #update() uses last-one-wins conflict-handling
+			except:
+				logger.warning( "Could not read annotate report: %s" % file_report_annotate )
 
 
 		#### READING clump ######
-		try:
-			with open(file_report_clump, 'r') as json_data: ## TODO: make try: execpt: block
-				tmp_json = json.load(json_data)
-	 			self.report_obj.update(tmp_json) #update() uses last-one-wins conflict-handling
-		except:
-			logger.warning( "Could not read clump report: %s" % file_report_clump )
+		if self.cmd_clump:
+			try:
+				with open(file_report_clump, 'r') as json_data: ## TODO: make try: execpt: block
+					tmp_json = json.load(json_data)
+		 			self.report_obj.update(tmp_json) #update() uses last-one-wins conflict-handling
+			except:
+				logger.warning( "Could not read clump report: %s" % file_report_clump )
 
 
 		#### READING bootface ######
@@ -419,12 +422,28 @@ class Processor(object):
 		## Debugging must be done by me be replicating the example. 
 		## (consider sending the formular in the email)
 
+		if self.cmd_clump:
+			command_shell = self.cmd_clump # HACK
+			self.processes['clump']['call'] = command_shell
+			with open(os.devnull, "w") as fnull: # same as open('/dev/null', 'w')
+				p = subprocess.Popen(command_shell, stdout = fnull, stderr = subprocess.STDOUT, shell=True) 
+				self.processes['clump']['process_obj'] = p
+				logger.info( "submitted subprocess for cmd_clump" )
+
+
+
+
 		if self.cmd_match:
 			command_shell = self.cmd_match
 			self.processes['match']['call'] = command_shell
 			with open(os.devnull, "w") as fnull: # same as open('/dev/null', 'w')
 				p = subprocess.Popen(command_shell, stdout = fnull, stderr = subprocess.STDOUT, shell=True)
 				self.processes['match']['process_obj'] = p
+				logger.info( "submitted subprocess for cmd_match" )
+				################## NEW IN SNPsnap v2 - 03/10/2015 ##################
+				### waiting for process
+				logger.info( "SPECIAL FOR 'cmd_match': waiting for process to finish before submitting more subprocesses" )
+				p.wait()
 
 
 		if self.cmd_annotate:
@@ -433,7 +452,8 @@ class Processor(object):
 			with open(os.devnull, "w") as fnull: # same as open('/dev/null', 'w')
 				p = subprocess.Popen(command_shell, stdout = fnull, stderr = subprocess.STDOUT, shell=True) 
 				self.processes['annotate']['process_obj'] = p
-				
+				logger.info( "submitted subprocess for cmd_annotate" )
+
 				# ONLY FOR DEBUGGING!!!
 				#p = subprocess.Popen(command_shell, stdout = subprocess.PIPE, stderr = subprocess.STDOUT, shell=True)
 				#(stdoutdata, stderrdata) = p.communicate()
@@ -441,12 +461,7 @@ class Processor(object):
 				#logger.info( "annotate STDERR: %s" % stderrdata )
 				#SIGKILL	9	Exit	Killed
 
-		if self.cmd_clump:
-			command_shell = self.cmd_clump # HACK
-			self.processes['clump']['call'] = command_shell
-			with open(os.devnull, "w") as fnull: # same as open('/dev/null', 'w')
-				p = subprocess.Popen(command_shell, stdout = fnull, stderr = subprocess.STDOUT, shell=True) 
-				self.processes['clump']['process_obj'] = p
+
 
 		# USED FOR DEBUGGING
 		# if self.cmd_match:
