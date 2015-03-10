@@ -67,7 +67,7 @@ def wait_for_processes(processes):
 		print "WATING <-- [pid={pid}; param={param}; job_no={job_no}; log_file={log_file}]".format(pid=pid, param=param, job_no=job_no, log_file=log_file)
 		
 		### Flushing
-		f.flush() # this should also work
+		# f.flush() # this should also work
 		sys.stdout.flush()
 
 		p.wait()

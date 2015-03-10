@@ -225,7 +225,13 @@ def LogArguments():
 ###################################### Global params ######################################
 #queue_name = "hour" # [bhour, bweek] priority
 #queue_name = "priority" # [bhour, bweek] priority
-queue_name = "week" # [bhour, bweek] priority
+if os.environ["HOST"] == "gold":
+	queue_name = "MEDPOP"
+elif os.environ["HOST"] == "copper":
+	queue_name = "week"
+else: # default queue
+	queue_name = "week"
+
 #queue_name = "MEDPOP" # *<--ONLY ON RHEL6-->* <-- DO NOT USE THIS QUEUE. One population generates *1900 JOBS*
 # priority: This queue has a per-user limit of 10 running jobs, and a run time limit of three days.
 mem="20" # gb      

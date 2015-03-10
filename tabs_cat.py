@@ -79,7 +79,7 @@ def validate_combined_file(attempt="NoArgumentParsed"):
 
 	snp_difference = n_batch_snps - n_combined_snps
 	with open(file_status, "a") as f: # *IMPORTANT*: open in append-mode
-		status_string = "status={status} | diff = {snp_difference} | pipeline_identifier={pipeline_identifier} | batch_time={batch_time}".format(status=status, snp_difference=snp_difference, pipeline_identifier=pipeline_identifier, batch_time)
+		status_string = "status={status} | diff = {snp_difference} | pipeline_identifier={pipeline_identifier} | batch_time={batch_time}".format(status=status, snp_difference=snp_difference, pipeline_identifier=pipeline_identifier, batch_time=batch_time)
 		f.write(status_string+"\n")
 
 		logger.info( status_string )
@@ -102,7 +102,7 @@ def cat_tabs():
 	### *BEFORE FEB 2015* - old ENSEMBL file
 	#header_str = "rsID freq_bin snp_chr snp_position gene_count dist_nearest_gene_snpsnap dist_nearest_gene dist_nearest_gene_located_within loci_upstream loci_downstream ID_nearest_gene_snpsnap ID_nearest_gene ID_nearest_gene_located_within LD_boddies ID_genes_in_matched_locus"
 	header_str_tab_sep = "\t".join(header_str.split())
-	with open(outpath_combined_tab, 'w') as f:
+	with open(outpath_combined_tab, 'w') as f: # WRITING MODE!
 		f.write(header_str_tab_sep+'\n')
 	#################################################
 

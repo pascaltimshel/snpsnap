@@ -97,15 +97,39 @@ def LogArguments():
 ###################################### Global params ######################################
 #queue_name = "priority" # [bhour, bweek] priority
 #queue_name = "hour" # [bhour, bweek] priority
-queue_name = "week" # [bhour, bweek] priority
+#queue_name = "week" # [bhour, bweek] priority
+if os.environ["HOST"] == "gold":
+	queue_name = "MEDPOP"
+elif os.environ["HOST"] == "copper":
+	queue_name = "week"
+else: # default queue
+	queue_name = "week"
+
 # priority: This queue has a per-user limit of 10 running jobs, and a run time limit of three days.
-mem=10 # 
+mem=20 # 10 GB worked for EUR/EAS 
 email='pascal.timshel@gmail.com' # [use an email address 'pascal.timshel@gmail.com' or 'False'/'None']
 email_status_notification=False # [True or False]
 email_report=False # # [True or False]
 
 ###################################### ARGUMENTS ######################################
 args = ParseArguments()
+
+
+############################# SWITCH ##########################################
+
+#super_populations = ["EUR"]
+#super_populations = ["EAS"]
+super_populations = ["WAFR"]
+distance_types = ["ld", "kb"]
+
+
+param_list_ld = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+param_list_kb = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
+
+#distance_types = ["ld"]
+#param_list_ld = [0.5, 0.9]
+
+
 
 ###################################### CONSTANTS ######################################
 batch_time = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H.%M.%S')
@@ -114,7 +138,7 @@ current_script_name = os.path.basename(__file__).replace('.py','')
 
 ###################################### SETUP logging ######################################
 #log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/logs_bsub_tabs_compile_priority" #OBS VARIABLE
-log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2/step4_wrapper_tabs_cat_week" #OBS VARIABLE
+log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2/step4_wrapper_tabs_cat"
 if not os.path.exists(log_dir):
 	os.makedirs(log_dir)
 
@@ -129,18 +153,6 @@ logger.info( "INSTANTIATION NOTE: placeholder" )
 ###########################################################################################
 
 
-
-############################# SWITCH ##########################################
-
-super_populations = ["EUR"]
-distance_types = ["ld", "kb"]
-
-
-param_list_ld = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-param_list_kb = [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
-
-#distance_types = ["ld"]
-#param_list_ld = [0.5, 0.9]
 
 
 

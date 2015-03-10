@@ -53,7 +53,7 @@ def read_ld_buddy_count():
 	#9=ld_buddy_count_0.9
 	# NUMBER OF COLUMNS = 10
 
-	logger.info( "START: reading ld buddy file..." )
+	logger.info( "START: reading ld buddy file: {}".format(ld_buddy_file) )
 	start_time = time.time()
 	# The file must not contain any mission values (empty fields or NaN)
 	df_ld_buddy = pd.read_csv( ld_buddy_file, delimiter="\t", header=0, index_col=0)
@@ -87,7 +87,10 @@ def read_combined_tab(file_combined):
 
 #@profile
 def drop_cols_combined_tabs(df_combined_tab):
-	""" This function will drop columns that have no further use. NB 'snp_chr', 'snp_position' are dropped later because they are needed for forming the snpID index """
+	""" 
+	This function will drop columns that have no further use. 
+	NB 'snp_chr', 'snp_position' are dropped later because they are needed for forming the snpID index 
+	"""
 	#7=dist_nearest_gene
 	#8=dist_nearest_gene_located_within
 	#....
@@ -152,22 +155,27 @@ def join_dfs(df_ld_buddy, df_combined_tab, path_output):
 	df_merged = df_merged.ix[:, col_order] # REARRANGE COLUMN ORDER - memory heavy?
 
 
-	if df_merged.isnull().any(axis=0).any(axis=0): # same as df_merged.isnull().any().any()
-		df_null = df_merged[df_merged.isnull().any(axis=1)]
-		logger.warning( 'JOIN_OUTER isnull(): len of data frame: %s' % len(df_null) )
-		#logger.warning( df_null )
+	###################################### OUTCOMMENTED SNPsnap production v2 ######################################
+	### Pascal found no reason to write these two rather large files to disk - they are not very helpful:
+	# - df_merged.tab ~ 3 GB
+	# - df_null.tab ~ 1.5 GB
 
-		file_df_null = path_output+"/df_null.tab"
-		logger.warning( 'Will write df_null to file: %s' % file_df_null )
-		df_null.to_csv(file_df_null, sep='\t', header=True, index=True, index_label='snpID')
-	else:
-		logger.warning( 'JOIN_OUTER: there is NO null values' )
+	# if df_merged.isnull().any(axis=0).any(axis=0): # same as df_merged.isnull().any().any()
+	# 	df_null = df_merged[df_merged.isnull().any(axis=1)]
+	# 	logger.warning( 'JOIN_OUTER isnull(): len of data frame: %s' % len(df_null) )
+	# 	#logger.warning( df_null )
 
-	############################ WRITE OUT df_merged ###########################
-	file_df_merged = path_output+"/df_merged.tab"
-	logger.info( 'Will write df_merged to file: %s' % file_df_merged )
-	df_merged.to_csv(file_df_merged, sep='\t', header=True, index=True, index_label='snpID')
-	logger.info( 'DONE writing df_merged to file' )
+	# 	file_df_null = path_output+"/df_null.tab"
+	# 	logger.warning( 'Will write df_null to file: %s' % file_df_null )
+	# 	df_null.to_csv(file_df_null, sep='\t', header=True, index=True, index_label='snpID')
+	# else:
+	# 	logger.warning( 'JOIN_OUTER: there is NO null values' )
+
+	# ############################ WRITE OUT df_merged ###########################
+	# file_df_merged = path_output+"/df_merged.tab"
+	# logger.info( 'Will write df_merged to file: %s' % file_df_merged )
+	# df_merged.to_csv(file_df_merged, sep='\t', header=True, index=True, index_label='snpID')
+	# logger.info( 'DONE writing df_merged to file' )
 
 
 	return df_merged
@@ -225,10 +233,15 @@ def df2collection(df, file_collection, file_dup, no_compression):
 	elapsed_time = time.time() - start_time
 	logger.info( "END: manipulating snpID in %s s (%s min)" % (elapsed_time, elapsed_time/60) )
 
-	logger.info( "Setting index on DataFrame and dropping columns 'snp_chr', 'snp_position'" )
-	df.reset_index(inplace=True) # UNTESTED. Added 03/07/2014. This will 'free' the rsID index and use it as a column. The column will be placed as the FIRST COLUMN (tested)
+	logger.info( "Setting index on DataFrame..." )
+	df.reset_index(inplace=True) # WORKS - Added 03/07/2014, but only run in SNPsnap v2. This will 'free' the rsID index and use it as a column. The column will be placed as the FIRST COLUMN (tested)
 	### ^^^ OBS: please check that the index is in fact something useful like rsID because it will be added as a column to the data frame (because drop=False by default)
 	df.set_index('snpID', inplace=True) # by default 'drop=True' ---> deletes columns to be used as the new index. That is, deletes the 'snpID' column
+	
+	################## DELETE unnecessary columns ##################
+	### AFTER RUNNING SNPsnap v2 Pipeline: OUTCOMMENT THE BELOW df.drop() CODE.
+	# --> IT IS USEFUL TO HAVE a COLUMN OF snp_chr and snp_position
+	logger.info( "Dropping columns 'snp_chr', 'snp_position'" )
 	df.drop(['snp_chr', 'snp_position'], axis=1, inplace=True) # Deletes unnecessary columns
 
 
@@ -323,16 +336,13 @@ arg_parser = argparse.ArgumentParser(description="Read multiple .tab files from 
 arg_parser.add_argument("--combined_tabfile", help="""e.g. /data/step3/1KG_snpsnap_production_v1/ld0.5/combined.tab""", required=True)
 
 
-arg_parser.add_argument("--output_dir", \
-	type=ArgparseAdditionalUtils.check_if_writable, \
-	help="Path to write HDF5 and Collection file. DIR MUST EXIST.", \
-	required=True)
+arg_parser.add_argument("--output_dir", help="Path to write HDF5 and Collection file. DIR WILL BE CREATED IF IT DOES NOT EXISTS.", required=True)
 ## USED BEFORE JUNE 2014
 # arg_parser.add_argument("--dist_type", \
 # 	help="Type of distance used, e.g. ld0.5 or kb100", \
 # 	required=True)
 
-arg_parser.add_argument("--super_population", required=True, help="IMPORTANT: This argument is used to LOCATE THE ld_buddy_file in the function 'read_ld_buddy_count()'", required=True)
+arg_parser.add_argument("--super_population", help="IMPORTANT: This argument is used to LOCATE THE ld_buddy_file in the function 'read_ld_buddy_count()'", required=True)
 arg_parser.add_argument("--distance_type", help="ld or kb. This argument is only used to construct sensable output files names", required=True)
 arg_parser.add_argument("--distance_cutoff", help="r2, or kb distance.  This argument is only used to construct sensable output files names", required=True)
 ## SNPsnap production v1
@@ -352,6 +362,8 @@ distance_type = args.distance_type
 distance_cutoff = args.distance_cutoff
 
 
+
+
 ###################################### CONSTANTS ######################################
 start_time_script = time.time()
 batch_time = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H.%M.%S')
@@ -360,10 +372,10 @@ batch_time = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H.
 ###################################### SETUP logging ######################################
 current_script_name = os.path.basename(__file__).replace('.py','')
 
-log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2/step5_tabs_compile/{super_population}".format(super_population=super_population) #OBS VARIABLE
+log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2/step6_tabs_compile/{super_population}".format(super_population=super_population) #OBS VARIABLE
 if not os.path.exists(log_dir):
 	os.makedirs(log_dir)
-log_name = "{current_script_name}_{type}{cutoff}_{timestamp}".format(current_script_name=current_script_name, type=distance_type, cutoff=distance_cutoff, timestamp=batch_time)
+log_name = "{current_script_name}_{distance_type}{distance_cutoff}_{batch_time}".format(current_script_name=current_script_name, distance_type=distance_type, distance_cutoff=distance_cutoff, batch_time=batch_time)
 
 logger = pplogger.Logger(name=log_name, log_dir=log_dir, log_format=1, enabled=True).get()
 def handleException(excType, excValue, traceback, logger=logger):
@@ -371,8 +383,6 @@ def handleException(excType, excValue, traceback, logger=logger):
 #### TURN THIS ON OR OFF: must correspond to enabled='True'/'False'
 sys.excepthook = handleException
 logger.info( "INSTANTIATION NOTE: placeholder" )
-else:
-	logger = pplogger.Logger(name=current_script_name, enabled=False).get()
 ###########################################################################################
 
 
@@ -382,8 +392,13 @@ else:
 	logger.info("Runinng compression: YES")
 
 file_combined = args.combined_tabfile
+
 # Trailing slash are removed/corrected - NICE!
 path_output = os.path.abspath(args.output_dir)
+if not os.path.exists(path_output):
+	logger.warning( "path_output does not exists. Will create it: {}".format(path_output) )
+	os.makedirs(path_output)
+
 file_hdf5_prim = "{path}/{type}{cutoff}_db.{ext}".format(path=path_output, type=distance_type, cutoff=distance_cutoff, ext='h5')
 
 if args.no_compression:
