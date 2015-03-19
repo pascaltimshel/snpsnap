@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>SNPsnap</title>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="description" content="SNPsnap - matching SNPs based on genetic properties. Enhance your SNP-based enrichment analysis.">
+	<meta name="author" content="Broad Institute of MIT and Harvard">
+	<meta name="keywords" content="Broad Institute of MIT and Harvard, history, Genome Center, Whitehead Institute/MIT Center for Genome Research, Human Genome Project, Eric Lander, Institute of Chemistry and Cell Biology, Stuart Schreiber, Initiative for Chemical Genetics, Harvard University, Harvard medical School, MIT, Massachusetts Institute of Technology, Human Genome Project" />
+
+	<!-- FAVICON -->
+	<link rel="shortcut icon" href="img/broad_logo/BroadSeal-20140621-favicon.ico">
+	<link rel="icon" type="image/png" href="img/broad_logo/favicon-32x32.png" sizes="32x32">
+
+	<!-- Custom styles for SNPsnap -->
+	<link href="css/jumbotron-narrow.css" rel="stylesheet">
+	<link href="css/snpsnap.css" rel="stylesheet">
+
+	<!-- GOOGLE FONTS -->
+	<link href="http://fonts.googleapis.com/css?family=Crimson+Text" rel="stylesheet" type="text/css">
+
+	<!-- GOOGLE ANALYTICS -->
+	<script src="js/snpsnap_googleanalytics.js"></script>
+
+	<!-- jQuery -->
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+
+	<!-- Bootstrap core CSS -->
+	<link href="static/css/bootstrap.min.css" rel="stylesheet">
+	<!-- Bootstrap core JavaScript - must come AFTER jQuery -->
+	<script src="static/js/bootstrap.min.js"></script>
+
+	<!-- ############################ SPECIAL FOR database_download.html ######################### -->
+	<!-- MY JAVASCRIPTS -->
+	<script src="js/database_download.js"></script>
+	<!-- ################################################################################### -->
+
+
+</head>
+
+
+
+	<body>
+
+	<div class="container-non-responsive">
+
+	<div class="row">
+		<div class="col-xs-6"><h1 class='allerta'>SNPsnap</h1></div>
+		<div class="col-xs-6"><img class="img-responsive min-limits" src="img/broad_logo/BroadLogo.png"></div>
+	</div>
+	<br>
+		
+	<div class="header">
+		<ul class="nav nav-pills">
+			<li><a href="index.html">Home</a></li>
+			<li><a href="about.html">About</a></li>
+			<li><a href="match_snps.html">Match SNPs</a></li>
+			<li class="active"><a href="database_download.html">Download</a></li>
+			<li><a href="faq.html">FAQ</a></li>
+			<li><a href="documentation.html">Documentation</a></li>
+			<li><a href="contact.html">Contact</a></li>
+			<li><a href="feedback.html">Feedback</a></li>
+		</ul>
+	</div>
+
+
+<!-- <form class="form-horizontal" id="dummy" action="" method="POST" target="_self" enctype="multipart/form-data"> -->
+<!-- <form class="form-horizontal" id="dummy" method="POST"> -->
+<form class="form-horizontal" id="dummy">
+	<!-- ############# POPULATION ############## -->
+	<fieldset>
+		<legend class="margin_bottom5">Download SNPsnap's SNP Annotation Database</legend>
+		<p class="help-block">For information about the content and column descriptions of the SNP annotation file see the <a href="documentation.html#snp_annotation_input_snps_annotated">documentation</a></p>
+		<div class="input_box"> <!-- START input box -->
+			<div class="form-group">
+				<label class="col-xs-2 control-label" for="super_population">Population</label>
+					<div class="input-group">
+						<select class="form-control" id="super_population" name="super_population">
+							<option value="" disabled>Select population</option>
+							<!-- <option value="EUR" selected="selected">1000G Phase1 European (CEU, GBR, TSI)</option> -->
+							<option value="EUR" selected="selected">European (EUR) - 1000G Phase 3</option>
+							<option value="EAS">East Asia (EAS) - 1000G Phase 3</option>
+							<option value="WAFR">West Africa (WAFR) - 1000G Phase 3</option>
+						</select>
+					</div>
+			</div> <!-- form-group -->
+		<div class="form-group">
+			<div class="col-xs-2 label_text text-right">
+			  Distance type
+			</div>
+			<div class="col-xs-4">
+				<label class="radio-inline">
+					<input type="radio" name="distance_type" id="ld_distance_type" value="ld" required="required" checked="checked">LD
+				</label>
+				<label class="radio-inline">
+					<input type="radio" name="distance_type" id="kb_distance_type" value="kb" required="required">Physical Distance
+				</label>
+			</div>
+			<div class="col-xs-3 label_text text-right">
+				Distance cut-off
+			</div>
+			<div class="col-xs-3">
+				<div class="input-group" id="input_group_ld_distance_cutoff">
+					<span class="input-group-addon">r&#178</span>
+					<select class="form-control" id="ld_distance_cutoff">
+						<option value="0.1">0.1</option>
+						<option value="0.2">0.2</option>
+						<option value="0.3">0.3</option>
+						<option value="0.4">0.4</option>
+						<option value="0.5" selected="selected">0.5</option>
+						<option value="0.6">0.6</option>
+						<option value="0.7">0.7</option>
+						<option value="0.8">0.8</option>
+						<option value="0.9">0.9</option>
+					</select>
+				</div>
+				<div class="input-group" id="input_group_kb_distance_cutoff" style="display:none;">
+					<span class="input-group-addon">kb</span>
+					<select class="form-control" id="kb_distance_cutoff">
+					<!-- OPS - SOMETHING HERE IS NOT WORKING -->
+						<option value="100">100</option>
+						<option value="200">200</option>
+						<option value="300">300</option>
+						<option value="400">400</option>
+						<option value="500" selected="selected">500</option>
+						<option value="600">600</option>
+						<option value="700">700</option>
+						<option value="800">800</option>
+						<option value="900">900</option>
+						<option value="1000">1000</option>
+					</select>
+				</div>
+			</div>
+		</div> <!-- END form group -->
+		</div> <!-- END input box -->
+	</fieldset>
+
+</form> <!-- END form -->
+
+	<!-- ################## SUBMIT BOTTON ################## -->
+	<br>
+	<div class="row margin_bottom10">
+		<div class="col-xs-offset-9 col-xs-4">
+			<!-- <button class="btn btn-success" onclick="test();">Submit - onclick </button> -->
+			<button id="button_get_download_info" class="btn btn-success">Submit</button>
+		</div>
+	</div>
+
+
+
+ <!-- ############## FOOTER ################### -->
+
+
+	<div class="panel panel-default" id='panel_download_query' style="display: none">
+		<div class="panel-heading">
+			<h4 class="panel-title">
+			<a data-toggle="collapse" data-target="#download_query" href="#download_query" onClick="return false;">
+				Query
+			</a>
+			</h4>
+		</div>
+		<div id="download_query" class="panel-collapse collapse in"> 
+			<div class="panel-body">
+				<table class='table table-hover'>
+				<thead>
+					<tr>
+						<th class="col-xs-3"><p class="text-left" style='font-size:105%;'>Super Population</p></th>
+						<th class="col-xs-8"><p class="text-left" style='font-size:105%;'>Distance Type</p></th>
+						<th class="col-xs-8"><p class="text-left" style='font-size:105%;'>Distance Cut-off</p></th>
+						<th class="col-xs-8"><p class="text-left" style='font-size:105%;'>File Size</p></th>
+						<th class="col-xs-8"><p class="text-left" style='font-size:105%;'>File</p></th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+						<td id="q_super_population">PLACEHOLDER</td>
+						<td id="q_distance_type">PLACEHOLDER</td>
+						<td id="q_distance_cutoff">PLACEHOLDER</td>
+						<td id="q_file_size">PLACEHOLDER</td>
+						<!-- *OBS: forcing download of the file instead of displaying it. This works for HTML5* -->
+						<td><a id="q_file" href="" class='btn btn-default btn-success' download><span class='glyphicon glyphicon-download'></span>Download</a></td>
+					</tr>
+				</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+
+<!-- 
+				<tbody>
+					<tr>
+						<th id="q_super_population">EUR</th>
+					</tr>
+					<tr>
+						<th id="q_distance_type">EUR</th>
+					</tr>
+					<tr>
+						<th id="q_distance_cutoff">EUR</th>
+					</tr>
+					<tr>
+						<th id="q_file_size">EUR</th>
+					</tr>
+					<tr>
+						<th id="q_file">EUR</th>
+					</tr>
+				</tbody>
+ -->
+
+ <!-- ############## FOOTER ################### -->
+<div class="footer">
+	<div class="col-xs-3"><p>&copy; Broad 2014</p></div>
+	<div class="col-xs-8"></div>
+	<div class="col-xs-1"><img class="img-responsive footer_min_limits" src="img/broad_logo/BroadSeal.png"></div>
+</div>
+ <!-- end FOOTER -->
+
+
+</div> <!-- /container -->
+
+
+
+
+</body>
+</html>

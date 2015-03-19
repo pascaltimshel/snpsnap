@@ -74,6 +74,7 @@ snpsnap_match_nav = """
 		<li><a href="index.html">Home</a></li>
 		<li><a href="about.html">About</a></li>
 		<li class="active"><a href="match_snps.html">Match SNPs</a></li>
+		<li><a href="database_download.html">Download</a></li>
 		<li><a href="faq.html">FAQ</a></li>
 		<li><a href="documentation.html">Documentation</a></li>
 		<li><a href="contact.html">Contact</a></li>
