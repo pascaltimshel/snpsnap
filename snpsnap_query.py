@@ -88,8 +88,8 @@ def locate_db_file(path, prefix):
 	return file_db
 
 def locate_collection_file(path, prefix):
-	#file_collection = "{path}/{type}_collection.{ext}".format(path=path, type=prefix, ext='tab.gz') # compressed file
-	file_collection = "{path}/{type}/{type}_collection.{ext}".format(path=path, type=prefix, ext='tab')
+	#file_collection = "{path}/{type}/{type}_collection.{ext}".format(path=path, type=prefix, ext='tab')
+	file_collection = "{path}/{type}/{type}_collection.{ext}".format(path=path, type=prefix, ext='tab.gz') # compressed file
 	if not os.path.exists(file_collection): # TODO- FIX THIS LATER
 		raise Exception( "Could not find collection file: %s" % file_collection )
 	return file_collection
@@ -332,7 +332,8 @@ def read_collection(file_collection):
 	#f_tab = gzip.open(file_collection, 'rb') #Before June 2014 - compressed file
 	#df_collection = pd.read_csv(f_tab, index_col=0, header=0, delim_whitespace=True) # index is snpID. #Before June 2014
 	f_tab = open(file_collection, 'r')
-	df_collection = pd.read_csv(f_tab, index_col=0, header=0, delimiter="\t") # index is snpID. # production_v1
+	#df_collection = pd.read_csv(f_tab, index_col=0, header=0, delimiter="\t") # index is snpID. # production_v1
+	df_collection = pd.read_csv(f_tab, index_col=0, header=0, delimiter="\t", compression="gzip") # index is snpID. # production_v2 - NEW March 2015. *REMEMBER TO correct "locate_collection_file()" as well*
 	f_tab.close()
 	elapsed_time = time.time() - start_time
 	logger.info( "END: read CSV file PRIM into DataFrame in %s s (%s min)" % (elapsed_time, elapsed_time/60) )

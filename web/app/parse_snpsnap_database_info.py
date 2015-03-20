@@ -23,7 +23,8 @@ path_web_logs = '/local/data/web_logs'
 file_download_stats = "{base}/stats_downloads.{ext}".format(base=path_web_logs, ext='csv')
 
 
-file_download = "/cvar/jhlab/snpsnap/data/step3/1KG_snpsnap_production_v2/{super_population}/{distance_type}{distance_cutoff}/{distance_type}{distance_cutoff}_collection.{ext}".format(super_population=super_population, distance_type=distance_type, distance_cutoff=distance_cutoff, ext="tab")
+#file_download = "/cvar/jhlab/snpsnap/data/step3/1KG_snpsnap_production_v2/{super_population}/{distance_type}{distance_cutoff}/{distance_type}{distance_cutoff}_collection.{ext}".format(super_population=super_population, distance_type=distance_type, distance_cutoff=distance_cutoff, ext="tab")
+file_download = "/cvar/jhlab/snpsnap/data/step3/1KG_snpsnap_production_v2/{super_population}/{distance_type}{distance_cutoff}/{distance_type}{distance_cutoff}_collection.{ext}".format(super_population=super_population, distance_type=distance_type, distance_cutoff=distance_cutoff, ext="tab.gz") # gz
 #e.g /cvar/jhlab/snpsnap/data/step3/1KG_snpsnap_production_v2/EUR/ld0.5/ld0.5_collection.tab
 
 

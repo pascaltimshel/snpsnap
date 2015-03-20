@@ -51,7 +51,8 @@ def submit():
 					os.makedirs(compile_out)
 
 				#./tabs_compile.py --combined_tabfile /cvar/jhlab/snpsnap/data/step2/1KG_snpsnap_production_v1/ld0.5/combined.tab --output_dir /cvar/jhlab/snpsnap/data/step3/1KG_snpsnap_production_v1/ld0.5 --distance_type ld --distance_cutoff 0.5 --log_dir /cvar/jhlab/snpsnap/snpsnap/logs_step5_tabs_compile --no_compression
-				cmd = "python tabs_compile.py --combined_tabfile {input} --output_dir {output} --distance_type {type} --distance_cutoff {cutoff} --super_population {super_population} --no_compression".format(input=compile_in, output=compile_out, type=distance_type, cutoff=param, super_population=super_population)
+				#cmd = "python tabs_compile.py --combined_tabfile {input} --output_dir {output} --distance_type {type} --distance_cutoff {cutoff} --super_population {super_population} --no_compression".format(input=compile_in, output=compile_out, type=distance_type, cutoff=param, super_population=super_population) # SNPsnap production v2
+				cmd = "python tabs_compile.py --combined_tabfile {input} --output_dir {output} --distance_type {type} --distance_cutoff {cutoff} --super_population {super_population}".format(input=compile_in, output=compile_out, type=distance_type, cutoff=param, super_population=super_population) # *NEW 03/20/2015 ["untested"] | added after pipeline was run*
 				#OBS: --no_compression set
 				logger.info( "making command:\n%s" % cmd )
 				
