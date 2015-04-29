@@ -167,6 +167,13 @@ def lookup_user_snps_iter(file_db, user_snps):
 				# SyntaxError: invalid syntax
 			logger.warning( "Got a input SNP containing single quote(s). Will skip this SNP." )
 			continue
+		if '"' in item: # we cannot accept *double quotes* in the input *BECAUSE* we use the single quotes in the query
+			# the query will crash if the SNP contains douple quotes, e.g. "rsXXX":
+				#     ((index == ""x""))
+				#                  ^
+				# SyntaxError: invalid syntax
+			logger.warning( "Got a input SNP containing douple quote(s). Will skip this SNP." )
+			continue
 
 		df = store.select('dummy', "index=['%s']" % item) # Remember to quote the string!
 		## ^^ df will be an empty DataFrame if there is no SNP with the quired index (NOTE that this is not the same as indexing in a pandas data frame: here a KeyError will be thrown if the index does not exists)
