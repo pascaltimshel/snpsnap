@@ -88,8 +88,8 @@ def locate_db_file(path, prefix):
 	return file_db
 
 def locate_collection_file(path, prefix):
-	#file_collection = "{path}/{type}_collection.{ext}".format(path=path, type=prefix, ext='tab.gz') # compressed file
-	file_collection = "{path}/{type}/{type}_collection.{ext}".format(path=path, type=prefix, ext='tab')
+	#file_collection = "{path}/{type}/{type}_collection.{ext}".format(path=path, type=prefix, ext='tab')
+	file_collection = "{path}/{type}/{type}_collection.{ext}".format(path=path, type=prefix, ext='tab.gz') # compressed file
 	if not os.path.exists(file_collection): # TODO- FIX THIS LATER
 		raise Exception( "Could not find collection file: %s" % file_collection )
 	return file_collection
@@ -160,6 +160,21 @@ def lookup_user_snps_iter(file_db, user_snps):
 	#user_snps_df = pd.DataFrame() # APPEND VERSION - WORKS, but NO control of column order. Consider: pd.DataFrame(columns=colnames)
 	for i, item in enumerate(user_snps, start=1):
 		logger.info( "#%s/#%s | Look-up SNP: %s" % (i, len(user_snps), item) )
+
+		if "'" in item: # we cannot accept *single quotes* in the input *BECAUSE* we use the single quotes in the query
+			# the query will crash if the SNP contains single quotes, e.g.:
+				#     index ==['#rs79640704 --> THIS SNP have 'inf ' in dist_nearest_gene_snpsnap column']
+				# SyntaxError: invalid syntax
+			logger.warning( "Got a input SNP containing single quote(s). Will skip this SNP." )
+			continue
+		if '"' in item: # we cannot accept *double quotes* in the input *BECAUSE* we use the single quotes in the query
+			# the query will crash if the SNP contains douple quotes, e.g. "rsXXX":
+				#     ((index == ""x""))
+				#                  ^
+				# SyntaxError: invalid syntax
+			logger.warning( "Got a input SNP containing douple quote(s). Will skip this SNP." )
+			continue
+
 		df = store.select('dummy', "index=['%s']" % item) # Remember to quote the string!
 		## ^^ df will be an empty DataFrame if there is no SNP with the quired index (NOTE that this is not the same as indexing in a pandas data frame: here a KeyError will be thrown if the index does not exists)
 		## ^^ nothing happens when appending/concatenating empty DataFrames
@@ -233,6 +248,7 @@ def process_input_snps(path_output, user_snps, user_snps_df):
 
 	snps_excluded = {} # dict will contain all user_snps not used further in SNPsnap (user_snps_not_in_db and snps_in_HLA)
 	snps_in_HLA = [] # this list will be used to drop input SNPs from the DataFrame (user_snps_df) mapping to HLA
+	snps_with_corrupted_genetic_properties = [] # NEW APRIL 2015 | this list will be used to drop input SNPs from the DataFrame (user_snps_df) *with corrupted values* (e.g. 'inf' in dist_nearest_gene_snpsnap column)
 	n_snps_not_in_db = 0 # counter for snps not found in data base - USED IN report_news 
 	for snp in user_snps: # OBS: looping over user_snps [LIST].
 		#if not (user_snps_df.index == snp).any():
@@ -253,9 +269,36 @@ def process_input_snps(path_output, user_snps, user_snps_df):
 				if 25000000 <= snp_position <= 35000000:
 					snps_excluded[snp] = "SNP_in_HLA_region"
 					snps_in_HLA.append(snp) # appending to list for exclusion
-		logger.warning( "{} SNPs mapping to HLA region:\n{}".format( len(snps_in_HLA), "\n".join(snps_in_HLA) ) ) # OBS: more SNPs may be added to snps_excluded in the exclude_HLA_SNPs step
+		logger.warning( "{} SNPs mapping to HLA region:\n{}".format( len(snps_in_HLA), "\n".join(snps_in_HLA) ) )
 		logger.warning( "Excluding the SNPs mapping to HLA region...")
 		user_snps_df.drop(snps_in_HLA, axis=0, inplace=True) # inplace dropping index mapping to HLA
+
+	##### BUG FIX 04-08-2015: the columns "dist_nearest_gene_{snpsnap, snpsnap_protein_coding, gene}" in collection and HDF5 files have, in some ~56 k cases (FOR EUR - others not tested), 'inf' as value instead of the real distance. ####
+	# ptimshel@snpsnap:/cvar/jhlab/snpsnap/data/step3/1KG_snpsnap_production_v2/EUR/ld0.5> fgrep "inf" ld0.5_collection.tab.cut_6-8 | wc -l
+	# 56907 --> EUR collection contains ~56k corrupted SNPs for the dist_nearest_gene_{snpsnap, snpsnap_protein_coding, gene}
+	### TODO: fix the collections/HDF5 to *NOT* contain the 'inf' values.
+	### EXPLANATION: if we exclude the SNPs upstream, we will not have issues.
+	### *NB* this SNPs with 'inf' in 'dist_nearest_gene_snpsnap' will *NEVER* be matched. Thus, the input_to_matched_ratio should still be correctly calculated.
+	for snp in user_snps_df.index: # OBS: looping over user_snps_df [DATA FRAME]
+		# ^^^WE ARE NOW SURE THAT THE SNP EXISTS IN OUR DATA-BASE. This is important because we now know what operations (e.g split) we can perform on them
+		# type(snp) --> <type 'str'> [chr:pos]
+
+		### INFO
+		# numpy.isinf(): Returns a boolean array of the same shape as x, True where x == +/-inf, otherwise False.
+		# np.isinf(float("inf")) --> True
+		# np.isinf(float("-inf")) --> True
+
+		dist_nearest_gene_snpsnap = user_snps_df.ix[snp, "dist_nearest_gene_snpsnap"] # --> numpy.float64
+		#df_collection.dtypes 
+			# dist_nearest_gene_snpsnap  --> float64
+		
+		if np.isinf(dist_nearest_gene_snpsnap): # could also use: dist_nearest_gene_snpsnap == float("inf")
+			snps_excluded[snp] = "SNP_genetic_properties_corrupted_in_data_base"
+			snps_with_corrupted_genetic_properties.append(snp) # appending to list for exclusion
+	logger.warning( "{} SNPs with corrupted genetic properties:\n{}".format( len(snps_with_corrupted_genetic_properties), "\n".join(snps_with_corrupted_genetic_properties) ) ) 
+	logger.warning( "Excluding the SNPs with corrupted genetic properties...")
+	user_snps_df.drop(snps_with_corrupted_genetic_properties, axis=0, inplace=True) # inplace dropping index
+
 
 	if snps_excluded: # if non-empty
 		logger.warning( "{} SNPs in total not found or excluded because they map to HLA region".format(len(snps_excluded)) )
@@ -332,7 +375,8 @@ def read_collection(file_collection):
 	#f_tab = gzip.open(file_collection, 'rb') #Before June 2014 - compressed file
 	#df_collection = pd.read_csv(f_tab, index_col=0, header=0, delim_whitespace=True) # index is snpID. #Before June 2014
 	f_tab = open(file_collection, 'r')
-	df_collection = pd.read_csv(f_tab, index_col=0, header=0, delimiter="\t") # index is snpID. # production_v1
+	#df_collection = pd.read_csv(f_tab, index_col=0, header=0, delimiter="\t") # index is snpID. # production_v1
+	df_collection = pd.read_csv(f_tab, index_col=0, header=0, delimiter="\t", compression="gzip") # index is snpID. # production_v2 - NEW March 2015. *REMEMBER TO correct "locate_collection_file()" as well*
 	f_tab.close()
 	elapsed_time = time.time() - start_time
 	logger.info( "END: read CSV file PRIM into DataFrame in %s s (%s min)" % (elapsed_time, elapsed_time/60) )
@@ -621,12 +665,15 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff,
 		ld_buddy_count_low = np.rint(np.repeat(q_ld_buddy_count, n_attempts)*(1-delta_ld_buddy_count))
 		ld_buddy_count_high = np.rint(np.repeat(q_ld_buddy_count, n_attempts)*(1+delta_ld_buddy_count))
 
-		logger.info( "SNP #%d/%d: ID starting query in data base" % (i+1, N_snps) )
+		logger.info( "SNP #%d/%d | query_snpID=%s | starting query in data base" % (i+1, N_snps, query_snpID) )
 		match_ID_old = None # placeholder for a Numpy array
 		match_ID = None # placeholder for a Numpy array
 		for attempt in xrange(n_attempts):
 			start_time = time.time()
-			if data_frame_query:
+			if data_frame_query: 
+				### *IMPORTANT INFORMATION APRIL 2015* ###
+				# This query method (data frame query) is *NOT* updated for error handling of dist_nearest_gene_snpsnap='inf'
+
 				#logger.info("query df")
 				query_freq_bin = '(%s <= freq_bin <= %s)' % (freq_low[attempt], freq_high[attempt])
 				query_gene_count = '(%s <= gene_count <= %s)' % (gene_count_low[attempt], gene_count_high[attempt])
@@ -635,7 +682,7 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff,
 
 				query = "%s & %s & %s & %s" % (query_freq_bin, query_gene_count, query_dist, query_ld_buddy_count)
 				match_ID = snpsnap_db_df.query(query)
-			else: # THIS IS USED
+			else: # THIS IS USED IN SNPsnap Production
 				#logger.info("query store")
 				query_freq_bin = '(freq_bin >= %s & freq_bin <= %s)' % (freq_low[attempt], freq_high[attempt])
 				query_gene_count = '(gene_count >= %s & gene_count <= %s)' % (gene_count_low[attempt], gene_count_high[attempt])
@@ -644,8 +691,22 @@ def query_similar_snps(file_db, path_output, df, N_sample_sets, ld_buddy_cutoff,
 
 				query = "%s & %s & %s & %s" % (query_freq_bin, query_gene_count, query_dist, query_ld_buddy_count)
 				#match_ID = store.select('dummy', query, columns=[]).index.values # --> only index # USED BEFORE JUNE 30
-				match_ID = store.select('dummy', query, columns=[]) # return no columns --> only index
-				#match_ID = store.select('dummy', query, columns=['freq_bin', 'gene_count', 'dist_nearest_gene_snpsnap', colname_ld_buddy_count]) # return specific columns
+				
+
+				try:
+					match_ID = store.select('dummy', query, columns=[]) # return no columns --> only index
+					#match_ID = store.select('dummy', query, columns=['freq_bin', 'gene_count', 'dist_nearest_gene_snpsnap', colname_ld_buddy_count]) # return specific columns
+				except NameError as e: 
+					# BUG REPORTED 04-07-2015 ==> NameError: name ``inf`` is not defined
+					logger.critical( "Caught NameError exception while quering in HDF5 store" )
+					logger.critical( "query_snpID = [{}]".format(query_snpID) )
+					logger.critical( "query = [{}]".format(query) )
+					logger.critical( "Exception = [{}]".format(e) )
+					logger.critical( "Will re-raise exception!" )
+					raise
+
+
+				
 
 
 

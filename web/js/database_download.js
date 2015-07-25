@@ -8,8 +8,9 @@ function get_Snpsnap_Database_URL_and_Size(super_population, distance_type, dist
 		// dataType: "html",
 		dataType: "json",
 		success: function(res){
-			var file = "/mpg/snpsnap/database/" + super_population + "/" + String(distance_type) + String(distance_cutoff) + "/" + String(distance_type) + String(distance_cutoff) + "_collection.tab";
-			// e.g. /mpg/snpsnap/database/EUR/ld0.5/ld0.5_collection.tab
+			// var file = "/mpg/snpsnap/database/" + super_population + "/" + String(distance_type) + String(distance_cutoff) + "/" + String(distance_type) + String(distance_cutoff) + "_collection.tab";
+			var file = "/mpg/snpsnap/database/" + super_population + "/" + String(distance_type) + String(distance_cutoff) + "/" + String(distance_type) + String(distance_cutoff) + "_collection.tab.gz";
+			// e.g. /mpg/snpsnap/database/EUR/ld0.5/ld0.5_collection.tab.gz
 
 			$("#q_super_population").html(res.super_population);
 			$("#q_distance_type").html(res.distance_type);
