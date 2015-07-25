@@ -35,14 +35,25 @@ def submit():
 		for chromosome in param_chromosome:
 			logger.info( "RUNNING: chromosome=%s" % chromosome )
 
+			# ### INPUT dir params ###
+			# input_ped="/cvar/jhlab/snpsnap/data/step1/production_v2/{super_population}/ALL.{chromosome}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes".format(super_population=super_population, chromosome=chromosome) # OBS: this is the prefix needed in PLINK
+
+			# dir_out = None # correct variable scope
+			# if gen_test_data:
+			# 	dir_out="/cvar/jhlab/snpsnap/data/step1/production_v2_QC_test/{super_population}".format(super_population=super_population)
+			# else:
+			# 	dir_out="/cvar/jhlab/snpsnap/data/step1/production_v2_QC_full/{super_population}".format(super_population=super_population)
+
 			### INPUT dir params ###
-			input_ped="/cvar/jhlab/snpsnap/data/step1/production_v2/{super_population}/ALL.{chromosome}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes".format(super_population=super_population, chromosome=chromosome) # OBS: this is the prefix needed in PLINK
+			input_ped="/cvar/jhlab/snpsnap/data/production_v2_chrX_standalone-altQC/step1/1_vfc2ped/{super_population}/ALL.{chromosome}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes".format(super_population=super_population, chromosome=chromosome) # OBS: this is the prefix needed in PLINK
 
 			dir_out = None # correct variable scope
 			if gen_test_data:
-				dir_out="/cvar/jhlab/snpsnap/data/step1/production_v2_QC_test/{super_population}".format(super_population=super_population)
+				dir_out="/cvar/jhlab/snpsnap/data/production_v2_chrX_standalone-altQC/step1/2_QCbed_test/{super_population}".format(super_population=super_population)
 			else:
-				dir_out="/cvar/jhlab/snpsnap/data/step1/production_v2_QC_full/{super_population}".format(super_population=super_population)
+				dir_out="/cvar/jhlab/snpsnap/data/production_v2_chrX_standalone-altQC/step1/2_QCbed_full/{super_population}".format(super_population=super_population)
+
+
 
 			### Creating outdir
 			if not os.path.exists(dir_out):
@@ -65,10 +76,14 @@ def submit():
 			cmd_plink = None
 			if gen_test_data:
 				# TEST DATA dir
-				cmd_plink = "/cvar/jhlab/timshel/bin/plink1.9_linux_x86_64/plink --file {input_ped} --thin {pthin} --maf {pmaf} --geno {pgeno} --hwe {phwe} --biallelic-only strict list --make-bed --out {out_prefix}".format(input_ped=input_ped, pthin=pthin, pmaf=pmaf, pgeno=pgeno, phwe=phwe, out_prefix=out_prefix)
+				#cmd_plink = "/cvar/jhlab/timshel/bin/plink1.9_linux_x86_64/plink --file {input_ped} --thin {pthin} --maf {pmaf} --geno {pgeno} --hwe {phwe} --biallelic-only strict list --make-bed --out {out_prefix}".format(input_ped=input_ped, pthin=pthin, pmaf=pmaf, pgeno=pgeno, phwe=phwe, out_prefix=out_prefix)
+				cmd_plink = "/cvar/jhlab/timshel/bin/plink1.9_linux_x86_64/plink --file {input_ped} --thin {pthin} --maf {pmaf} --geno {pgeno} --biallelic-only strict list --make-bed --out {out_prefix}".format(input_ped=input_ped, pthin=pthin, pmaf=pmaf, pgeno=pgeno, out_prefix=out_prefix)
+					# --> OBS: HWE is removed in the version!!!!
 			else:
 				# FULL DATA (--thin REMOVED)
-				cmd_plink = "/cvar/jhlab/timshel/bin/plink1.9_linux_x86_64/plink --file {input_ped} --maf {pmaf} --geno {pgeno} --hwe {phwe} --biallelic-only strict list --make-bed --out {out_prefix}".format(input_ped=input_ped, pmaf=pmaf, pgeno=pgeno, phwe=phwe, out_prefix=out_prefix)
+				#cmd_plink = "/cvar/jhlab/timshel/bin/plink1.9_linux_x86_64/plink --file {input_ped} --maf {pmaf} --geno {pgeno} --hwe {phwe} --biallelic-only strict list --make-bed --out {out_prefix}".format(input_ped=input_ped, pmaf=pmaf, pgeno=pgeno, phwe=phwe, out_prefix=out_prefix)
+				cmd_plink = "/cvar/jhlab/timshel/bin/plink1.9_linux_x86_64/plink --file {input_ped} --maf {pmaf} --geno {pgeno} --biallelic-only strict list --make-bed --out {out_prefix}".format(input_ped=input_ped, pmaf=pmaf, pgeno=pgeno, out_prefix=out_prefix)
+					# --> OBS: HWE is removed in the version!!!!
 			logger.info( "Making call '--make-bed and QC':\n%s" % cmd_plink )
 			# "--biallelic-only strict list" CREATES FILE: plink.skip.3allele
 
@@ -150,9 +165,10 @@ gen_test_data = False ### SUPER IMPORTANT - controls generation of test data.
 
 ###################################### SETUP logging ######################################
 current_script_name = os.path.basename(__file__).replace('.py','')
-log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2/step1_genQCbed" #OBS
+#log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2/step1_genQCbed" #OBS
+log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2_chrX_standalone-altQC/step1_genQCbed" #OBS
 if not os.path.exists(log_dir):
-	logger.warning( "UPS: log dir %s does not exist. I will create it for you..." % log_dir )
+	print "UPS: log dir %s does not exist. I will create it for you..." % log_dir
 	os.mkdir(log_dir)
 log_name = None
 if gen_test_data:
@@ -171,11 +187,12 @@ logger.info( "INSTANTIATION NOTE: placeholder" )
 
 ############################# SWITCH ##########################################
 
-param_super_population = ["EUR", "EAS", "WAFR"]
+#param_super_population = ["EUR", "EAS", "WAFR"]
+param_super_population = ["EUR"]
 #param_chromosome = range(1,23) # produces 1, 2, .., 21, 22
-param_chromosome = ["chr"+str(chrID) for chrID in range(1,23)+["X"]] 
+#param_chromosome = ["chr"+str(chrID) for chrID in range(1,23)+["X"]] 
 	# ---> *IMPORTANT NOTE* Y-chromosome removed. Plink2 (and plink1) fails to process it because all variants are removed after filtering
-
+param_chromosome = ["chrX"] 
 
 
 ###################################### PARAMETERS ######################################
@@ -185,7 +202,7 @@ pthin=0.02 #To keep only a random e.g. 20% of SNPs. Parameter for --thin must be
 ######################################
 pmaf=0.01 # Only include SNPs with MAF >= 0.01.
 pgeno=0.1
-phwe=0.000001 #10^-6 [phwe=0.001 default value]
+#phwe=0.000001 #10^-6 [phwe=0.001 default value] --> NOT USED ANYMORE
 
 
 

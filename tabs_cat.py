@@ -177,7 +177,8 @@ batch_time = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H.
 
 
 ###################################### SETUP logging ######################################
-log_dir='/cvar/jhlab/snpsnap/logs_pipeline/production_v2/step4_tabs_cat/{super_population}'.format(super_population=super_population)
+#log_dir='/cvar/jhlab/snpsnap/logs_pipeline/production_v2/step4_tabs_cat/{super_population}'.format(super_population=super_population)
+log_dir='/cvar/jhlab/snpsnap/logs_pipeline/production_v2_chrX_standalone-altQC/step4_tabs_cat/{super_population}'.format(super_population=super_population)
 if not os.path.exists(log_dir):
 	os.makedirs(log_dir)
 
@@ -195,7 +196,8 @@ logger.info( "INSTANTIATION NOTE: placeholder" )
 ###################################################################################
 
 ### NEW FEB 2015* - production_v2
-input_dir_base = "/cvar/jhlab/snpsnap/data/step2/1KG_snpsnap_production_v2"
+#input_dir_base = "/cvar/jhlab/snpsnap/data/step2/1KG_snpsnap_production_v2"
+input_dir_base = "/cvar/jhlab/snpsnap/data/production_v2_chrX_standalone-altQC/step2"
 
 
 ### NEW FEB 2015* - production_v2
@@ -210,7 +212,8 @@ outpath_combined_tab = inpath_base + '/' + 'combined.tab' # FILE: e.g /data/step
 ################################################################################################################################		
 
 ###################################### Counting the number of SNPs in the freq file ######################################
-file_frq = "/cvar/jhlab/snpsnap/data/step1/production_v2_QC_full_merged_duplicate_rm/{super_population}/ALL.chr_merged.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.frq".format(super_population=super_population)
+#file_frq = "/cvar/jhlab/snpsnap/data/step1/production_v2_QC_full_merged_duplicate_rm/{super_population}/ALL.chr_merged.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.frq".format(super_population=super_population)
+file_frq = "/cvar/jhlab/snpsnap/data/production_v2_chrX_standalone-altQC/step1/3_QCbed_full_merged_duplicate_rm//{super_population}/ALL.chr_merged.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.frq".format(super_population=super_population)
 	# --> could also use .bim file
 ### File snippet
 ### NB: ALL SNPs (rsIDs) should be unique at this stage
@@ -232,7 +235,8 @@ logger.info( "done" )
 # This script will *APPEND* a "status line" to a file that is SHARED within a super_population. That is, all distance measures writes to the same file.
 # (Note that this approach is not *thread* safe: you might corrupt the file (or loose data) in the UNLIKELY event that two "tabs_cat.py" processes wants to append at the same time.
 
-path_status = '/cvar/jhlab/snpsnap/logs_pipeline/production_v2/step4_tabs_cat_status/{super_population}'.format(super_population=super_population)
+#path_status = '/cvar/jhlab/snpsnap/logs_pipeline/production_v2/step4_tabs_cat_status/{super_population}'.format(super_population=super_population)
+path_status = '/cvar/jhlab/snpsnap/logs_pipeline/production_v2_chrX_standalone-altQC/step4_tabs_cat_status/{super_population}'.format(super_population=super_population)
 if not os.path.exists(path_status):
 	os.makedirs(path_status)
 file_status = path_status + "/tabs_cat_status_file.txt"

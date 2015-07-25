@@ -465,8 +465,9 @@ outfilename = args.outfilename
 
 
 ###################################### *OBS* HARDCODED PATH - setting file_frq ######################################
-file_frq = "/cvar/jhlab/snpsnap/data/step1/production_v2_QC_full_merged_duplicate_rm/{super_population}/ALL.chr_merged.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.frq".format(super_population=super_population)
+#file_frq = "/cvar/jhlab/snpsnap/data/step1/production_v2_QC_full_merged_duplicate_rm/{super_population}/ALL.chr_merged.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.frq".format(super_population=super_population)
 # e.g. /cvar/jhlab/snpsnap/data/step1/production_v2_QC_full_merged_duplicate_rm/EUR/ALL.chr_merged.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.frq
+file_frq = "/cvar/jhlab/snpsnap/data/production_v2_chrX_standalone-altQC/step1/3_QCbed_full_merged_duplicate_rm/{super_population}/ALL.chr_merged.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.frq".format(super_population=super_population)
 
 ### read .frq file
 snp_maf_dict = read_file_frq(file_frq)

@@ -33,11 +33,11 @@ batch_time = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H.
 
 processes = collections.defaultdict(dict)
 
-#super_populations = ["EUR"]
+super_populations = ["EUR"]
 #super_populations = ["EUR", "EAS", "WAFR"]
 #super_populations = ["EAS", "WAFR"]
 #super_populations = ["EAS"]
-super_populations = ["WAFR"]
+#super_populations = ["WAFR"]
 distance_types = ["ld", "kb"]
 
 
@@ -102,7 +102,8 @@ for super_population in super_populations:
 				# --> MUST BE UNIQUE
 
 			###################################### LOG DIR - IMPORTANT TO SET IT CORRECTLY ######################################
-			log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2/step2_run_multiple_plink_matched_SNPs/{super_population}".format(super_population=super_population)
+			#log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2/step2_run_multiple_plink_matched_SNPs/{super_population}".format(super_population=super_population)
+			log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2_chrX_standalone-altQC/step2_run_multiple_plink_matched_SNPs/{super_population}".format(super_population=super_population)
 			if not os.path.exists(log_dir):
 				os.makedirs(log_dir)
 			log_file = log_dir + "/log_{super_population}_{type}_{cutoff}_{batch_time}".format(type=distance_type, cutoff=param, super_population=super_population, batch_time=batch_time)
@@ -126,6 +127,8 @@ for super_population in super_populations:
 			processes[pipeline_identifer]['cmd'] = cmd
 			processes[pipeline_identifer]['p'] = p
 			processes[pipeline_identifer]['pid'] = p.pid
+
+			time.sleep(1) # sleep one second to avoid concurrent problems!
 
 			### Waiting every 5th job
 			if (job_no % 5 == 0):

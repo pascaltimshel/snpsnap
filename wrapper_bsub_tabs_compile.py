@@ -133,7 +133,7 @@ current_script_name = os.path.basename(__file__).replace('.py','')
 
 ###################################### SETUP logging ######################################
 #log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/logs_bsub_tabs_compile_priority" #OBS VARIABLE
-log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2/step6_wrapper_tabs_compile" #OBS VARIABLE
+log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2_chrX_standalone-altQC/step6_wrapper_tabs_compile" #OBS VARIABLE
 if not os.path.exists(log_dir):
 	os.makedirs(log_dir)
 
@@ -159,9 +159,9 @@ param_list_ld=[0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
 param_list_kb=[100, 200, 300, 400, 500, 600, 700, 800, 900, 1000]
 
 
-#super_populations = ["EUR"]
+super_populations = ["EUR"]
 #super_populations = ["EAS"]
-super_populations = ["WAFR"]
+#super_populations = ["WAFR"]
 distance_types = ["ld", "kb"]
 
 
@@ -174,8 +174,12 @@ distance_types = ["ld", "kb"]
 
 
 ### NEW FEB 2015* - production_v2
-input_dir_base = "/cvar/jhlab/snpsnap/data/step2/1KG_snpsnap_production_v2"
-output_dir_base = "/cvar/jhlab/snpsnap/data/step3/1KG_snpsnap_production_v2"
+#input_dir_base = "/cvar/jhlab/snpsnap/data/step2/1KG_snpsnap_production_v2"
+#output_dir_base = "/cvar/jhlab/snpsnap/data/step3/1KG_snpsnap_production_v2"
+
+input_dir_base = "/cvar/jhlab/snpsnap/data/production_v2_chrX_standalone-altQC/step2"
+output_dir_base = "/cvar/jhlab/snpsnap/data/production_v2_chrX_standalone-altQC/step3"
+
 
 # ### production_v1
 # input_dir_base = "/cvar/jhlab/snpsnap/data/step2/1KG_snpsnap_production_v1"

@@ -125,7 +125,10 @@ args = ParseArguments()
 
 ###################################### SETUP logging ######################################
 current_script_name = os.path.basename(__file__).replace('.py','')
-log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2/step1_vfc2ped" #OBS VARIABLE
+log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2_chrX_standalone-altQC/step1_vfc2ped" #OBS VARIABLE
+if not os.path.exists(log_dir):
+	print "UPS: log dir %s does not exist. I will create it for you..." % log_dir
+	os.makedirs(log_dir)
 logger = pplogger.Logger(name=current_script_name, log_dir=log_dir, log_format=1, enabled=True).get()
 def handleException(excType, excValue, traceback, logger=logger):
 	logger.error("Logging an uncaught exception", exc_info=(excType, excValue, traceback))
@@ -135,25 +138,29 @@ logger.info( "INSTANTIATION NOTE: placeholder" )
 ###########################################################################################
 
 ############################# SWITCH ##########################################
-param_super_population = ["EUR", "EAS", "WAFR"]
+#param_super_population = ["EUR", "EAS", "WAFR"]
+param_super_population = ["EUR"]
 #param_chromosome = range(1,23) # produces 1, 2, .., 21, 22
-param_chromosome = ["chr"+str(chrID) for chrID in range(1,23)+["X", "Y"]]
-#>>> param_chromosome
-#['chr1', 'chr2', 'chr3', 'chr4', 'chr5', 'chr6', 'chr7', 'chr8', 'chr9', 'chr10', 'chr11', 'chr12', 'chr13', 'chr14', 'chr15', 'chr16', 'chr17', 'chr18', 'chr19', 'chr20', 'chr21', 'chr22', 'chrX', 'chrY']
+#param_chromosome = ["chr"+str(chrID) for chrID in range(1,23)+["X"]] 
+	# ---> *IMPORTANT NOTE* Y-chromosome removed. Plink2 (and plink1) fails to process it because all variants are removed after filtering
+param_chromosome = ["chrX"] 
 
 
 ##############################################################################
 
 input_dir_base = "/cvar/jhlab/snpsnap/data/genotypes_raw_production_v2/ftp"
-output_dir_base = "/cvar/jhlab/snpsnap/data/step1/production_v2"
+#output_dir_base = "/cvar/jhlab/snpsnap/data/step1/production_v2"
+output_dir_base = "/cvar/jhlab/snpsnap/data/production_v2_chrX_standalone-altQC/step1/1_vfc2ped"
+
+
 
 if not os.path.exists(output_dir_base):
-	logger.warning( "UPS: output path %s does not exist. Fix it! Exiting..." % output_dir_base )
-	sys.exit(1)
+	logger.warning( "UPS: output path %s does not exist. Will create it" % output_dir_base )
+	os.makedirs(output_dir_base)
 
-if not os.path.exists(log_dir):
-	logger.warning( "UPS: log dir %s does not exist. Fix it! Exiting..." % log_dir )
-	sys.exit(1)
+# if not os.path.exists(log_dir):
+# 	logger.warning( "UPS: log dir %s does not exist. Fix it! Exiting..." % log_dir )
+# 	sys.exit(1)
 
 
 

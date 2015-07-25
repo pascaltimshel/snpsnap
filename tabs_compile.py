@@ -41,7 +41,8 @@ def read_ld_buddy_count():
 	# NB: this files have rsID as 'index'
 
 	########## NEW FEB 2015* - production_v2 ############
-	ld_buddy_file = "/cvar/jhlab/snpsnap/data/ld_buddy_counts/1KG_snpsnap_production_v2/{super_population}/ld_buddy_count.tab_join_outer".format(super_population=super_population) # USE THIS this file is sorted (gives same result every time)	
+	#ld_buddy_file = "/cvar/jhlab/snpsnap/data/ld_buddy_counts/1KG_snpsnap_production_v2/{super_population}/ld_buddy_count.tab_join_outer".format(super_population=super_population) # USE THIS this file is sorted (gives same result every time)	
+	ld_buddy_file = "/cvar/jhlab/snpsnap/data/production_v2_chrX_standalone-altQC/ld_buddy_counts/{super_population}/ld_buddy_count.tab_join_outer".format(super_population=super_population) # USE THIS this file is sorted (gives same result every time)	
 	#####################################################
 
 	## LD BUDDY COUNT FILE
@@ -372,7 +373,8 @@ batch_time = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H.
 ###################################### SETUP logging ######################################
 current_script_name = os.path.basename(__file__).replace('.py','')
 
-log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2/step6_tabs_compile/{super_population}".format(super_population=super_population) #OBS VARIABLE
+#log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2/step6_tabs_compile/{super_population}".format(super_population=super_population) #OBS VARIABLE
+log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2_chrX_standalone-altQC/step6_tabs_compile/{super_population}".format(super_population=super_population) #OBS VARIABLE
 if not os.path.exists(log_dir):
 	os.makedirs(log_dir)
 log_name = "{current_script_name}_{distance_type}{distance_cutoff}_{batch_time}".format(current_script_name=current_script_name, distance_type=distance_type, distance_cutoff=distance_cutoff, batch_time=batch_time)

@@ -34,11 +34,8 @@ def submit():
 		logger.info( "****** RUNNING: type=%s *******" % super_population )
 
 		### INPUT dir params - OBS INPUT DIR IS duplicate_rm ###
-		input_bed = None
-		if gen_test_data:
-			input_bed="/cvar/jhlab/snpsnap/data/step1/production_v2_QC_test_merged_duplicate_rm/{super_population}/ALL.{chromosome}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes".format(super_population=super_population, chromosome="chr_merged") # OBS: this is the prefix needed in PLINK
-		else:
-			input_bed="/cvar/jhlab/snpsnap/data/step1/production_v2_QC_full_merged_duplicate_rm/{super_population}/ALL.{chromosome}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes".format(super_population=super_population, chromosome="chr_merged") # OBS: this is the prefix needed in PLINK
+		#input_bed="/cvar/jhlab/snpsnap/data/step1/production_v2_QC_full_merged_duplicate_rm/{super_population}/ALL.{chromosome}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes".format(super_population=super_population, chromosome="chr_merged") # OBS: this is the prefix needed in PLINK
+		input_bed="/cvar/jhlab/snpsnap/data/production_v2_chrX_standalone-altQC/step1/3_QCbed_full_merged_duplicate_rm//{super_population}/ALL.{chromosome}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes".format(super_population=super_population, chromosome="chr_merged") # OBS: this is the prefix needed in PLINK
 
 		### OBS: output and input ROOT/PREFIX is the same!! (we just want to add a .freq to the file)
 		out_prefix = input_bed
@@ -53,11 +50,7 @@ def submit():
 		cmd_plink = "/cvar/jhlab/timshel/bin/plink_linux_x86_64_v1.90b3d/plink --bfile {input_bed} --freq --out {out_prefix}".format(input_bed=input_bed, out_prefix=out_prefix)
 		logger.info( "Making call '--make-bed and QC':\n%s" % cmd_plink )
 
-		jobname = None
-		if gen_test_data:
-			jobname = "freq_test_" + super_population # e.g freq_EUR
-		else:
-			jobname = "freq_full_" + super_population # e.g freq_EUR
+		jobname = "freq_full_" + super_population # e.g freq_EUR
 
 		processes.append( pplaunch.LaunchBsub(cmd=cmd_plink, queue_name=queue_name, mem=mem, jobname=jobname, projectname='snpsnap', path_stdout=log_dir, file_output=None, no_output=False, email=email, email_status_notification=email_status_notification, email_report=email_report, logger=logger) ) #
 
@@ -131,7 +124,7 @@ gen_test_data = False ### SUPER IMPORTANT - controls generation of test data.
 
 ###################################### SETUP logging ######################################
 current_script_name = os.path.basename(__file__).replace('.py','')
-log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2/step1_calc_freq" #OBS
+log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2_chrX_standalone-altQC/step1_calc_freq" #OBS
 if not os.path.exists(log_dir):
 	os.mkdir(log_dir)
 log_name = None
@@ -151,7 +144,8 @@ logger.info( "INSTANTIATION NOTE: placeholder" )
 
 ############################# SWITCH ##########################################
 
-param_super_population = ["EUR", "EAS", "WAFR"]
+#param_super_population = ["EUR", "EAS", "WAFR"]
+param_super_population = ["EUR"]
 # *OBS*: notice: no "param_chromosome"
 
 

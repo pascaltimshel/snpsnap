@@ -378,11 +378,13 @@ distance_cutoff = args.distance_cutoff
 
 ### NEW BROAD PATH - dependent on super_population
 super_population = args.super_population
-genotype_prefix = "/cvar/jhlab/snpsnap/data/step1/production_v2_QC_full_merged_duplicate_rm/{super_population}/ALL.{chromosome}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes".format(super_population=super_population, chromosome="chr_merged")
+#genotype_prefix = "/cvar/jhlab/snpsnap/data/step1/production_v2_QC_full_merged_duplicate_rm/{super_population}/ALL.{chromosome}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes".format(super_population=super_population, chromosome="chr_merged")
+genotype_prefix = "/cvar/jhlab/snpsnap/data/production_v2_chrX_standalone-altQC/step1/3_QCbed_full_merged_duplicate_rm/{super_population}/ALL.{chromosome}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes".format(super_population=super_population, chromosome="chr_merged")
 
 ###################################### SETUP logging ######################################
 current_script_name = os.path.basename(__file__).replace('.py','')
-log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2/step2_plink_matched_SNPs_broad/{super_population}".format(super_population=super_population) #OBS
+#log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2/step2_plink_matched_SNPs_broad/{super_population}".format(super_population=super_population) #OBS
+log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2_chrX_standalone-altQC/step2_plink_matched_SNPs_broad/{super_population}".format(super_population=super_population) #OBS
 if not os.path.exists(log_dir):
 	os.makedirs(log_dir)
 log_name = current_script_name + "_{super_population}_{distance_type}_{distance_cutoff}".format(super_population=super_population, distance_type=distance_type, distance_cutoff=distance_cutoff) #OBS
@@ -397,8 +399,13 @@ logger.info( "INSTANTIATION NOTE: placeholder" )
 
 
 
-output_dir_path = "/cvar/jhlab/snpsnap/data/step2/1KG_snpsnap_production_v2/{super_population}".format(super_population=super_population) # NO trailing slash (/)!
+#output_dir_path = "/cvar/jhlab/snpsnap/data/step2/1KG_snpsnap_production_v2/{super_population}".format(super_population=super_population) # NO trailing slash (/)!
+output_dir_path = "/cvar/jhlab/snpsnap/data/production_v2_chrX_standalone-altQC/step2/{super_population}".format(super_population=super_population) # NO trailing slash (/)!
 if not os.path.exists(output_dir_path):
+	### AVOID paralelization issues ###
+	#time.sleep(random.randint(1,5))
+	random.seed(None) # explicitlily use the system time for setting the seed.
+	time.sleep(random.random()*3) # random.random() gives floats in the interval [0;1]. 
 	os.makedirs(output_dir_path)
 
 #
@@ -440,13 +447,13 @@ logger.info(("Running with %s option, using cutoff %s"%(distance_type,distance_c
 
 
 ###################################### Global params ######################################
-queue_name = "week" # [bhour, bweek] priority
+#queue_name = "week" # [bhour, bweek] priority
 #queue_name = "hour" # [bhour, bweek] priority
-#queue_name = "priority" # [bhour, bweek] priority
+queue_name = "priority" # [bhour, bweek] priority
 #queue_name = "MEDPOP" # OBS: ONLY RUN THIS ON RHEL6 System!
 # priority: This queue has a per-user limit of 10 running jobs, and a run time limit of three days.
-#mem="30" # 20 GB worked for EUR+EAS!
-mem="120" # ?? GB worked for WAFR!
+mem="30" # 20 GB worked for EUR+EAS!
+#mem="120" # ?? GB worked for WAFR!
 email='pascal.timshel@gmail.com' # [use an email address 'pascal.timshel@gmail.com' or 'False'/'None']
 email_status_notification=False # [True or False]
 email_report=False # # [True or False]

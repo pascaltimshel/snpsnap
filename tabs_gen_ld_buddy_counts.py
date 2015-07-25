@@ -230,7 +230,8 @@ batch_time = datetime.datetime.fromtimestamp(time.time()).strftime('%Y-%m-%d_%H.
 
 
 ###################################### SETUP logging ######################################
-log_dir='/cvar/jhlab/snpsnap/logs_pipeline/production_v2/step5_tabs_ld_buddy_counts/{super_population}'.format(super_population=super_population)
+#log_dir='/cvar/jhlab/snpsnap/logs_pipeline/production_v2/step5_tabs_ld_buddy_counts/{super_population}'.format(super_population=super_population)
+log_dir='/cvar/jhlab/snpsnap/logs_pipeline/production_v2_chrX_standalone-altQC/step5_tabs_ld_buddy_counts/{super_population}'.format(super_population=super_population)
 if not os.path.exists(log_dir):
 	os.makedirs(log_dir)
 
@@ -250,7 +251,8 @@ distance_type = 'ld' # SCRIPT SHOULD ONLY RUN FOR *LD* DISTANCE
 ############################# PARAM LIST ##########################################
 
 ################## *OBS*: specific for "create_ld_buddy_counts()" ##################
-output_dir_base = "/cvar/jhlab/snpsnap/data/ld_buddy_counts/1KG_snpsnap_production_v2/{super_population}".format(super_population=super_population) # e.g /data/ld_buddy_counts/1KG_snpsnap_production_v2/EUR
+#output_dir_base = "/cvar/jhlab/snpsnap/data/ld_buddy_counts/1KG_snpsnap_production_v2/{super_population}".format(super_population=super_population) # e.g /data/ld_buddy_counts/1KG_snpsnap_production_v2/EUR
+output_dir_base = "/cvar/jhlab/snpsnap/data/production_v2_chrX_standalone-altQC/ld_buddy_counts/{super_population}".format(super_population=super_population) # e.g /data/ld_buddy_counts/1KG_snpsnap_production_v2/EUR
 if not os.path.exists(output_dir_base):
 	os.makedirs(output_dir_base)
 
@@ -261,7 +263,8 @@ outfile_ld_buddy = "{base}/ld_buddy_count.tab".format(base=output_dir_base) # e.
 ###################################################################################
 
 ### NEW FEB 2015* - production_v2
-input_dir_base = "/cvar/jhlab/snpsnap/data/step2/1KG_snpsnap_production_v2"
+#input_dir_base = "/cvar/jhlab/snpsnap/data/step2/1KG_snpsnap_production_v2"
+input_dir_base = "/cvar/jhlab/snpsnap/data/production_v2_chrX_standalone-altQC/step2"
 
 ### production_v1
 # input_dir_base = "/cvar/jhlab/snpsnap/data/step2/1KG_snpsnap_production_v1"

@@ -33,32 +33,21 @@ def submit():
 	for super_population in param_super_population:
 		logger.info( "****** RUNNING: type=%s *******" % super_population )
 		### INPUT dir params ###
-		input_bed = None
-		if gen_test_data:
-			input_bed="/cvar/jhlab/snpsnap/data/step1/production_v2_QC_test_merged/{super_population}/ALL.{chromosome}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes".format(super_population=super_population, chromosome="chr_merged") # OBS: this is the prefix needed in PLINK
-		else:
-			input_bed="/cvar/jhlab/snpsnap/data/step1/production_v2_QC_full_merged/{super_population}/ALL.{chromosome}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes".format(super_population=super_population, chromosome="chr_merged") # OBS: this is the prefix needed in PLINK
+		input_bed="/cvar/jhlab/snpsnap/data/production_v2_chrX_standalone-altQC/step1/2_QCbed_full/{super_population}/ALL.{chromosome}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes".format(super_population=super_population, chromosome="chrX") # OBS: this is the prefix needed in PLINK
 
 		### DUPLICATES TEXT FILE ###
-		file_duplicates = None
-		if gen_test_data:
-			file_duplicates="/cvar/jhlab/snpsnap/data/step1/production_v2_QC_test_merged/{super_population}/ALL.{chromosome}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.{ext}".format(super_population=super_population, chromosome="chr_merged", ext="duplicates.txt") # OBS MUST MATCH WITH WHAT get_duplicates.py produces!
-		else:
-			file_duplicates="/cvar/jhlab/snpsnap/data/step1/production_v2_QC_full_merged/{super_population}/ALL.{chromosome}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.{ext}".format(super_population=super_population, chromosome="chr_merged", ext="duplicates.txt") # OBS MUST MATCH WITH WHAT get_duplicates.py produces!
+		file_duplicates="/cvar/jhlab/snpsnap/data/production_v2_chrX_standalone-altQC/step1/2_QCbed_full/{super_population}/ALL.{chromosome}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes.{ext}".format(super_population=super_population, chromosome="chrX", ext="duplicates.txt") # OBS MUST MATCH WITH WHAT get_duplicates.py produces!
 
 		### Output dir
-		dir_out = None # correct variable scope
-		if gen_test_data:
-			dir_out="/cvar/jhlab/snpsnap/data/step1/production_v2_QC_test_merged_duplicate_rm/{super_population}".format(super_population=super_population)
-		else:
-			dir_out="/cvar/jhlab/snpsnap/data/step1/production_v2_QC_full_merged_duplicate_rm/{super_population}".format(super_population=super_population)
+		dir_out="/cvar/jhlab/snpsnap/data/production_v2_chrX_standalone-altQC/step1/3_QCbed_full_merged_duplicate_rm/{super_population}".format(super_population=super_population)
 
 		### Creating outdir
 		if not os.path.exists(dir_out):
 			os.makedirs(dir_out) # NOTE use of makedirs(): all intermediate-level directories needed to contain the leaf directory
 
 		### Setting out_prefix
-		out_prefix = dir_out + '/' + os.path.basename(input_bed) # e.g. /cvar/jhlab/snpsnap/data/step1/production_v2_QC_full_merged_duplicate_rm/EUR/ALL.chr1.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes
+		#out_prefix = dir_out + '/' + os.path.basename(input_bed) # e.g. /cvar/jhlab/snpsnap/data/step1/production_v2_QC_full_merged_duplicate_rm/EUR/ALL.chr1.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes
+		out_prefix = dir_out + "/ALL.{chromosome}.phase3_shapeit2_mvncall_integrated_v5.20130502.genotypes".format(chromosome="chr_merged") 
 
 		### SAFETY CHECK - checking for existence of .PED file with out_prefix
 		if os.path.exists(out_prefix+'.bed'): 
@@ -73,7 +62,8 @@ def submit():
 			# --> THIS COMMAND WAS USED FOR SNPsnap Production v2 for EUR and EAS.
 			# However, due to errors in WAFR with "NA" in .frq file I substituted the command with the below.
 			# THE BELOW HAS NOT BEEN TESTED, but I BELEIVE IT WORKS!
-		cmd_plink = "/cvar/jhlab/timshel/bin/plink_linux_x86_64_v1.90b3d/plink --bfile {input_bed} --exclude {file_duplicates} --maf {pmaf} --geno {pgeno} --hwe {phwe} --biallelic-only strict list --make-bed --out {out_prefix}".format(input_bed=input_bed, file_duplicates=file_duplicates, pmaf=pmaf, pgeno=pgeno, phwe=phwe, out_prefix=out_prefix)
+		#cmd_plink = "/cvar/jhlab/timshel/bin/plink_linux_x86_64_v1.90b3d/plink --bfile {input_bed} --exclude {file_duplicates} --maf {pmaf} --geno {pgeno} --hwe {phwe} --biallelic-only strict list --make-bed --out {out_prefix}".format(input_bed=input_bed, file_duplicates=file_duplicates, pmaf=pmaf, pgeno=pgeno, phwe=phwe, out_prefix=out_prefix)
+		cmd_plink = "/cvar/jhlab/timshel/bin/plink_linux_x86_64_v1.90b3d/plink --bfile {input_bed} --exclude {file_duplicates} --maf {pmaf} --geno {pgeno} --biallelic-only strict list --make-bed --out {out_prefix}".format(input_bed=input_bed, file_duplicates=file_duplicates, pmaf=pmaf, pgeno=pgeno, out_prefix=out_prefix)
 
 
 		logger.info( "Making call --exclude {file_duplicates} and --make-bed:\n%s" % cmd_plink )
@@ -154,7 +144,7 @@ args = ParseArguments()
 ##################### *PLEASE KEEP THESE PARAMS IN SYNC WITH "wrapper_bsub_gen_QCbed.py" 
 pmaf=0.01 # Only include SNPs with MAF >= 0.01.
 pgeno=0.1
-phwe=0.000001 #10^-6 [phwe=0.001 default value]
+#phwe=0.000001 #10^-6 [phwe=0.001 default value]
 
 ###################################### ... ######################################
 
@@ -163,7 +153,8 @@ gen_test_data = False ### SUPER IMPORTANT - controls generation of test data.
 
 ###################################### SETUP logging ######################################
 current_script_name = os.path.basename(__file__).replace('.py','')
-log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2/step1_remove_duplicates" #OBS
+#log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2/step1_remove_duplicates" #OBS
+log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2_chrX_standalone-altQC/step1_remove_duplicates" #OBS
 if not os.path.exists(log_dir):
 	os.mkdir(log_dir)
 log_name = None
@@ -183,7 +174,8 @@ logger.info( "INSTANTIATION NOTE: placeholder" )
 
 ############################# SWITCH ##########################################
 
-param_super_population = ["EUR", "EAS", "WAFR"]
+#param_super_population = ["EUR", "EAS", "WAFR"]
+param_super_population = ["EUR"]
 # OBS: no "param_chromosome"
 
 

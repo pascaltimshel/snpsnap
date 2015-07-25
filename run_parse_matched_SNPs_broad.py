@@ -226,7 +226,9 @@ def LogArguments():
 #queue_name = "hour" # [bhour, bweek] priority
 #queue_name = "priority" # [bhour, bweek] priority
 if os.environ["HOST"] == "gold":
-	queue_name = "MEDPOP"
+	#queue_name = "MEDPOP" 
+	#queue_name = "hour" # NEW altQC
+	queue_name = "priority" # NEW altQC
 elif os.environ["HOST"] == "copper":
 	queue_name = "week"
 else: # default queue
@@ -273,7 +275,8 @@ super_population = os.path.basename(os.path.dirname(os.path.abspath(path))) # e.
 
 
 ###################################### SETUP logging ######################################
-log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2/step2_run_parse_matched_SNPs_broad/{super_population}".format(super_population=super_population) #OBS
+#log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2/step2_run_parse_matched_SNPs_broad/{super_population}".format(super_population=super_population) #OBS
+log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2_chrX_standalone-altQC/step2_run_parse_matched_SNPs_broad/{super_population}".format(super_population=super_population) #OBS
 if not os.path.exists(log_dir):
 	os.makedirs(log_dir)
 log_name = current_script_name + "_{super_population}_{distance_measure}".format(super_population=super_population, distance_measure=distance_measure) #OBS

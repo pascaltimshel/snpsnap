@@ -99,7 +99,8 @@ def LogArguments():
 #queue_name = "hour" # [bhour, bweek] priority
 #queue_name = "week" # [bhour, bweek] priority
 if os.environ["HOST"] == "gold":
-	queue_name = "MEDPOP"
+	#queue_name = "MEDPOP"
+	queue_name = "priority"
 elif os.environ["HOST"] == "copper":
 	queue_name = "week"
 else: # default queue
@@ -117,9 +118,9 @@ args = ParseArguments()
 
 ############################# SWITCH ##########################################
 
-#super_populations = ["EUR"]
+super_populations = ["EUR"]
 #super_populations = ["EAS"]
-super_populations = ["WAFR"]
+#super_populations = ["WAFR"]
 distance_types = ["ld", "kb"]
 
 
@@ -138,7 +139,8 @@ current_script_name = os.path.basename(__file__).replace('.py','')
 
 ###################################### SETUP logging ######################################
 #log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/logs_bsub_tabs_compile_priority" #OBS VARIABLE
-log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2/step4_wrapper_tabs_cat"
+#log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2/step4_wrapper_tabs_cat"
+log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2_chrX_standalone-altQC/step4_wrapper_tabs_cat"
 if not os.path.exists(log_dir):
 	os.makedirs(log_dir)
 

@@ -36,14 +36,15 @@ script2call = "run_parse_matched_SNPs_broad.py"
 
 ##### IMPORTANT DIRECTORY
 #output_dir_base = "/home/projects/tp/childrens/snpsnap/data/step2/1KG_snpsnap_production_v1"
-output_dir_base = "/cvar/jhlab/snpsnap/data/step2/1KG_snpsnap_production_v2"
+#output_dir_base = "/cvar/jhlab/snpsnap/data/step2/1KG_snpsnap_production_v2"
+output_dir_base = "/cvar/jhlab/snpsnap/data/production_v2_chrX_standalone-altQC/step2" # SHOULD MATCH the output dir of "plink_matched_SNPs_broad.py" --> "--plink_matched_snps_path"
 
 
 processes = collections.defaultdict(dict)
 
-#super_populations = ["EUR"]
+super_populations = ["EUR"]
 #super_populations = ["EAS"]
-super_populations = ["WAFR"]
+#super_populations = ["WAFR"]
 distance_types = ["ld", "kb"]
 #distance_types = ["ld"]
 
@@ -113,7 +114,8 @@ for super_population in super_populations:
 
 
 			###################################### LOG DIR - IMPORTANT TO SET IT CORRECTLY ######################################
-			log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2/step3_run_multiple_run_parse_matched_SNPs/{super_population}".format(super_population=super_population)
+			#log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2/step3_run_multiple_run_parse_matched_SNPs/{super_population}".format(super_population=super_population)
+			log_dir = "/cvar/jhlab/snpsnap/logs_pipeline/production_v2_chrX_standalone-altQC/step3_run_multiple_run_parse_matched_SNPs/{super_population}".format(super_population=super_population)
 			if not os.path.exists(log_dir):
 				os.makedirs(log_dir)
 			log_file = log_dir + "/log_{super_population}_{type}_{cutoff}_{batch_time}".format(type=distance_type, cutoff=param, super_population=super_population, batch_time=batch_time)
@@ -141,6 +143,8 @@ for super_population in super_populations:
 			processes[pipeline_identifer]['cmd'] = cmd
 			processes[pipeline_identifer]['p'] = p
 			processes[pipeline_identifer]['pid'] = p.pid
+
+			time.sleep(1) # *NEW altQC*
 
 			### Waiting every 5th job
 			if (job_no % 5 == 0):
