@@ -33,6 +33,14 @@ def read_file_frq(file_frq):
 	#   1                              1:14464    T    A       0.1859     1006
 	#   1                              1:14599    A    T        0.161     1006
 	#   1                              1:14604    G    A        0.161     1006
+	# ....
+	# 	23      X:60032 0       60032   C       T
+	# 	23      X:60052 0       60052   A       T
+	# 	23      X:60069 0       60069   A       T
+	# 	23      X:60185 0       60185   T       C
+	# 	23      X:60215 0       60215   A       C
+	# 	23      X:60256 0       60256   G       C
+	# 	23      X:60336 0       60336   G       A
 	snp_maf_dict = {}
 	with open(file_frq, 'r') as f:
 		for line in f: # reading line by line
@@ -94,12 +102,14 @@ def read_gene_info(infile):
 		if not chr_pattern.match(chromosome):
 			continue 
 
-		### ************Outcommented on Broad 2015************
-		# # Convert everything to numeric to enable comparison afterwards
-		# if chromosome == "X":
-		# 	chromosome = "23"
-		# if chromosome == "Y":
-		# 	chromosome = "24"
+		### *IMPORTANT* the ENSEMBL file uses "X"/"Y" for the sex chromosome. PLINK uses numeric codes 23/34.
+		### Failing to do this conversion resulted *BUG* in the collection file for all X-chromosome variants!
+		### DATE OF FIX: 29th July 2015
+		# Convert Ensembl format X-chromosome to numeric codes used by PLINK.
+		if chromosome == "X":
+			chromosome = "23"
+		if chromosome == "Y":
+			chromosome = "24"
 
 		############# Saving ENSEMBLE ID in dict ###################
 		gene_info[chromosome][ensembl_gene_id] = 1
