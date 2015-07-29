@@ -830,6 +830,12 @@ def html_error(e):
 
 
 if __name__ == "__main__":
+	# with open("/cvar/jhlab/snpsnap/bootface2.log.txt", "a") as f_log_tmp:
+	# 	tmp_command = "rm -r /local/data/web_results/*"
+	# 	f_log_tmp.write( "Will issue command: {}\n".format(tmp_command) )
+	# 	p = subprocess.Popen(tmp_command, stdout=f_log_tmp, stderr=subprocess.STDOUT, shell=True)
+	# 	f_log_tmp.write( "Done\n" )
+
 	try:
 		run()
 	except FormValidationError as e:
