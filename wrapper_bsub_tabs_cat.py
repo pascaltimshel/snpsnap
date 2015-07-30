@@ -100,14 +100,16 @@ def LogArguments():
 #queue_name = "week" # [bhour, bweek] priority
 if os.environ["HOST"] == "gold":
 	#queue_name = "MEDPOP"
-	queue_name = "priority"
+	#queue_name = "priority"
+	queue_name = "hour"
 elif os.environ["HOST"] == "copper":
 	queue_name = "week"
 else: # default queue
 	queue_name = "week"
 
 # priority: This queue has a per-user limit of 10 running jobs, and a run time limit of three days.
-mem=20 # 10 GB worked for EUR/EAS 
+#mem=20 # 10 GB worked for EUR/EAS 
+mem=5 # 10 GB worked for EUR/EAS 
 email='pascal.timshel@gmail.com' # [use an email address 'pascal.timshel@gmail.com' or 'False'/'None']
 email_status_notification=False # [True or False]
 email_report=False # # [True or False]

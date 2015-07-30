@@ -227,8 +227,8 @@ def LogArguments():
 #queue_name = "priority" # [bhour, bweek] priority
 if os.environ["HOST"] == "gold":
 	#queue_name = "MEDPOP" 
-	#queue_name = "hour" # NEW altQC
-	queue_name = "priority" # NEW altQC
+	queue_name = "hour" # NEW altQC
+	#queue_name = "priority" # NEW altQC
 elif os.environ["HOST"] == "copper":
 	queue_name = "week"
 else: # default queue
@@ -236,7 +236,9 @@ else: # default queue
 
 #queue_name = "MEDPOP" # *<--ONLY ON RHEL6-->* <-- DO NOT USE THIS QUEUE. One population generates *1900 JOBS*
 # priority: This queue has a per-user limit of 10 running jobs, and a run time limit of three days.
-mem="20" # gb      
+#mem="20" # gb      
+mem="5" # NEW altQC
+
 	### RESULTS from EUR_chr_1 (largest chromosome)
 email='pascal.timshel@gmail.com' # [use an email address 'pascal.timshel@gmail.com' or 'False'/'None']
 email_status_notification=False # [True or False]
