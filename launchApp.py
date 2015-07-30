@@ -119,7 +119,9 @@ class Processor(object):
 		
 		file_report_bootface = "{base}/{sid}_{subcommand}.{ext}".format(base=self.path_web_tmp_output, sid=self.session_id, subcommand='bootface', ext='json')
 
-		self.report_obj = None ## Needed for correct variable scope
+		self.report_obj = {} ## Needed for correct variable scope
+		
+
 		#### READING match ######
 		if self.cmd_match:
 			try:

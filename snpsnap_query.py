@@ -76,6 +76,19 @@ import pdb
 
 #/cvar/jhlab/snpsnap/data/step3/1KG_snpsnap_production_v1/ld0.1_db.h5.
 
+def pre_terminate(message="No message"):
+	""" 
+	Function to pre-terminate the script.
+	The script is used if e.g. there are no user SNPs left in user_snps_df when processing/excluding them.
+	"""
+	### Log this event
+	logger.critical( "THE SCRIPT IS PRE-TERMINATING with exit code 0" )
+	logger.critical( "Pre-terminating message: {}".format(message) )
+	### Set the status to complete for all categories of "tasks"
+	status_obj.complete_all()
+	### Now exit gracefully (exit code 0)
+	sys.exit(0)
+
 def locate_db_file(path, prefix):
 	#TODO fix this. Make checks
 	file_db = "{path}/{type}/{type}_db.{ext}".format(path=path, type=prefix, ext='h5')
@@ -335,6 +348,11 @@ def process_input_snps(path_output, user_snps, user_snps_df):
 							"user_snps_mapping_to_HLA":len(snps_in_HLA)
 							}
 		report_obj.report['input'].update(report_news)
+
+	### Check if there are any SNPs left in user_snps_df. If not, then we need to *pre-terminate* the script.
+	if len(user_snps_df) == 0:
+		pre_terminate(message="No input SNPs left to match.")
+
 
 	### RETURNING DataFrame
 	#Note: if exclude_HLA_SNPs is enabled, then the DataFrame (user_snps_df) will be a modified version of the one parsed to this function
@@ -1342,6 +1360,16 @@ class Progress():
 		self.status_list.append(self.status_now) # not needed
 		self._write_status()
 
+	def complete_all(self):
+		""" Setting all statuses to complete """
+		if not self.enabled: return
+		for selector in self.status_now:
+			# selector | string --> 'match', 'bias','set_file','annotate','clump'
+			# self.status_now[selector] | dict -- e.g --> {'pct_complete':100.0, 'status':'complete'}
+			self.status_now[selector]['pct_complete'] = float(100)
+			self.status_now[selector]['status'] = 'complete'
+		self._write_status()
+			
 	## Private function
 	def _write_status(self):
 		with open(self.fname, 'w') as f:
