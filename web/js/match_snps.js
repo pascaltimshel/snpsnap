@@ -87,7 +87,10 @@ $(document).ready(function(){
 			"6:32592119",
 			"4:58923290",
 			"4:59511935",
-			"2:73321971"].join('\n');
+			"2:73321971",
+			"23:41149388",
+			"23:15856587",
+			"23:23904440"].join('\n');
 		$('#snplist_text').val(example_snp_input_str); //this puts the example_snp_input_str inside the textarea for the id labeled 'snplist_text'
 	});
 
@@ -101,7 +104,10 @@ $(document).ready(function(){
 			"rs111462038",
 			"rs143056833",
 			"rs35886686",
-			"rs727470"].join('\n');
+			"rs727470",
+			"rs184744489",
+			"rs798180",
+			"rs5925957"].join('\n');
 		$('#snplist_text').val(example_snp_input_str); //this puts the example_snp_input_str inside the textarea for the id labeled 'snplist_text'
 	});
 

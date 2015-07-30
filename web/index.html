@@ -91,8 +91,23 @@
 
 	<div class="row">
 		<div class="col-xs-offset-1 col-xs-9">
-			<h2>What's New?</h2>
+			<!-- <h2>What's New?</h2> -->
+			<h2><a name="whatsnew" class="documentation_header_link">What's New?</a></h2>
 			<!-- <div class="scrollable_news"> -->
+				<div class="panel panel-default"> <!-- START feed -->
+					<div class="panel-heading">
+						<div class="text-right">July 30, 2015</div>
+						<h3 class="panel-title"><span class="text-danger">BUG report</span>: missing gene annotation for X chromosome SNPs</h3>
+					</div>
+					<div class="panel-body">
+						We have discovered a bug in SNPsnap's SNP database. All X chromosome variants are missing the gene annotation.
+						This effectively means that <strong>SNPsnap is not able to match X chromosome SNPs at the current moment</strong>.
+						We are working on fixing this problem and updating SNPsnap's database, but the timeline for the fix is unknown.
+						Input X chromosome SNPs are still accepted but they will be excluded during the matching algorithm (exclusion mark: <code>SNP_genetic_properties_corrupted_in_data_base</code>).
+						<br>
+						We are sorry about the inconvenience this may cause our users.
+					</div>
+				</div> <!-- END feed -->
 				<div class="panel panel-default"> <!-- START feed -->
 					<div class="panel-heading">
 						<div class="text-right">March 18, 2015</div>
