@@ -94,12 +94,14 @@ def read_gene_info(infile):
 		if not chr_pattern.match(chromosome):
 			continue 
 
-		### ************Outcommented on Broad 2015************
-		# # Convert everything to numeric to enable comparison afterwards
-		# if chromosome == "X":
-		# 	chromosome = "23"
-		# if chromosome == "Y":
-		# 	chromosome = "24"
+		### *IMPORTANT* the ENSEMBL file uses "X"/"Y" for the sex chromosome. PLINK uses numeric codes 23/34.
+		### Failing to do this conversion resulted *BUG* in the collection file for all X-chromosome variants!
+		### DATE OF FIX: 29th July 2015
+		# Convert Ensembl format X-chromosome to numeric codes used by PLINK.
+		if chromosome == "X":
+			chromosome = "23"
+		if chromosome == "Y":
+			chromosome = "24"
 
 		############# Saving ENSEMBLE ID in dict ###################
 		gene_info[chromosome][ensembl_gene_id] = 1
