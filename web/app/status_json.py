@@ -52,6 +52,9 @@ try:
 			with open(file_status_annotate, 'r') as json_data:
 				tmp = json.load(json_data)
 				status_obj['annotate'] = tmp['annotate'] ## OBS: key must be in sync with snpsnap_query.py status keywords!
+				if tmp['error']['error_status'] == True:
+					status_obj['error']['error_msg'] += "\n"+tmp['error']['error_msg']
+
 		except IOError: # if file does not exists, e.g. the subprocess is waiting
 			status_obj['annotate'] = {'pct_complete':0, 'status':'job waiting in queue'} 
 	else:
@@ -64,6 +67,8 @@ try:
 			with open(file_status_clump, 'r') as json_data:
 				tmp = json.load(json_data)
 				status_obj['clump'] = tmp['clump'] ## OBS: key must be in sync with snpsnap_query.py status keywords!
+				if tmp['error']['error_status'] == True:
+					status_obj['error']['error_msg'] += "\n"+tmp['error']['error_msg']
 		except IOError: # if file does not exists, e.g. the subprocess is waiting
 			status_obj['clump'] = {'pct_complete':0, 'status':'job waiting in queue'} 
 	else:
@@ -75,16 +80,19 @@ try:
 
 	#### FORMATTING PROCENTATGE COMPLETE
 	for val in status_obj.values():
-		val['pct_complete'] = int(val['pct_complete']) ### Formatting numbers. TODO: consider changing this to a string formatting call to avoid expection int() cannot convert.
+		if 'pct_complete' in val: # 2015
+			val['pct_complete'] = int(val['pct_complete']) ### Formatting numbers. TODO: consider changing this to a string formatting call to avoid expection int() cannot convert.
 
 	## ***OBS: BAD CODE
 	## TODO: rewrite this later
 	status_all_complete = True
 	for val in status_obj.values():
-		if val['status'] != 'complete':
+		if 'status' in val and val['status'] != 'complete': #2015
 			status_all_complete = False
 
 	status_obj['status_all_complete'] = status_all_complete
+
+
 
 	### DUMPING dict of dict as json string
 	status2parse = json.dumps(status_obj)
@@ -102,11 +110,13 @@ except Exception as e: # DIRTY: but properly the file(s) does not exists
 	# NOTE from 09/15/2014 about why I do the below: 
 	# we need the below lines to avoid getting errors in Javascripts about undefined values for e.g. res.bias.pct_complete and res.bias.status
 	status_obj = {}
+	#status_obj['exception'] = "{}".format(e)
 	status_obj['match'] = {'pct_complete':0, 'status':'initialyzing'} ## OBS: dirty code.
 	status_obj['bias'] = {'pct_complete':0, 'status':'initialyzing'} ## OBS: dirty code.
 	status_obj['set_file'] = {'pct_complete':0, 'status':'initialyzing'} ## OBS: dirty code.
 	status_obj['annotate'] = {'pct_complete':0, 'status':'initialyzing'} ## OBS: dirty code.
 	status_obj['clump'] = {'pct_complete':0, 'status':'initialyzing'} ## OBS: dirty code.
+	status_obj['error'] = {'error_status':False, 'error_msg':""}
 	
 	### RETURNING json string to ajax calls
 	print "Content-Type: application/json"

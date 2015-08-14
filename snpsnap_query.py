@@ -84,8 +84,15 @@ def pre_terminate(message="No message"):
 	### Log this event
 	logger.critical( "THE SCRIPT IS PRE-TERMINATING with exit code 0" )
 	logger.critical( "Pre-terminating message: {}".format(message) )
+	
 	### Set the status to complete for all categories of "tasks"
-	status_obj.complete_all()
+	#status_obj.complete_all()
+	
+	#
+	status_obj.set_error(error_msg=message)
+
+	### Pause script some time, to allow the status repports to be written.
+	time.sleep(5) # 
 	### Now exit gracefully (exit code 0)
 	sys.exit(0)
 
@@ -351,7 +358,7 @@ def process_input_snps(path_output, user_snps, user_snps_df):
 
 	### Check if there are any SNPs left in user_snps_df. If not, then we need to *pre-terminate* the script.
 	if len(user_snps_df) == 0:
-		pre_terminate(message="No input SNPs left to match.")
+		pre_terminate(message="No input SNPs found in SNPsnap database")
 
 
 	### RETURNING DataFrame
@@ -1333,13 +1340,14 @@ class Progress():
 		# 	logger.critical( emsg )
 		# 	raise Exception( emsg )
 		
+		self.error = {'error_status':False, 'error_msg':""} # must be empty string! strings are appended in "status_json.py"
 		self.match = {'pct_complete':0, 'status':'waiting'} # will be updated under args.subcommand == "match"
 		self.bias = {'pct_complete':0, 'status':'waiting'} # will be updated under args.subcommand == "match"
 		self.set_file = {'pct_complete':0, 'status':'waiting'} # will be updated under args.subcommand == "match"
 		self.annotate = {'pct_complete':0, 'status':'waiting'} # will be updated under args.subcommand == "annotate"
 		self.clump = {'pct_complete':0, 'status':'waiting'} # will be updated under args.subcommand == "clump"
 		
-		self.status_now = {'match':self.match, 'bias':self.bias, 'set_file':self.set_file, 'annotate':self.annotate, 'clump':self.clump}
+		self.status_now = {'match':self.match, 'bias':self.bias, 'set_file':self.set_file, 'annotate':self.annotate, 'clump':self.clump, 'error':self.error}
 		self.status_list = [self.status_now] # NOT NESSESARY. This war only implemented to have a full list of the status bar
 
 
@@ -1360,14 +1368,21 @@ class Progress():
 		self.status_list.append(self.status_now) # not needed
 		self._write_status()
 
-	def complete_all(self):
-		""" Setting all statuses to complete """
+	# def complete_all(self):
+	# 	""" Setting all statuses to complete """
+	# 	if not self.enabled: return
+	# 	for selector in self.status_now:
+	# 		# selector | string --> 'match', 'bias','set_file','annotate','clump'
+	# 		# self.status_now[selector] | dict -- e.g --> {'pct_complete':100.0, 'status':'complete'}
+	# 		self.status_now[selector]['pct_complete'] = float(100)
+	# 		self.status_now[selector]['status'] = 'complete'
+	# 	self._write_status()
+
+	def set_error(self, error_msg):
+		""" .. """
 		if not self.enabled: return
-		for selector in self.status_now:
-			# selector | string --> 'match', 'bias','set_file','annotate','clump'
-			# self.status_now[selector] | dict -- e.g --> {'pct_complete':100.0, 'status':'complete'}
-			self.status_now[selector]['pct_complete'] = float(100)
-			self.status_now[selector]['status'] = 'complete'
+		self.status_now['error']['error_status'] = True
+		self.status_now['error']['error_msg'] = error_msg
 		self._write_status()
 			
 	## Private function

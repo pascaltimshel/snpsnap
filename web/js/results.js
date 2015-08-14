@@ -166,6 +166,20 @@ $(document).ready(function(){
 			data: data_parse_cgi, 
 			dataType: "json",
 			success: function(res){
+				if (res.error.error_status) { // true
+					$("#row_progress_match").hide();
+					$("#row_progress_set_file").hide();
+					$("#row_progress_bias").hide();
+					$("#row_progress_annotate").hide();
+					$("#row_progress_clump").hide();
+					
+					//$("#collapse_progress .panel-body").append("<p class='text-danger text-center'>I am sorry, but we could not find any of your SNPs in the SNPsnap database.</p>")
+					$("#collapse_progress .panel-body").append("<p class='text-danger text-center'>Input problem:" + res.error.error_msg + "</p>")
+					clearInterval(progresspump);
+
+				}
+				
+
 				$("#progress_bar_match .progress-bar").css('width', res.match.pct_complete+'%');
 				$("#progress_bar_match .progress-bar").html(res.match.pct_complete + "%");
 				$("#row_progress_match .text-info").html(res.match.status);
