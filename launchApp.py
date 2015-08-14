@@ -375,7 +375,11 @@ class Processor(object):
 	def zip_folder(folder_path, output_path):
 		"""Zip the contents of an entire folder (with that folder included in the archive). 
 		Empty subfolders will be included in the archive as well."""
-		zip_file = zipfile.ZipFile(output_path, 'w', compression=zipfile.ZIP_DEFLATED)
+		#zip_file = zipfile.ZipFile(output_path, 'w', compression=zipfile.ZIP_DEFLATED)
+		zip_file = zipfile.ZipFile(output_path, 'w', compression=zipfile.ZIP_DEFLATED, allowZip64=True) ## UPDATE August 2015
+			# If allowZip64 is True zipfile will create ZIP files that use the ZIP64 extensions *when the zipfile is larger than 2 GB*. 
+			# If it is false (the default) zipfile will raise an exception when the ZIP file would require ZIP64 extensions. 
+			# ZIP64 extensions are disabled by default because the default zip and unzip commands on Unix (the InfoZIP utilities) don't support these extensions
 		parent_folder = os.path.dirname(folder_path) # this is the PARRENT folder of the folder_path. e.g. parrent=/local/data when folder_path=/local/data/<session_id>
 		# Retrieve the paths of the folder contents.
 		contents = os.walk(folder_path) # ---> type generator
