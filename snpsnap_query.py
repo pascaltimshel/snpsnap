@@ -1002,7 +1002,8 @@ def clump_snps(user_snps_df, path_output, clump_r2, clump_kb, path_genotype):
 	#source /broad/software/scripts/useuse && use .plink-1.07 && plink <plink arguments>
 
 	################## SNPsnap production v2 ##################
-	cmd_plink = "/cvar/jhlab/timshel/bin/plink_linux_x86_64_v1.90b3d/plink --bfile {geno} --clump {assoc} --clump-r2 {clump_r2} --clump-kb {clump_kb} --out {file_plink_output_tmp_prefix}".format(geno=path_genotype, assoc=file_plink_input_tmp_assoc, clump_r2=clump_r2, clump_kb=clump_kb, file_plink_output_tmp_prefix=file_plink_output_tmp_prefix)
+	#cmd_plink = /cvar/jhlab/timshel/bin/plink_linux_x86_64_v1.90b3d/plink # BEFORE 2015-12
+	cmd_plink = "/cvar/jhlab/timshel/bin/plink1.9_2015-11-26/plink --bfile {geno} --clump {assoc} --clump-r2 {clump_r2} --clump-kb {clump_kb} --out {file_plink_output_tmp_prefix}".format(geno=path_genotype, assoc=file_plink_input_tmp_assoc, clump_r2=clump_r2, clump_kb=clump_kb, file_plink_output_tmp_prefix=file_plink_output_tmp_prefix)
 
 	logger.info( "Making plink call: %s" % cmd_plink )
 	fnull = open(os.devnull, "w")
