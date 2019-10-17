@@ -1,0 +1,12 @@
+ld0.5_db_blosc9.h5
+ld0.5_db_lzo1.h5
+ld0.5_db_no_comp.h5
+ld0.5_db_zlib1.h5
+ld0.5_db_zlip9.h5
+ld0.5_ORIGINAL_db_blosc9.h5
+ld0.5_ORIGINAL_db_no_comp.h5
+ld0.5_ORIGINAL_mod_db_blosc9.h5
+store_test_1k_comp.h5
+store_test_1mil.h5
+store_test_100k.h5
+store_test_full_comp_complete.h5
