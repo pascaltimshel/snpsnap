@@ -5,7 +5,7 @@ class FormValidationError(Exception):
 	""" Exception raised for errors in the form input from the website
 	The arguments for instantiating the class is 'args': tuple of arguments given to the exception constructor. """
 	# ** question: how does the inheritance work when the __init__ of the parrent class is not called?
-	# SEE more at: http://stackoverflow.com/questions/1319615/proper-way-to-declare-custom-exceptions-in-modern-python
+	# SEE more at: https://stackoverflow.com/questions/1319615/proper-way-to-declare-custom-exceptions-in-modern-python
 	# https://docs.python.org/2/library/exceptions.html
 	# https://docs.python.org/2/tutorial/errors.html#user-defined-exceptions
 	pass
@@ -16,8 +16,8 @@ snpsnap_header = """
 <html lang="en">
 <head>
 	<!-- ############################ SPECIAL FOR BOOTFACE ######################### -->
-	<!-- <BASE href="http://snpsnap.broadinstitute.org/mpg/snpsnap/"> -->
-	<!-- <BASE href="http://www.broadinstitute.org/mpg/snpsnap/"> -->
+	<!-- <BASE href="https://snpsnap.broadinstitute.org/mpg/snpsnap/"> -->
+	<!-- <BASE href="https://www.broadinstitute.org/mpg/snpsnap/"> -->
 	<BASE href="https://data.broadinstitute.org/mpg/snpsnap/">
 	<!-- ################################################################################### -->
 
@@ -37,13 +37,13 @@ snpsnap_header = """
 	<link href="css/snpsnap.css" rel="stylesheet">
 
 	<!-- GOOGLE FONTS -->
-	<link href="http://fonts.googleapis.com/css?family=Crimson+Text" rel="stylesheet" type="text/css">
+	<link href="https://fonts.googleapis.com/css?family=Crimson+Text" rel="stylesheet" type="text/css">
 
 	<!-- GOOGLE ANALYTICS -->
 	<script src="js/snpsnap_googleanalytics.js"></script>
 
 	<!-- jQuery -->
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 
 	<!-- Bootstrap core CSS -->
 	<link href="static/css/bootstrap.min.css" rel="stylesheet">
@@ -346,7 +346,7 @@ def run():
 
 	###### CHECKBOXES ########
 	# INFO: type "checkbox" and "radio": will have value 'on' for selected checkbox elements without value attributes
-	# REF: http://www.eskimo.com/~scs/cclass/handouts/cgi.html
+	# REF: https://www.eskimo.com/~scs/cclass/handouts/cgi.html
 	exclude_input_SNPs = form.getvalue('exclude_input_SNPs', '') # value will be 'on' if parsed (and no value attribute is specified)
 	exclude_HLA_SNPs = form.getvalue('exclude_HLA_SNPs', '') # value will be 'on' if parsed (and no value attribute is specified)
 	
@@ -504,8 +504,8 @@ def run():
 
 	print snpsnap_header
 
-	## SEE: http://stackoverflow.com/questions/10721244/ajax-posting-to-python-cgi
-	## IMPORTANT: http://stackoverflow.com/questions/9540957/jquery-ajax-loop-to-refresh-jqueryui-progressbar
+	## SEE: https://stackoverflow.com/questions/10721244/ajax-posting-to-python-cgi
+	## IMPORTANT: https://stackoverflow.com/questions/9540957/jquery-ajax-loop-to-refresh-jqueryui-progressbar
 
 	###################################### BODY - START ######################################
 	print "<body>"
@@ -518,13 +518,13 @@ def run():
 
 
 	print "<h2 class='text-center'>SNPsnap is now matching your SNPs</h2>"
-	print "<h6 class='text-center'><i>Please remember to <a target='_blank' href='{link_citation}'>cite SNPsnap</a></i></h6>".format(link_citation="http://www.broadinstitute.org/mpg/snpsnap/about.html")
+	print "<h6 class='text-center'><i>Please remember to <a target='_blank' href='{link_citation}'>cite SNPsnap</a></i></h6>".format(link_citation="https://www.broadinstitute.org/mpg/snpsnap/about.html")
 
 	#print "<p>Your session ID is: %s</p>" % session_id
 	print "<p> An email will be sent to <strong>%s</strong> when the job is completed.<br>You will be able to download the results as soon your job finish. You can download the results from the bottom of this page or via the below link.</p>" % email_address
 	
 	### Display results URL as "raw text"
-	print "<p>Results URL: <code>{url}</code></p>".format(url="http://www.broadinstitute.org/mpg/snpsnap/"+url_results)
+	print "<p>Results URL: <code>{url}</code></p>".format(url="https://www.broadinstitute.org/mpg/snpsnap/"+url_results)
 
 	### Give some information about the use...
 	print """<p class='text-muted'><i>If you browse back you will not be able to retrieve this site again. However, you will still receive an email notification about your job completion.

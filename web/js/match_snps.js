@@ -1,5 +1,5 @@
 // Function to detect file upload
-// Taken from: http://stackoverflow.com/a/18164555 
+// Taken from: https://stackoverflow.com/a/18164555 
 $(document).on('change', '.btn-file :file', function() {
   var input = $(this),
 	  numFiles = input.get(0).files ? input.get(0).files.length : 1,
@@ -15,7 +15,7 @@ $(document).ready(function(){
 	
 
 	// USER FEEDBACK FOR FILE UPLOAD
-	// Taken from: http://stackoverflow.com/a/18164555 
+	// Taken from: https://stackoverflow.com/a/18164555 
 	$('.btn-file :file').on('fileselect', function(event, numFiles, label) {
 		// the input variable will be a HTML text element under the input-group class, e.g. <input type="text" class="form-control" readonly>
 		var input = $(this).parents('.input-group').find(':text'),
@@ -111,7 +111,7 @@ $(document).ready(function(){
 		$('#snplist_text').val(example_snp_input_str); //this puts the example_snp_input_str inside the textarea for the id labeled 'snplist_text'
 	});
 
-// http://stackoverflow.com/questions/20316117/error-placement-with-selectpicker-jquery-validation-plugins
+// https://stackoverflow.com/questions/20316117/error-placement-with-selectpicker-jquery-validation-plugins
 // errorPlacement: function (error, element) {
 //     if ($(element).is('select')) {
 //         element.next().after(error); // special placement for select elements
@@ -121,8 +121,8 @@ $(document).ready(function(){
 // }
 
 	//SEE BELOW LINK for more info about this.optional(element) in jQuery validation method: 
-		// ---> http://stackoverflow.com/questions/13093971/what-does-this-optionalelement-do-when-adding-a-jquery-validation-method
-	// GOT REGEX METHOD FROM: http://stackoverflow.com/questions/280759/jquery-validate-how-to-add-a-rule-for-regular-expression-validation
+		// ---> https://stackoverflow.com/questions/13093971/what-does-this-optionalelement-do-when-adding-a-jquery-validation-method
+	// GOT REGEX METHOD FROM: https://stackoverflow.com/questions/280759/jquery-validate-how-to-add-a-rule-for-regular-expression-validation
 	$.validator.addMethod("regex", function(value, element, regexp) {
 		var re = new RegExp(regexp);
 		return this.optional(element) || re.test(value);
@@ -248,12 +248,12 @@ $(document).ready(function(){
 				// parents traverses all the way up the DOM tree
 			}
 
-			// See also http://api.jquery.com/category/traversing/
+			// See also https://api.jquery.com/category/traversing/
 			// error.appendTo(element.next(".error_msg_place"))
 			// element.parent().next('.error_msg_place').html('sadasdas') // use this for inserting text in field
 
 			// ABOUT after vs append
-			// http://stackoverflow.com/questions/14846506/append-prepend-after-and-before
+			// https://stackoverflow.com/questions/14846506/append-prepend-after-and-before
 			// .after() puts the element after the element
 			// .append() puts data inside an element at last index and
 		}
@@ -269,7 +269,7 @@ $(document).ready(function(){
 
 
 
-// // SEE MORE AT http://stackoverflow.com/questions/3671300/jquery-validation-groups
+// // SEE MORE AT https://stackoverflow.com/questions/3671300/jquery-validation-groups
 // groups: {
 //    username: "fname lname"
 //  },

@@ -46,7 +46,7 @@ try:
 	# <p class="text-center">{str_explanation}</p>
 
 	#Description of how to control column width of tables of bootstrap:
-	# --->http://ericsaupe.com/custom-column-widths-in-bootstrap-tables/
+	# --->https://ericsaupe.com/custom-column-widths-in-bootstrap-tables/
 	html2parse = """
 	<div style='width:60%;'>
 		  <table class='table table-hover'>

@@ -17,13 +17,13 @@
 	<link href="css/snpsnap.css" rel="stylesheet">
 
 	<!-- GOOGLE FONTS -->
-	<link href="http://fonts.googleapis.com/css?family=Crimson+Text" rel="stylesheet" type="text/css">
+	<link href="https://fonts.googleapis.com/css?family=Crimson+Text" rel="stylesheet" type="text/css">
 
 	<!-- GOOGLE ANALYTICS -->
 	<script src="js/snpsnap_googleanalytics.js"></script>
 
 	<!-- jQuery -->
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 
 	<!-- Bootstrap core CSS -->
 	<link href="static/css/bootstrap.min.css" rel="stylesheet">
@@ -142,7 +142,7 @@
 
 
 	<h4>SNPsnap Super Population Definitions</h4>
-	SNPsnap's super population definitions are based on the following <a href="http://www.1000genomes.org/about#ProjectSamples">1000G cohorts</a>:
+	SNPsnap's super population definitions are based on the following <a href="https://www.1000genomes.org/about#ProjectSamples">1000G cohorts</a>:
 	<ul>
 		<li><strong>European (EUR)</strong>
 			<ul>
@@ -208,7 +208,7 @@
 	<span class="text-danger">SNPsnap will soon be updated with 1000 Genomes Phase 3 variants. The update will also include more populations.</span>
  -->
 	<h4>SNPsnap Gene Sets</h4>
-	SNPsnap uses genes from the <a href="http://www.gencodegenes.org/">GENCODE</a> consortium downloaded via <a href="http://grch37.ensembl.org">Ensembl GRCh37 Biomart</a> (Homo sapiens genes, GRCh37.p13). (<span class="snpsnap_new_feature">March 2015: Gene set updated to GENCODE genes</span>).
+	SNPsnap uses genes from the <a href="https://www.gencodegenes.org/">GENCODE</a> consortium downloaded via <a href="https://grch37.ensembl.org">Ensembl GRCh37 Biomart</a> (Homo sapiens genes, GRCh37.p13). (<span class="snpsnap_new_feature">March 2015: Gene set updated to GENCODE genes</span>).
 	SNPsnap uses any genes within the GENCODE gene set to define the <span class="code_settings">Distance to Nearest Gene</span> and <span class="code_settings">Gene Density</span>. Please note that not all these genes are coding genes.
 	The SNPsnap GENCODE gene set contains 57737 genes of which 20314 are protein coding genes. SNPsnap provides the annotation feature <span class="code_column">dist_nearest_gene_snpsnap_protein_coding</span> as the distance to the nearest protein coding gene.
 	Finaly, SNPsnap uses Ensembl's mapping to HGNC symbols whenever a HGNC symbol is provided.
@@ -217,7 +217,7 @@
 	<ul>
 	  <li ><strong>Minor allele frequency</strong>: SNPs are partitioned into minor allele frequency bins of 1-2, 2-3, ..., 49-50% strata.</li>
 	  <li ><strong>LD buddies</strong>: the number of “buddy” (or "proxy") SNPs in LD at various thresholds. SNPsnap currently offers LD buddy counts for thresholds using r&#178 > 0.1, 0.2, ..., 0.9</li>
-	  <li ><strong>Distance to nearest gene</strong>: the distance to the nearest 5’ start site using <a href="http://www.gencodegenes.org/">GENCODE</a> gene coordinates. If the SNP is within a gene, the distance to that gene’s start site is used. </li>
+	  <li ><strong>Distance to nearest gene</strong>: the distance to the nearest 5’ start site using <a href="https://www.gencodegenes.org/">GENCODE</a> gene coordinates. If the SNP is within a gene, the distance to that gene’s start site is used. </li>
 	  <li ><strong>Gene density</strong>: the number of genes in loci around the SNP, using LD (r&#178 > 0.1, 0.2, ..., 0.9) and physical distance (100, 200, ..., 1000 kb) to define loci. </li>
 	</ul>
 	
@@ -280,7 +280,7 @@
 			<li>SNP identifers can consists of chromosomal coordinates, rs-numbers or a mixture of the two.</li>
 		</ul>
 	Please note that SNPs not formatted correctly, SNPs that does not exists in the database and SNPs excluded from matching will be written to the file <span class="code_files">input_snps_excluded.txt</span>. Please inspect this file to make sure all your SNPs are formatted correctly.
-	<!-- REFERENCE: http://getbootstrap.com/css/#code -->
+	<!-- REFERENCE: https://getbootstrap.com/css/#code -->
 
 	
 	<h3><a name="snpsnap_score" class="documentation_header_link">SNPsnap score</a></h3> <!-- OBS: this link is used in report_html.py. MAKE SURE THAT THE NAMES ARE IN SYNC! -->

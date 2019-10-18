@@ -39,7 +39,7 @@ body {
     text-align:center;
 }*/
 
-/*FROM http://stackoverflow.com/questions/18146476/how-to-turn-off-the-responsive-feature-completely-from-twitter-bootstrap-3*/
+/*FROM https://stackoverflow.com/questions/18146476/how-to-turn-off-the-responsive-feature-completely-from-twitter-bootstrap-3*/
 .container-non-responsive {
   /* Margin/padding copied from Bootstrap */
   margin-left: auto;

@@ -77,7 +77,7 @@ try:
 	# <th class="col-xs-7"><p class="text-center" style='font-size:125%;'>Rating</p></th>
 
 	#Description of how to control column width of tables of bootstrap:
-	# --->http://ericsaupe.com/custom-column-widths-in-bootstrap-tables/
+	# --->https://ericsaupe.com/custom-column-widths-in-bootstrap-tables/
 	html2parse = """
 	  <div style='width:100%;'>
 	  <table class='table table-hover'>
