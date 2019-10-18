@@ -124,9 +124,9 @@ except Exception as e: # DIRTY: but properly the file(s) does not exists
 	print json.dumps(status_obj)
 
 
-#http://stackoverflow.com/questions/17347404/python-cgi-and-json-dumps
+#https://stackoverflow.com/questions/17347404/python-cgi-and-json-dumps
 
-#http://stackoverflow.com/questions/10718572/post-json-to-python-cgi
+#https://stackoverflow.com/questions/10718572/post-json-to-python-cgi
 
-#http://stackoverflow.com/questions/10721244/ajax-posting-to-python-cgi
+#https://stackoverflow.com/questions/10721244/ajax-posting-to-python-cgi
 	#--> good
