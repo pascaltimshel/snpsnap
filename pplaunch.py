@@ -88,7 +88,7 @@ class LaunchBsub(object):
 	- email: 
 		- parse an email address to this argument. The user MUST set email_status_notification or email_report to 'True' for any email to be sent
 		- DEFAULT: None
-		- Example: email='pascal.timshel@gmail.com'
+		- Example: email='joe@somemail.com'
 		* email_status_notification:
 			if enabled, you will receive email notification when the job starts/stops. 
 		* email_report:

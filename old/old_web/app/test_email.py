@@ -8,7 +8,7 @@ from email.mime.text import MIMEText
 # fromaddr == my email address
 # toaddr == recipient's email address
 fromaddr = "snpsnap@broadinstitute.org"
-toaddr = "pascal.timshel@gmail.com"
+toaddr = "joe@somemail.com"
 
 # Create message container - the correct MIME type is multipart/alternative.
 msg = MIMEMultipart('alternative')

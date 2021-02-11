@@ -57,7 +57,7 @@ queue_name = "hour" # [bhour, bweek] priority
 #queue_name = "priority" # [bhour, bweek] priority
 walltime="30" # hh:mmm, e.g. [24:00=1day | 10:00=10hrs | 120=2hrs | 1:0=1hrs
 mem="1" # gb
-#email='pascal.timshel@gmail.com'
+#email='joe@somemail.com'
 email=False
 
 script2call = "/home/unix/ptimshel/git/snpsnap/snpsnap_query.py" # Updated path

@@ -447,7 +447,7 @@ queue_name = "week" # [bhour, bweek] priority
 # priority: This queue has a per-user limit of 10 running jobs, and a run time limit of three days.
 #mem="30" # 20 GB worked for EUR+EAS!
 mem="120" # ?? GB worked for WAFR!
-email='pascal.timshel@gmail.com' # [use an email address 'pascal.timshel@gmail.com' or 'False'/'None']
+email='joe@somemail.com' # [use an email address 'joe@somemail.com' or 'False'/'None']
 email_status_notification=False # [True or False]
 email_report=False # # [True or False]
 

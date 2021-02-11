@@ -20,7 +20,7 @@ from email.mime.text import MIMEText
 import sys
 cmd_match = "python /cvar/jhlab/snpsnap/snpsnap/snpsnap_query.py --user_snps_file /cvar/jhlab/snpsnap/web_tmp/bf1d367b7bac7d6ff60fb2cfc728b090_user_snplist --output_dir /cvar/jhlab/snpsnap/web_results/bf1d367b7bac7d6ff60fb2cfc728b090 --distance_type ld --distance_cutoff 0.5 --status_file /cvar/jhlab/snpsnap/web_tmp/bf1d367b7bac7d6ff60fb2cfc728b090_status.json match --N_sample_sets 1000 --max_freq_deviation 5 --max_distance_deviation 20 --max_genes_count_deviation 20"
 cmd_annotate = ''
-email_address = 'pascal.timshel@gmail.com'
+email_address = 'joe@somemail.com'
 session_id = 'bf1d367b7bac7d6ff60fb2cfc728b090'
 job_name = 'test_job_multi'
 

@@ -114,7 +114,7 @@ mem="4" # gb
 	#    Max Memory :      2488 MB
 	#    Max Swap   :      2609 MB
 	### chr_21 only took 400 sec and Max Memory 440 MB
-email='pascal.timshel@gmail.com' # [use an email address 'pascal.timshel@gmail.com' or 'False'/'None']
+email='joe@somemail.com' # [use an email address 'joe@somemail.com' or 'False'/'None']
 email_status_notification=True # [True or False]
 email_report=False # # [True or False]
 

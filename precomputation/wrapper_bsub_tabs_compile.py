@@ -115,7 +115,7 @@ def LogArguments():
 queue_name = "priority" # [bhour, bweek] priority
 # priority: This queue has a per-user limit of 10 running jobs, and a run time limit of three days.
 mem=30 # WAFR MAX = 30 GB # 25 gb used and I know this worked for EUR/EAS! (12 GB max mem + 12 GB max SWAP). 15 GB--> production_v1 # 
-email='pascal.timshel@gmail.com' # [use an email address 'pascal.timshel@gmail.com' or 'False'/'None']
+email='joe@somemail.com' # [use an email address 'joe@somemail.com' or 'False'/'None']
 email_status_notification=False # [True or False]
 email_report=False # # [True or False]
 
